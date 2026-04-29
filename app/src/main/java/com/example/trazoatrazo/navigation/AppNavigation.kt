@@ -1,6 +1,5 @@
 package com.example.trazoatrazo.navigation
 
-import FlowerScreen
 import GirasolScreen
 import HomeScreen
 import androidx.compose.runtime.Composable
@@ -9,6 +8,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trazoatrazo.ui.Screen.CategoryScreen
+import com.tuapp.drawbloom.drawings.flowers.FlowerScreen
 
 
 @Composable

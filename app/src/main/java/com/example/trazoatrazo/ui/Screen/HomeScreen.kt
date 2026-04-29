@@ -37,8 +37,8 @@ val allCategories = listOf(
         emoji       = "🌸",
         title       = "Flores",
         subtitle    = "Girasoles, ramos y más",
-        bgColor     = Color(0xFFFFF9C4),   // ← amarillo clarito original
-        accentColor = Color(0xFFF9A825)
+        bgColor     = AppColors.FlowersBg,
+        accentColor = AppColors.FlowersAccent
     ),
     DrawingCategory(
         id          = Routes.Category.CARTOONS,
