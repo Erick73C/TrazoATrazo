@@ -59,7 +59,14 @@ val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
     ),
 
     Routes.Category.CARTOONS to listOf(
-        // Aquí irán los cartoons
+        DrawingItem(
+            id          = Routes.Drawings.HEART,
+            emoji       = "🤍",
+            title       = "Corazón",
+            description = "Un dibujo con cariño",
+            bgColor     = Color(0xFFFFEBEE),
+            accentColor = Color(0xFFE91E63)
+        ),
     ),
 
     Routes.Category.ANIMALS to listOf(

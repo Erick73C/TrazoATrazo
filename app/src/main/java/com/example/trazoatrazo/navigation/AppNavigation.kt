@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.trazoatrazo.drawings.Shapes.HeartScreen
 import com.example.trazoatrazo.ui.Screen.CategoryScreen
 import com.tuapp.drawbloom.drawings.flowers.FlowerScreen
 
@@ -55,8 +56,17 @@ fun AppNavigation(
                             FlowerScreen(onBack  = { navController.popBackStack() })
                     }
                 }
+                Routes.Category.CARTOONS -> {
+                    when(drawingId) {
+                        Routes.Drawings.CARTOON -> {
+                            // Si tienes una pantalla para esto, agrégala aquí
+                        }
+                        Routes.Drawings.HEART -> {
+                            HeartScreen(onBack = { navController.popBackStack() })
+                        }
+                    }
+                }
                 // Aquí se agregan más categorías en el futuro:
-                // Routes.Category.CARTOONS -> { ... }
                 // Routes.Category.ANIMALS  -> { ... }
             }
         }

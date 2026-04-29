@@ -14,6 +14,7 @@ object Routes {
         const val FLOWERS  = "flowers"
         const val CARTOONS = "cartoons"
         const val ANIMALS  = "animals"
+        const val SHAPES   = "shapes"
     }
 
     // ── Dibujos ──────────────────────────────────────────────────────────────
@@ -27,5 +28,7 @@ object Routes {
     object Drawings {
         const val GIRASOL = "girasol"
         const val FLORES  = "flores"
+        const val CARTOON = "cartoon"
+        const val HEART   = "heart"
     }
 }

@@ -44,7 +44,7 @@ val allCategories = listOf(
         id          = Routes.Category.CARTOONS,
         emoji       = "🎭",
         title       = "Cartoons",
-        subtitle    = "Próximamente",
+        subtitle    = "Corazón animado y más",
         bgColor     = AppColors.CartoonsBg,
         accentColor = AppColors.CartoonsAccent
     ),
