@@ -30,5 +30,9 @@ object Routes {
         const val FLORES  = "flores"
         const val CARTOON = "cartoon"
         const val HEART   = "heart"
+
+        const val TURTLE = "turtle"
+
+        const val IMPROVED_SUNFLOWER = "improved_sunflower"
     }
 }

@@ -304,7 +304,7 @@ fun HeartScreen(onBack: () -> Unit) {
         ) {
             DrawingButtons(
                 visible     = etapa >= 5,
-                message     = "❤️ Con cariño ❤️",
+                message     = "❤️ Corazon 14 de febrero❤️",
                 subMessage  = "Eres una gran amistad" ,
                 repeatEmoji = "❤️",
                 accentColor = HeartRed,

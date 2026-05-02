@@ -32,11 +32,11 @@ data class DrawingItem(
     val emoji:       String,
     val title:       String,
     val description: String,
-    val bgColor:     Color = AppColors.Sombra,      // default oscuro
+    val bgColor:     Color = AppColors.Sombra,
     val accentColor: Color = AppColors.FlowersAccent
 )
 
-// ── Catálogo de dibujos por categoría ────────────────────────────────────────
+// Catálogo de dibujos por categoría
 val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
 
     Routes.Category.FLOWERS to listOf(
@@ -45,7 +45,7 @@ val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
             emoji       = "🌻",
             title       = "Girasol",
             description = "Especial para ti :D",
-            bgColor     = Color(0xFFFFF9C4),   // ← amarillo clarito
+            bgColor     = Color(0xFFFFF9C4),
             accentColor = Color(0xFFF9A825)
         ),
         DrawingItem(
@@ -53,8 +53,17 @@ val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
             emoji       = "💐",
             title       = "Ramo de Flores",
             description = "Ten un bonito día :D",
-            bgColor     = Color(0xFFFCE4EC),   // ← rosa clarito
+            bgColor     = Color(0xFFFCE4EC),
+
             accentColor = Color(0xFFE75480)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.IMPROVED_SUNFLOWER,
+            emoji       = "🌞",
+            title       = "Girasol Mejorado",
+            description = "Con tallo y hojas animados",
+            bgColor     = Color(0xFFFFF3CD),
+            accentColor = Color(0xFF8B6914)
         ),
     ),
 
@@ -63,14 +72,14 @@ val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
             id          = Routes.Drawings.HEART,
             emoji       = "🤍",
             title       = "Corazón",
-            description = "Un dibujo con cariño",
+            description = "14 de febrero",
             bgColor     = Color(0xFFFFEBEE),
             accentColor = Color(0xFFE91E63)
         ),
     ),
 
     Routes.Category.ANIMALS to listOf(
-        // Aquí irán los animales
+
     ),
 )
 
@@ -284,7 +293,7 @@ private fun DrawingListCard(
                     text       = drawing.title,
                     fontSize   = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = AppColors.Reversa
+                    color      = Color.Black//Cambio de color de titulo
                 )
                 Text(
                     text     = drawing.description,

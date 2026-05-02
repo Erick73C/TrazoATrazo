@@ -1,6 +1,6 @@
 package com.example.trazoatrazo.navigation
 
-import GirasolScreen
+
 import HomeScreen
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
@@ -8,6 +8,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.trazoatrazo.drawings.Shapes.HeartScreen
+import com.example.trazoatrazo.drawings.flowers.GirasolScreen
+import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
 import com.example.trazoatrazo.ui.Screen.CategoryScreen
 import com.tuapp.drawbloom.drawings.flowers.FlowerScreen
 
@@ -54,6 +56,8 @@ fun AppNavigation(
                             GirasolScreen(onBack = { navController.popBackStack() })
                         Routes.Drawings.FLORES  ->
                             FlowerScreen(onBack  = { navController.popBackStack() })
+                        Routes.Drawings.IMPROVED_SUNFLOWER ->
+                            ImprovedSunflowerScreen(onBack = { navController.popBackStack() })
                     }
                 }
                 Routes.Category.CARTOONS -> {
