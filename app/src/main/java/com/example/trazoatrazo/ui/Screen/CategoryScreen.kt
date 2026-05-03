@@ -79,7 +79,14 @@ val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
     ),
 
     Routes.Category.ANIMALS to listOf(
-
+        DrawingItem(
+            id          = Routes.Drawings.TURTLE,
+            emoji       = "🐢",
+            title       = "Tortuga",
+            description = "Animación paso a paso",
+            bgColor     = Color(0xFFE8F5E9),
+            accentColor = Color(0xFF2E7D32)
+        ),
     ),
 )
 

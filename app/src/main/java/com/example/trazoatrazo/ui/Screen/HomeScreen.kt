@@ -52,7 +52,7 @@ val allCategories = listOf(
         id          = Routes.Category.ANIMALS,
         emoji       = "🐾",
         title       = "Animales",
-        subtitle    = "Próximamente",
+        subtitle    = "Tortuga y Próximamente más :0",
         bgColor     = AppColors.AnimalsBg,
         accentColor = AppColors.AnimalsAccent
     ),

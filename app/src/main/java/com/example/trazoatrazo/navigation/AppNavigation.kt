@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.trazoatrazo.drawings.Animals.TurtleScreen
 import com.example.trazoatrazo.drawings.Shapes.HeartScreen
 import com.example.trazoatrazo.drawings.flowers.GirasolScreen
 import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
@@ -70,8 +71,12 @@ fun AppNavigation(
                         }
                     }
                 }
-                // Aquí se agregan más categorías en el futuro:
-                // Routes.Category.ANIMALS  -> { ... }
+                Routes.Category.ANIMALS -> {
+                    when (drawingId) {
+                        Routes.Drawings.TURTLE ->
+                            TurtleScreen(onBack = { navController.popBackStack() })
+                    }
+                }
             }
         }
     }
