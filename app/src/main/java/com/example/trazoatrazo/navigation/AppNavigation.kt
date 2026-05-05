@@ -7,6 +7,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.trazoatrazo.drawings.Animals.CatBlackScreen
 import com.example.trazoatrazo.drawings.Animals.TurtleScreen
 import com.example.trazoatrazo.drawings.Shapes.HeartScreen
 import com.example.trazoatrazo.drawings.flowers.GirasolScreen
@@ -75,8 +76,11 @@ fun AppNavigation(
                     when (drawingId) {
                         Routes.Drawings.TURTLE ->
                             TurtleScreen(onBack = { navController.popBackStack() })
+                        Routes.Drawings.CAT_BLACK ->
+                            CatBlackScreen(onBack = { navController.popBackStack() })
                     }
                 }
+
             }
         }
     }
