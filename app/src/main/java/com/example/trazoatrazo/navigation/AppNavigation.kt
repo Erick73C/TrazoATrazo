@@ -12,6 +12,8 @@ import com.example.trazoatrazo.drawings.Animals.TurtleScreen
 import com.example.trazoatrazo.drawings.Shapes.HeartScreen
 import com.example.trazoatrazo.drawings.flowers.GirasolScreen
 import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
+import com.example.trazoatrazo.drawings.special.EnvelopeScreen
+import com.example.trazoatrazo.drawings.special.LetterContentScreen
 import com.example.trazoatrazo.ui.Screen.CategoryScreen
 import com.tuapp.drawbloom.drawings.flowers.FlowerScreen
 
@@ -30,7 +32,12 @@ fun AppNavigation(
             HomeScreen(
                 onCategoryClick = { categoryId ->
                     navController.navigate(Routes.category(categoryId))
+
+                },
+                onCartaClick = {
+                    navController.navigate(Routes.CARTA_SCREEN)
                 }
+
             )
         }
 
@@ -82,6 +89,18 @@ fun AppNavigation(
                 }
 
             }
+        }
+
+        composable(Routes.CARTA_SCREEN) {
+            EnvelopeScreen(
+                onBack       = { navController.popBackStack() },
+                onReadLetter = { navController.navigate(Routes.LETTER_CONTENT) }
+            )
+        }
+        composable(Routes.LETTER_CONTENT) {
+            LetterContentScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

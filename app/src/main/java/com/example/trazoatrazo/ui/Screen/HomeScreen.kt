@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,10 +61,13 @@ val allCategories = listOf(
 
 // ── HomeScreen ────────────────────────────────────────────────────────────────
 @Composable
-fun HomeScreen(onCategoryClick: (String) -> Unit) {
+fun HomeScreen(
+    onCategoryClick: (String) -> Unit,
+    onCartaClick: () -> Unit) {
 
     val titleAnim  = remember { Animatable(0f) }
     val cardsAnim  = remember { List(allCategories.size) { Animatable(0f) } }
+    val cartaAnim  = remember { Animatable(0f) }
 
     LaunchedEffect(Unit) {
         titleAnim.animateTo(1f, tween(650, easing = EaseOutBack))
@@ -71,6 +75,8 @@ fun HomeScreen(onCategoryClick: (String) -> Unit) {
             delay(90)
             anim.animateTo(1f, tween(480, easing = EaseOutBack))
         }
+        delay(120)
+        cartaAnim.animateTo(1f, tween(600, easing = EaseOutBack))
     }
 
     Box(
@@ -149,6 +155,11 @@ fun HomeScreen(onCategoryClick: (String) -> Unit) {
                 )
                 if (index < allCategories.lastIndex) Spacer(Modifier.height(16.dp))
             }
+            Spacer(Modifier.height(16.dp))
+            CartaEspecialCard(
+                scale   = cartaAnim.value,
+                onClick = onCartaClick
+            )
         }
     }
 }
@@ -228,6 +239,124 @@ private fun CategoryCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text("▶", fontSize = 13.sp, color = category.accentColor)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CartaEspecialCard(
+    scale:   Float,
+    onClick: () -> Unit
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val pressScale by animateFloatAsState(
+        targetValue   = if (pressed) 0.97f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label         = "press"
+    )
+
+    // Pulso sutil continuo para llamar la atención
+    val pulso = rememberInfiniteTransition(label = "cartaPulso")
+    val glow by pulso.animateFloat(
+        initialValue  = 0.55f,
+        targetValue   = 0.85f,
+        animationSpec = infiniteRepeatable(
+            tween(1400, easing = FastOutSlowInEasing),
+            RepeatMode.Reverse
+        ),
+        label = "glow"
+    )
+
+    Box(
+        modifier = Modifier
+            .scale(scale * pressScale)
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(20.dp))
+            .background(Color(0xFF1C1508))
+            .then(
+                Modifier.drawWithContent {
+                    drawContent()
+                    // Borde dorado animado
+                    drawRoundRect(
+                        color        = Color(0xFFD4A017).copy(alpha = glow),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()),
+                        style        = androidx.compose.ui.graphics.drawscope.Stroke(width = 1.8f)
+                    )
+                }
+            )
+            .clickable {
+                pressed = true
+                onClick()
+            }
+            .padding(vertical = 20.dp, horizontal = 22.dp)
+    ) {
+        Row(
+            verticalAlignment     = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(18.dp)
+        ) {
+            // Ícono del sobre con Canvas
+            Box(
+                modifier = Modifier
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFD4A017).copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Canvas(modifier = Modifier.size(38.dp)) {
+                    val w = size.width
+                    val h = size.height
+
+                    // Cuerpo del sobre
+                    drawRoundRect(
+                        color        = Color(0xFFF5E6C8),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f),
+                        size         = size
+                    )
+                    // Solapa superior (triángulo)
+                    val flap = Path().apply {
+                        moveTo(0f, 0f)
+                        lineTo(w / 2f, h * 0.52f)
+                        lineTo(w, 0f)
+                        close()
+                    }
+                    drawPath(flap, color = Color(0xFFE8D5B0))
+                    // Líneas diagonales del sobre
+                    drawLine(Color(0xFFBFA87A), Offset(0f, h), Offset(w / 2f, h * 0.52f), 1.5f)
+                    drawLine(Color(0xFFBFA87A), Offset(w, h), Offset(w / 2f, h * 0.52f), 1.5f)
+                    // Borde del sobre
+                    drawRoundRect(
+                        color        = Color(0xFFD4A017),
+                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(6f),
+                        size         = size,
+                        style        = Stroke(width = 1.8f)
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = "Una carta para ti",
+                    fontSize   = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color      = Color(0xFFF5E6C8)
+                )
+                Text(
+                    text     = "Toca para abrir ✉️",
+                    fontSize = 12.sp,
+                    color    = Color(0xFFD4A017).copy(alpha = 0.85f)
+                )
+            }
+
+            // Flecha dorada
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color(0xFFD4A017).copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("▶", fontSize = 13.sp, color = Color(0xFFD4A017))
             }
         }
     }
