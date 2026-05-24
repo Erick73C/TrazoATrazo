@@ -1,4 +1,4 @@
-package com.tuapp.drawbloom.drawings.flowers
+package com.example.trazoatrazo.drawings.flowers
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

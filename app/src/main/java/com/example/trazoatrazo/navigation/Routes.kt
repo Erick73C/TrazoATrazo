@@ -9,8 +9,8 @@ object Routes {
     // Helper para construir la ruta con parámetro
     fun category(categoryId: String) = "category/$categoryId"
 
-    const val CARTA_SCREEN = "carta_screen"
-
+    const val SETTINGS = "settings"
+    const val LETTER   = "letter"
     const val LETTER_CONTENT = "letter_content"
 
     // ── Categorías ───────────────────────────────────────────────────────────
@@ -18,8 +18,11 @@ object Routes {
         const val FLOWERS  = "flowers"
         const val CARTOONS = "cartoons"
         const val ANIMALS  = "animals"
+
         const val SHAPES   = "shapes"
         const val SPECIAL  = "special"
+
+        const val GALLERY  = "gallery"
     }
 
     // ── Dibujos ──────────────────────────────────────────────────────────────

@@ -1,6 +1,5 @@
-package com.example.trazoatrazo.ui.Screen
+package com.example.trazoatrazo.presentation.category
 
-import allCategories
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -14,89 +13,21 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.trazoatrazo.data.DrawingItem
+import com.example.trazoatrazo.data.allCategories
+import com.example.trazoatrazo.data.drawingCatalog
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
 import kotlinx.coroutines.delay
-
-
-// ── Modelo de dibujo ──────────────────────────────────────────────────────────
-data class DrawingItem(
-    val id:          String,
-    val emoji:       String,
-    val title:       String,
-    val description: String,
-    val bgColor:     Color = AppColors.Sombra,
-    val accentColor: Color = AppColors.FlowersAccent
-)
-
-// Catálogo de dibujos por categoría
-val drawingsByCategoryId: Map<String, List<DrawingItem>> = mapOf(
-
-    Routes.Category.FLOWERS to listOf(
-        DrawingItem(
-            id          = Routes.Drawings.GIRASOL,
-            emoji       = "🌻",
-            title       = "Girasol",
-            description = "Especial para ti :D",
-            bgColor     = Color(0xFFFFF9C4),
-            accentColor = Color(0xFFF9A825)
-        ),
-        DrawingItem(
-            id          = Routes.Drawings.FLORES,
-            emoji       = "💐",
-            title       = "Ramo de Flores",
-            description = "Ten un bonito día :D",
-            bgColor     = Color(0xFFFCE4EC),
-
-            accentColor = Color(0xFFE75480)
-        ),
-        DrawingItem(
-            id          = Routes.Drawings.IMPROVED_SUNFLOWER,
-            emoji       = "🌞",
-            title       = "Girasol Mejorado",
-            description = "Con tallo y hojas animados",
-            bgColor     = Color(0xFFFFF3CD),
-            accentColor = Color(0xFF8B6914)
-        ),
-    ),
-
-    Routes.Category.CARTOONS to listOf(
-        DrawingItem(
-            id          = Routes.Drawings.HEART,
-            emoji       = "🤍",
-            title       = "Corazón",
-            description = "14 de febrero",
-            bgColor     = Color(0xFFFFEBEE),
-            accentColor = Color(0xFFE91E63)
-        ),
-    ),
-
-    Routes.Category.ANIMALS to listOf(
-        DrawingItem(
-            id          = Routes.Drawings.TURTLE,
-            emoji       = "🐢",
-            title       = "Tortuga",
-            description = "Adorable",
-            bgColor     = Color(0xFFE8F5E9),
-            accentColor = Color(0xFF2E7D32)
-        ),
-        DrawingItem(
-            id          = Routes.Drawings.CAT_BLACK,
-            emoji       = "🐈‍⬛",
-            title       = "Gatito Negro",
-            description = "Muy tierno",
-            bgColor     = Color(0xFFE8EAF6),
-            accentColor = Color(0xFF0D0D0D)
-        )
-    ),
-)
 
 // ── CategoryScreen ────────────────────────────────────────────────────────────
 @Composable
@@ -108,7 +39,7 @@ fun CategoryScreen(
     val category = allCategories.find { it.id == categoryId }
         ?: return
 
-    val drawings = drawingsByCategoryId[categoryId] ?: emptyList()
+    val drawings = drawingCatalog[categoryId] ?: emptyList()
 
     // Animaciones de entrada
     val headerAnim = remember { Animatable(0f) }
@@ -226,7 +157,7 @@ fun CategoryScreen(
                             "Se están preparando dibujos\npara esta categoría",
                             fontSize  = 14.sp,
                             color     = AppColors.ReversaSuave,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                             modifier  = Modifier.padding(top = 8.dp)
                         )
                     }
@@ -272,16 +203,6 @@ private fun DrawingListCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(drawing.bgColor)
-            .then(
-                Modifier.drawWithContent {
-                    drawContent()
-                    drawRoundRect(
-                        color        = accentColor.copy(alpha = 0.25f),
-                        cornerRadius = androidx.compose.ui.geometry.CornerRadius(18.dp.toPx()),
-                        style        = androidx.compose.ui.graphics.drawscope.Stroke(width = 1f)
-                    )
-                }
-            )
             .clickable {
                 pressed = true
                 onClick()
@@ -308,7 +229,7 @@ private fun DrawingListCard(
                     text       = drawing.title,
                     fontSize   = 17.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = Color.Black//Cambio de color de titulo
+                    color      = Color.Black
                 )
                 Text(
                     text     = drawing.description,
