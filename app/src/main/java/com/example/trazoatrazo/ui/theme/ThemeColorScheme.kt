@@ -35,6 +35,11 @@ fun themeColorSchemeFor(theme: AppTheme): ThemeColorScheme = when (theme) {
     AppTheme.FOREST        -> forestScheme
     AppTheme.AMBER         -> amberScheme
     AppTheme.CRIMSON       -> crimsonScheme
+    AppTheme.SAKURA_NIGHT  -> sakuraNightScheme
+    AppTheme.SPRING_GARDEN -> springGardenScheme
+    AppTheme.SUMMER_SUN    -> summerSunScheme
+    AppTheme.AUTUMN_LEAVES -> autumnLeavesScheme
+    AppTheme.WINTER_SNOW   -> winterSnowScheme
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -60,9 +65,7 @@ val jjkDarkScheme = ThemeColorScheme(
     animalsAccent  = Color(0xFF16A34A)
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ── 2. AZUL NOCHE ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 val midnightBlueScheme = ThemeColorScheme(
     vacio        = Color(0xFF060B14),
     sombra       = Color(0xFF0D1525),
@@ -83,9 +86,7 @@ val midnightBlueScheme = ThemeColorScheme(
     animalsAccent  = Color(0xFF38BDF8)
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ── 3. BOSQUE ─────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 val forestScheme = ThemeColorScheme(
     vacio        = Color(0xFF050E07),
     sombra       = Color(0xFF0C1A0E),
@@ -106,9 +107,7 @@ val forestScheme = ThemeColorScheme(
     animalsAccent  = Color(0xFF22C55E)
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ── 4. ÁMBAR ──────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 val amberScheme = ThemeColorScheme(
     vacio        = Color(0xFF0D0904),
     sombra       = Color(0xFF1C1408),
@@ -129,9 +128,7 @@ val amberScheme = ThemeColorScheme(
     animalsAccent  = Color(0xFFEAB308)
 )
 
-// ─────────────────────────────────────────────────────────────────────────────
 // ── 5. CRIMSON ────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
 val crimsonScheme = ThemeColorScheme(
     vacio        = Color(0xFF0D0505),
     sombra       = Color(0xFF1A0808),
@@ -150,4 +147,109 @@ val crimsonScheme = ThemeColorScheme(
     cartoonsAccent = Color(0xFFF87171),
     animalsBg      = Color(0xFF100505),
     animalsAccent  = Color(0xFFEF4444)
+)
+
+// ── 6. SAKURA NIGHT ───────────────────────────────────────────────────────────
+val sakuraNightScheme = ThemeColorScheme(
+    vacio        = Color(0xFF0F050A),
+    sombra       = Color(0xFF1A0A14),
+    dominio      = Color(0xFF2A1520),
+    maldicion    = Color(0xFF881144),
+    tecnica      = Color(0xFFD11A5E),
+    kiEspiritual = Color(0xFFFFB7D5),
+    expansion    = Color(0xFF4A0E2A),
+    eco          = Color(0xFF9A6A80),
+    sukuna       = Color(0xFFFF2E63),
+    reversa      = Color(0xFFFFF0F5),
+    reversaSuave = Color(0xFFFFC0CB),
+    flowersBg      = Color(0xFF200A15),
+    flowersAccent  = Color(0xFFD11A5E),
+    cartoonsBg     = Color(0xFF1A050F),
+    cartoonsAccent = Color(0xFFFF748C),
+    animalsBg      = Color(0xFF15050A),
+    animalsAccent  = Color(0xFFF06292)
+)
+
+// ── 7. PRIMAVERA (Light) ──────────────────────────────────────────────────────
+val springGardenScheme = ThemeColorScheme(
+    vacio        = Color(0xFFF0FDF4),
+    sombra       = Color(0xFFDCFCE7),
+    dominio      = Color(0xFFBBF7D0),
+    maldicion    = Color(0xFF166534),
+    tecnica      = Color(0xFF22C55E),
+    kiEspiritual = Color(0xFF4ADE80),
+    expansion    = Color(0xFFDCFCE7),
+    eco          = Color(0xFF059669),
+    sukuna       = Color(0xFFEF4444),
+    reversa      = Color(0xFF064E3B),
+    reversaSuave = Color(0xFF065F46),
+    flowersBg      = Color(0xFFECFDF5),
+    flowersAccent  = Color(0xFF10B981),
+    cartoonsBg     = Color(0xFFF0FDF4),
+    cartoonsAccent = Color(0xFF22C55E),
+    animalsBg      = Color(0xFFF7FEE7),
+    animalsAccent  = Color(0xFF84CC16)
+)
+
+// ── 8. VERANO (Bright) ────────────────────────────────────────────────────────
+val summerSunScheme = ThemeColorScheme(
+    vacio        = Color(0xFFFFFBEB),
+    sombra       = Color(0xFFFEF3C7),
+    dominio      = Color(0xFFFDE68A),
+    maldicion    = Color(0xFFB45309),
+    tecnica      = Color(0xFFF59E0B),
+    kiEspiritual = Color(0xFFFBBF24),
+    expansion    = Color(0xFFFEF3C7),
+    eco          = Color(0xFFD97706),
+    sukuna       = Color(0xFFEF4444),
+    reversa      = Color(0xFF451A03),
+    reversaSuave = Color(0xFF78350F),
+    flowersBg      = Color(0xFFFFF7ED),
+    flowersAccent  = Color(0xFFF97316),
+    cartoonsBg     = Color(0xFFFFFBEB),
+    cartoonsAccent = Color(0xFFF59E0B),
+    animalsBg      = Color(0xFFFEF9C3),
+    animalsAccent  = Color(0xFFEAB308)
+)
+
+// ── 9. OTOÑO (Warm) ───────────────────────────────────────────────────────────
+val autumnLeavesScheme = ThemeColorScheme(
+    vacio        = Color(0xFF2A1810),
+    sombra       = Color(0xFF3D251A),
+    dominio      = Color(0xFF5C3626),
+    maldicion    = Color(0xFF7C2D12),
+    tecnica      = Color(0xFFC2410C),
+    kiEspiritual = Color(0xFFFB923C),
+    expansion    = Color(0xFF431407),
+    eco          = Color(0xFFA87A66),
+    sukuna       = Color(0xFFB91C1C),
+    reversa      = Color(0xFFFFF7ED),
+    reversaSuave = Color(0xFFFFEDD5),
+    flowersBg      = Color(0xFF351A10),
+    flowersAccent  = Color(0xFFC2410C),
+    cartoonsBg     = Color(0xFF2D150B),
+    cartoonsAccent = Color(0xFFEA580C),
+    animalsBg      = Color(0xFF251005),
+    animalsAccent  = Color(0xFFD97706)
+)
+
+// ── 10. INVIERNO (Cold/Light) ─────────────────────────────────────────────────
+val winterSnowScheme = ThemeColorScheme(
+    vacio        = Color(0xFFF8FAFC),
+    sombra       = Color(0xFFF1F5F9),
+    dominio      = Color(0xFFE2E8F0),
+    maldicion    = Color(0xFF1E40AF),
+    tecnica      = Color(0xFF3B82F6),
+    kiEspiritual = Color(0xFF93C5FD),
+    expansion    = Color(0xFFF1F5F9),
+    eco          = Color(0xFF475569),
+    sukuna       = Color(0xFFE11D48),
+    reversa      = Color(0xFF0F172A),
+    reversaSuave = Color(0xFF1E293B),
+    flowersBg      = Color(0xFFEFF6FF),
+    flowersAccent  = Color(0xFF2563EB),
+    cartoonsBg     = Color(0xFFF8FAFC),
+    cartoonsAccent = Color(0xFF3B82F6),
+    animalsBg      = Color(0xFFF1F5F9),
+    animalsAccent  = Color(0xFF0EA5E9)
 )

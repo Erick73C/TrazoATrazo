@@ -29,5 +29,30 @@ enum class AppTheme(
         displayName = "Crimson",
         emoji       = "⚡",
         description = "Rojo oscuro ·\nIntenso y poderoso"
+    ),
+    SAKURA_NIGHT(
+        displayName = "Sakura Night",
+        emoji       = "🌸",
+        description = "Cerezo oscuro ·\nElegante y místico"
+    ),
+    SPRING_GARDEN(
+        displayName = "Primavera",
+        emoji       = "🌱",
+        description = "Claro · Jardín en\npleno florecimiento"
+    ),
+    SUMMER_SUN(
+        displayName = "Verano",
+        emoji       = "☀️",
+        description = "Brillante · Energía\ny sol radiante"
+    ),
+    AUTUMN_LEAVES(
+        displayName = "Otoño",
+        emoji       = "🍂",
+        description = "Cálido · Hojas secas\ny atardeceres"
+    ),
+    WINTER_SNOW(
+        displayName = "Invierno",
+        emoji       = "❄️",
+        description = "Frío · Nieve y\npureza cristalina"
     )
 }

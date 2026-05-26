@@ -35,18 +35,36 @@ private val LightColorScheme = lightColorScheme(
 fun TrazoATrazoTheme(
     content: @Composable () -> Unit
 ) {
+    // Verificamos si el fondo es claro u oscuro para elegir el onBackground/onSurface adecuado
+    // Usamos una luminancia simple para determinar si el texto debe ser blanco o negro
+    val isLightBackground = AppColors.Vacio.red * 0.299 + AppColors.Vacio.green * 0.587 + AppColors.Vacio.blue * 0.114 > 0.5
+
     // Creamos un ColorScheme que derive de AppColors (nuestro estado global reactivo)
-    val colorScheme = darkColorScheme(
-        primary      = AppColors.Tecnica,
-        secondary    = AppColors.Maldicion,
-        tertiary     = AppColors.KiEspiritual,
-        background   = AppColors.Vacio,
-        surface      = AppColors.Sombra,
-        onPrimary    = Color.White,
-        onSecondary  = Color.White,
-        onBackground = AppColors.Reversa,
-        onSurface    = AppColors.Reversa
-    )
+    val colorScheme = if (isLightBackground) {
+        lightColorScheme(
+            primary      = AppColors.Tecnica,
+            secondary    = AppColors.Maldicion,
+            tertiary     = AppColors.KiEspiritual,
+            background   = AppColors.Vacio,
+            surface      = AppColors.Sombra,
+            onPrimary    = if (isLightBackground) Color.White else Color.Black,
+            onSecondary  = Color.White,
+            onBackground = AppColors.Reversa,
+            onSurface    = AppColors.Reversa
+        )
+    } else {
+        darkColorScheme(
+            primary      = AppColors.Tecnica,
+            secondary    = AppColors.Maldicion,
+            tertiary     = AppColors.KiEspiritual,
+            background   = AppColors.Vacio,
+            surface      = AppColors.Sombra,
+            onPrimary    = Color.White,
+            onSecondary  = Color.White,
+            onBackground = AppColors.Reversa,
+            onSurface    = AppColors.Reversa
+        )
+    }
 
     MaterialTheme(
         colorScheme = colorScheme,

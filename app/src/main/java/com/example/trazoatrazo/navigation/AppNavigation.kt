@@ -88,11 +88,8 @@ fun AppNavigation(
 
         // ── CARTA / LETTER (accesible desde el sobre en HomeScreen) ───────────
         composable(Routes.LETTER) {
-            EnvelopeScreen(
-                onBack       = { navController.popBackStack() },
-                onReadLetter = {
-                    navController.navigate(Routes.LETTER_CONTENT)
-                }
+            LetterContentScreen(
+                onBack = { navController.popBackStack() }
             )
         }
 
