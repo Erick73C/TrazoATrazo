@@ -4,36 +4,43 @@ import androidx.compose.ui.graphics.Color
 
 // ── Paleta principal · Trazo a Trazo ─────────────────────────────────────────
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 object AppColors {
 
-    // Fondos
-    val Vacio    = Color(0xFF0A0A0A)   // background principal
-    val Sombra   = Color(0xFF141414)   // surface / cards
-    val Dominio  = Color(0xFF1E1E2E)   // surfaceVariant
+    // ── Estado reactivo ── el único punto de verdad del tema activo ───────────
+    private var _scheme: ThemeColorScheme by mutableStateOf(jjkDarkScheme)
 
-    // Primarios
-    val Maldicion = Color(0xFF6B21A8)  // primary (morado)
-    val Tecnica   = Color(0xFF9333EA)  // primaryContainer (morado claro)
-    val KiEspiritual = Color(0xFFC8A8F0) // onPrimary (lila suave)
+    // ── Aplica un tema (llamado desde SettingsViewModel) ──────────────────────
+    fun applyTheme(theme: AppTheme) {
+        _scheme = themeColorSchemeFor(theme)
+    }
 
-    // Secundarios
-    val Expansion = Color(0xFF2D1B69)  // secondary (índigo oscuro)
-    val Eco       = Color(0xFF7B6A9A)  // onSurfaceVariant
+    // ── Fondos ────────────────────────────────────────────────────────────────
+    val Vacio:   Color get() = _scheme.vacio
+    val Sombra:  Color get() = _scheme.sombra
+    val Dominio: Color get() = _scheme.dominio
 
-    // Error / Acento
-    val Sukuna  = Color(0xFFB91C1C)    // error / tertiary (rojo)
+    // ── Primarios ─────────────────────────────────────────────────────────────
+    val Maldicion:    Color get() = _scheme.maldicion
+    val Tecnica:      Color get() = _scheme.tecnica
+    val KiEspiritual: Color get() = _scheme.kiEspiritual
 
-    // Texto
-    val Reversa = Color(0xFFEAEAEA)    // onBackground (texto claro)
-    val ReversaSuave = Color(0xFFAAAAAA) // texto secundario
+    // ── Secundarios ───────────────────────────────────────────────────────────
+    val Expansion: Color get() = _scheme.expansion
+    val Eco:       Color get() = _scheme.eco
+    val Sukuna:    Color get() = _scheme.sukuna
 
-    // ── Colores por categoría de dibujos ─────────────────────────────────────
-    val FlowersBg      = Color(0xFF1A1225)   // fondo tarjeta flores
-    val FlowersAccent  = Color(0xFF9333EA)   // acento flores (Técnica)
+    // ── Texto ─────────────────────────────────────────────────────────────────
+    val Reversa:      Color get() = _scheme.reversa
+    val ReversaSuave: Color get() = _scheme.reversaSuave
 
-    val CartoonsBg     = Color(0xFF1A1A10)   // fondo tarjeta cartoons
-    val CartoonsAccent = Color(0xFFB45309)   // acento cartoons (ámbar)
-
-    val AnimalsBg      = Color(0xFF0F1A12)   // fondo tarjeta animals
-    val AnimalsAccent  = Color(0xFF16A34A)   // acento animals (verde)
+    // ── Categorías ────────────────────────────────────────────────────────────
+    val FlowersBg:      Color get() = _scheme.flowersBg
+    val FlowersAccent:  Color get() = _scheme.flowersAccent
+    val CartoonsBg:     Color get() = _scheme.cartoonsBg
+    val CartoonsAccent: Color get() = _scheme.cartoonsAccent
+    val AnimalsBg:      Color get() = _scheme.animalsBg
+    val AnimalsAccent:  Color get() = _scheme.animalsAccent
 }

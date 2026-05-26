@@ -21,6 +21,7 @@ import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen
 import com.example.trazoatrazo.presentation.category.CategoryScreen
+import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.ui.theme.AppColors
 
 
@@ -87,13 +88,6 @@ fun AppNavigation(
 
         // ── CARTA / LETTER (accesible desde el sobre en HomeScreen) ───────────
         composable(Routes.LETTER) {
-            LetterContentScreen(
-                onBack = { navController.popBackStack() }
-            )
-        }
-
-        composable(Routes.LETTER_CONTENT) {
-
             EnvelopeScreen(
                 onBack       = { navController.popBackStack() },
                 onReadLetter = {
@@ -102,10 +96,17 @@ fun AppNavigation(
             )
         }
 
+        composable(Routes.LETTER_CONTENT) {
+            LetterContentScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+
         // ── SETTINGS (ajustes — Fase 4) ───────────────────────────────────────
         composable(Routes.SETTINGS) {
-            // TODO: Reemplazar con SettingsScreen cuando esté listo
-            PlaceholderScreen(label = "Ajustes ⚙️\n(Próximamente)")
+            SettingsScreen(
+                onBack = {navController.popBackStack()}
+            )
         }
     }
 }

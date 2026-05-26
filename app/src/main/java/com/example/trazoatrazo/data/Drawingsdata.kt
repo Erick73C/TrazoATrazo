@@ -5,7 +5,7 @@ import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
 import kotlin.collections.emptyList
 
-// ── Modelos centralizados ───────────────────────────────────────────────────
+// Modelos centralizados
 
 data class Category(
     val id:          String,
@@ -81,6 +81,14 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             description = "Animación paso a paso",
             bgColor     = Color(0xFFE8F5E9),
             accentColor = Color(0xFF2E7D32)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.CAT_BLACK,
+            emoji       = "🐈‍⬛",
+            title       = "Gatito negro",
+            description = "Un lindo gatito",
+            bgColor     = Color(0xFFF5F5F5),
+            accentColor = Color(0xFF1C1C1C)
         ),
     ),
 
