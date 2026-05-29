@@ -17,14 +17,14 @@ val memoriesList: List<Memory> = listOf(
     Memory(
         id          = 2,
         drawableRes = R.drawable.foto_grupal_dos,
-        title       = "Foto grupal",
+        title       = "Foto grupal 💜",
         description = "Otra foto, con los mejores gestores empresariales que conoci, y el de recursos humanos (bryan) jaja",
         category    = MemoryCategory.PERSONAL
     ),
     Memory(
         id          = 3,
         drawableRes = R.drawable.foto_grupal_uno,
-        title       = "La foto de servicios T",
+        title       = "La foto de servicios T 🩵",
         description = "Nuestra foto todos juntos, servicios T por siempre 💙",
         category    = MemoryCategory.PERSONAL
     ),
@@ -92,7 +92,7 @@ val memoriesList: List<Memory> = listOf(
         id          = 12,
         drawableRes = R.drawable.recuerdo_programa_sanvalentin,
         title       = "San Valentín 💝",
-        description = "Porque el amor y la amistad se celebran todos los días. Un recuerdo muy especial.",
+        description = "Programa del dia del 14 de febrero que les hice",
         category    = MemoryCategory.PROGRAMAS
     ),
 
@@ -117,5 +117,26 @@ val memoriesList: List<Memory> = listOf(
         title       = "Llavero girasol 🌻",
         description = "un pequeño girasol que puedes llevar a donde quieras",
         category    = MemoryCategory.ESPECIALES
+    ),
+    Memory(
+        id = 16,
+        drawableRes = R.drawable.recuerdo_inovatec_servicios_t,
+        title = "Programa de Servicos T 🤎",
+        description =  "Este fue el proyecto de servicios T, me encanto mucho hacerlo. pero sobre todo Trabar con ustedes",
+        category = MemoryCategory.INOVATEC
+    ),
+    Memory(
+        id = 17,
+        drawableRes = R.drawable.recuerdo_programa_arte_en_codigo,
+        title = "Arte en codigo 🎨",
+        description =  "Este fue el primer prototipo de la app que queria hacerte desde un principio",
+        category = MemoryCategory.PROGRAMAS
+    ),
+    Memory(
+        id = 17,
+        drawableRes = R.drawable.recuerdo_programa_pastel_de_cumpleanos_uno,
+        title = "Programa pastel de cumpleaños 🎂",
+        description =  "El segundo programa de pastel de cumpleaños, que queria mejorar por el primero que te di jaja",
+        category = MemoryCategory.PROGRAMAS
     ),
 )

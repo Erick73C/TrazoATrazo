@@ -1,5 +1,6 @@
 package com.example.trazoatrazo.ui.theme
 
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 
 // ── Paleta principal · Trazo a Trazo ─────────────────────────────────────────
@@ -7,6 +8,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+
+val LocalAppColors = compositionLocalOf<ThemeColorScheme> { jjkDarkScheme }
+
 object AppColors {
 
     // ── Estado reactivo ── el único punto de verdad del tema activo ───────────

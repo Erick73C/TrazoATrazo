@@ -1,12 +1,15 @@
 package com.example.trazoatrazo.domain.model
 
+import androidx.compose.runtime.Immutable
+
 enum class MemoryCategory(val label: String, val emoji: String) {
     PERSONAL("Nosotros",          "💜"),
     INOVATEC("Inovatec",          "🚀"),
     PROGRAMAS("Programas",        "🎨"),
-    ESPECIALES("Detalles especiales", "✨")
+    ESPECIALES("Especiales", "✨")
 }
 
+@Immutable
 data class Memory(
     val id:          Int,
     val drawableRes: Int,

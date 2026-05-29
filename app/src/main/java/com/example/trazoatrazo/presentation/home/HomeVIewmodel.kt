@@ -1,5 +1,7 @@
 package com.example.trazoatrazo.presentation.home
 
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -7,64 +9,39 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
+// ── Constantes de archivo (inmutables, fuera del ViewModel) ───────────────────
+// List<Color> normal sería inestable para Compose dentro del ViewModel.
+// Al ser top-level val, el compilador la trata como referencia fija y estable.
+val messageColors = listOf(
+    Color(0xFFEAEAEA), Color(0xFFC8A8F0), Color(0xFF9333EA),
+    Color(0xFFFFD700), Color(0xFFFF6B8A), Color(0xFF4FC3F7),
+    Color(0xFF81C784), Color(0xFFFFB74D), Color(0xFFE0E0E0),
+    Color(0xFFF48FB1), Color(0xFFCE93D8), Color(0xFF90CAF9),
+    Color(0xFF80CBC4), Color(0xFFA5D6A7), Color(0xFFFFF59D),
+    Color(0xFFFFCC80), Color(0xFFFF8A80), Color(0xFFB0BEC5),
+    Color(0xFF7986CB), Color(0xFFFF8A65), Color(0xFFDCE775),
+    Color(0xFF4DD0E1), Color(0xFFC5E1A5), Color(0xFFF8BBD0),
+    Color(0xFFF06292), Color(0xFFFFF176), Color(0xFFFFB300),
+    Color(0xFFB39DDB), Color(0xFF81D4FA), Color(0xFFB2DFDB),
+    Color(0xFFF0E68C), Color(0xFFE1BEE7), Color(0xFFFFA07A),
+    Color(0xFFA1887F), Color(0xFF9575CD), Color(0xFF4DB6AC),
+    Color(0xFFD4E157), Color(0xFFFFD54F), Color(0xFFBA68C8),
+    Color(0xFF42A5F5), Color(0xFF80DEEA), Color(0xFFF48FB1),
+)
+
 // ── Estado de la UI ───────────────────────────────────────────────────────────
+@Immutable
 data class HomeUiState(
     val welcomeMessage: String,
     val colorIndex:     Int = 0
 )
 
 // ── ViewModel ─────────────────────────────────────────────────────────────────
+@Stable
 class HomeViewModel : ViewModel() {
-
-    // Lista pública para que HomeScreen pueda leerla por índice sin Boxing
-    val messageColors = listOf(
-        Color(0xFFEAEAEA),   // Reversa  (blanco suave — default)
-        Color(0xFFC8A8F0),   // Ki espiritual (lila suave)
-        Color(0xFF9333EA),   // Técnica (morado)
-        Color(0xFFFFD700),   // Dorado
-        Color(0xFFFF6B8A),   // Rosa
-        Color(0xFF4FC3F7),   // Azul cielo
-        Color(0xFF81C784),   // Verde suave
-        Color(0xFFFFB74D),   // Ámbar
-        Color(0xFFE0E0E0),   // Plata
-        Color(0xFFF48FB1),   // Rosa pastel
-        Color(0xFFCE93D8),   // Lavanda
-        Color(0xFF90CAF9),   // Azul pastel
-        Color(0xFF80CBC4),   // Turquesa suave
-        Color(0xFFA5D6A7),   // Verde menta
-        Color(0xFFFFF59D),   // Amarillo canario
-        Color(0xFFFFCC80),   // Melocotón
-        Color(0xFFFF8A80),   // Coral
-        Color(0xFFB0BEC5),   // Gris azulado
-        Color(0xFF7986CB),   // Índigo suave
-        Color(0xFFFF8A65),   // Naranja profundo
-        Color(0xFFDCE775),   // Lima
-        Color(0xFF4DD0E1),   // Cian
-        Color(0xFFC5E1A5),   // Verde té (Ojos gato)
-        Color(0xFFF8BBD0),   // Rosa pálido
-        Color(0xFFF06292),   // Rosa fuerte
-        Color(0xFFFFF176),   // Amarillo suave
-        Color(0xFFFFB300),   // Ambar brillante
-        Color(0xFFB39DDB),   // Violeta suave
-        Color(0xFF81D4FA),   // Azul cielo claro
-        Color(0xFFB2DFDB),   // Menta claro
-        Color(0xFFF0E68C),   // Arena / Khaki
-        Color(0xFFE1BEE7),   // Lila muy claro
-        Color(0xFFFFA07A),   // Salmón
-        Color(0xFFA1887F),   // Café claro / Tierra
-        Color(0xFF9575CD),   // Morado medio
-        Color(0xFF4DB6AC),   // Verde azulado
-        Color(0xFFD4E157),   // Lima brillante
-        Color(0xFFFFD54F),   // Ámbar claro
-        Color(0xFFBA68C8),   // Amatista
-        Color(0xFF42A5F5),   // Azul brillante
-    )
-
     private val welcomeMessages = listOf(
         "✨ ¡Que hoy sea un día increíble!",
-        "🌟 Tú puedes con todo lo que venga",
         "💜 Que te vaya muy bien hoy",
-        "🌸 Cada día es una nueva oportunidad",
         "🎯 ¡Vas a lograr todo lo que te propones!",
         "🌈 Hoy es un gran día para ti",
         "💫 Eres más fuerte de lo que crees",
@@ -74,12 +51,7 @@ class HomeViewModel : ViewModel() {
         "🌙 Que descanses y recargues energía",
         "🎵 La vida es mejor con un poco de arte",
         "💎 Eres única e irremplazable",
-        "🌊 Fluye, todo llegará a su tiempo",
-        "🏆 Hoy será tu mejor día, lo sé",
         "🎨 El arte es la forma más bonita de expresarte",
-        "🌺 Que florezca algo bonito en tu día",
-        "🦅 Vuela alto, sin miedo a caer",
-        "💪 Eres capaz de todo lo que te propongas",
         "🤍 Te quiero mucho ",
         "🌻 Me alegra mucho haberte conocido",
         "🤍 Siempre voy a guardar un bonito recuerdo tuyo",
@@ -98,6 +70,9 @@ class HomeViewModel : ViewModel() {
         "🫶 Gracias por formar parte de mi vida",
         "💎 Hay personas que dejan huellas bonitas, tú eres una de ellas",
         "🌻 Espero que siempre te vaya bonito",
+        "✏️ Trazo a trazo es un app para ti",
+        "😶‍🌫️ Hay muchos errores de ortografía por la app jajaja",
+        "🎉 Es pero que si te guste la app",
         "✨ El mundo se siente más bonito con personas como tú",
         "🎀 Nunca dudes de lo especial que eres",
         "💜 Ojalá la vida te sorprenda con cosas hermosas",
@@ -105,8 +80,18 @@ class HomeViewModel : ViewModel() {
         "🤍 Siempre tendrás un lugar especial en mis recuerdos",
         "🌸 Espero que sonrías mucho hoy",
         "🦋 Sigue siendo esa persona tan linda que eres",
-        "✨ Gracias por existir",
+        "✨ Gracias por ser tu",
+        "🍣 Hay que ir todos por makis jajaja",
+        "👋 Holaaaaaaaaa",
         "🤎 Servicios T",
+        "🍗 Abajo el América ",
+        "🦅 Penal para el america",
+        "💟 Viva el Real Madrid ",
+        "📉 Enséñame a evadir impuestos porfa jajaja",
+        "👀 ¿En verdad lees esto?",
+        "🖥️ Los voy a volver a meter al itsur, pero hora a sistemas para que sean mas felices",
+        "🔘 Esta app no la pueden usar los que le van al real Madrid ",
+        "👨‍🦲 App creada por erickzen :O",
         "🎮 Hay que jugar jaja"
     )
 
@@ -115,7 +100,6 @@ class HomeViewModel : ViewModel() {
     )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    // ── Acción: tap al mensaje → cambia mensaje Y color ───────────────────────
     fun onMessageTap() {
         _uiState.update { current ->
             val nextColor = (current.colorIndex + 1) % messageColors.size

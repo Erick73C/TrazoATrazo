@@ -1,8 +1,10 @@
 package com.example.trazoatrazo.ui.theme
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.ui.graphics.Color
 
-// ── Modelo de esquema de colores ──────────────────────────────────────────────
+// Modelo de esquema de colores
+@Immutable
 data class ThemeColorScheme(
     // Fondos
     val vacio:        Color,

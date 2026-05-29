@@ -36,11 +36,11 @@ import com.example.trazoatrazo.data.drawingCatalog
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.presentation.gallery.GalleryScreen
 import com.example.trazoatrazo.presentation.home.HomeViewModel
+import com.example.trazoatrazo.presentation.home.messageColors
 import com.example.trazoatrazo.ui.theme.AppColors
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
+@Immutable
 private data class TabInfo(
     val categoryId:  String,
     val emoji:       String,
@@ -48,23 +48,30 @@ private data class TabInfo(
     val accentColor: Color
 )
 
-private val homeTabs = listOf(
-    TabInfo(Routes.Category.FLOWERS,  "🌸", "Flores",   AppColors.FlowersAccent),
-    TabInfo(Routes.Category.CARTOONS, "🎭", "Cartoons", AppColors.CartoonsAccent),
-    TabInfo(Routes.Category.ANIMALS,  "🐾", "Animales", AppColors.AnimalsAccent),
-    TabInfo(Routes.Category.SPECIAL, "⭐", "Especial", Color(0xFF9333EA)),
-    TabInfo(Routes.Category.GALLERY,  "📷", "Galería",  Color(0xFFF06292)),
-)
 
 // ── HomeScreen ────────────────────────────────────────────────────────────────
 @Composable
 fun HomeScreen(
-    viewModel:      HomeViewModel = viewModel(),
+    viewModel: HomeViewModel = viewModel(),
     onDrawingClick: (categoryId: String, drawingId: String) -> Unit,
     onLetterClick:  () -> Unit,
     onSettingsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val homeTabs = remember(
+        AppColors.FlowersAccent,
+        AppColors.CartoonsAccent,
+        AppColors.AnimalsAccent
+    ) {
+        listOf(
+            TabInfo(Routes.Category.FLOWERS,  "🌸", "Flores",   AppColors.FlowersAccent),
+            TabInfo(Routes.Category.CARTOONS, "🎭", "Cartoons", AppColors.CartoonsAccent),
+            TabInfo(Routes.Category.ANIMALS,  "🐾", "Animales", AppColors.AnimalsAccent),
+            TabInfo(Routes.Category.SPECIAL,  "⭐", "Especial", Color(0xFF9333EA)),
+            TabInfo(Routes.Category.GALLERY,  "📷", "Galería",  Color(0xFFF06292)),
+        )
+    }
 
     // ── Animaciones de entrada ────────────────────────────────────────────────
     val headerAnim  = remember { Animatable(0f) }
@@ -126,7 +133,7 @@ fun HomeScreen(
             // ── WELCOME + ENVELOPE ────────────────────────────────────────────
             WelcomeSection(
                 message      = uiState.welcomeMessage,
-                messageColor = viewModel.messageColors[uiState.colorIndex],
+                messageColor = messageColors[uiState.colorIndex],
                 animValue    = welcomeAnim.value,
                 onMessageTap = viewModel::onMessageTap,
                 onEnvelopeTap = onLetterClick
@@ -145,7 +152,9 @@ fun HomeScreen(
             // ── PAGER ─────────────────────────────────────────────────────────
             HorizontalPager(
                 state    = pagerState,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                beyondViewportPageCount = 0,
+                key                  = { page -> page }
             ) { page ->
                 val tab = homeTabs[page]
                 when (tab.categoryId) {
@@ -311,7 +320,7 @@ private fun WelcomeSection(
                             .background(AppColors.Tecnica)
                     )
                     Text(
-                        text          = "MENSAJE DEL DÍA",
+                        text          = "MENSAJE DEL DÍA :O",
                         fontSize      = 9.sp,
                         color         = AppColors.Eco,
                         fontWeight    = FontWeight.Bold,

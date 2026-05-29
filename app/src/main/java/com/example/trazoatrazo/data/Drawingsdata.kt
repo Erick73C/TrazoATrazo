@@ -4,9 +4,11 @@ import androidx.compose.ui.graphics.Color
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
 import kotlin.collections.emptyList
+import androidx.compose.runtime.Immutable
 
 // Modelos centralizados
 
+@Immutable
 data class Category(
     val id:          String,
     val emoji:       String,
@@ -14,6 +16,7 @@ data class Category(
     val accentColor: Color
 )
 
+@Immutable
 data class DrawingItem(
     val id:          String,
     val emoji:       String,
