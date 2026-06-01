@@ -39,6 +39,7 @@ import com.example.trazoatrazo.presentation.gallery.GalleryScreen
 import com.example.trazoatrazo.presentation.home.HomeViewModel
 import com.example.trazoatrazo.presentation.home.messageColors
 import com.example.trazoatrazo.ui.theme.AppColors
+import com.example.trazoatrazo.utils.categoryLabelFor
 import kotlinx.coroutines.launch
 
 @Immutable
@@ -63,14 +64,18 @@ fun HomeScreen(
     val homeTabs = remember(
         AppColors.FlowersAccent,
         AppColors.CartoonsAccent,
-        AppColors.AnimalsAccent
+        AppColors.AnimalsAccent,
+        AppColors.SpringAccent,
+        AppColors.WinterAccent
     ) {
         listOf(
-            TabInfo(Routes.Category.FLOWERS,  "🌸", "Flores",   AppColors.FlowersAccent),
-            TabInfo(Routes.Category.CARTOONS, "🎭", "Cartoons", AppColors.CartoonsAccent),
-            TabInfo(Routes.Category.ANIMALS,  "🐾", "Animales", AppColors.AnimalsAccent),
-            TabInfo(Routes.Category.SPECIAL,  "⭐", "Especial", Color(0xFF9333EA)),
-            TabInfo(Routes.Category.GALLERY,  "📷", "Galería",  Color(0xFFF06292)),
+            TabInfo(Routes.Category.FLOWERS,  "🌸", "Flores",    AppColors.FlowersAccent),
+            TabInfo(Routes.Category.CARTOONS, "🎭", "Cartoons",  AppColors.CartoonsAccent),
+            TabInfo(Routes.Category.ANIMALS,  "🐾", "Animales",  AppColors.AnimalsAccent),
+            TabInfo(Routes.Category.SPRING,   "🌱", "Primavera", AppColors.SpringAccent),
+            TabInfo(Routes.Category.WINTER,   "❄️", "Invierno",  AppColors.WinterAccent),
+            TabInfo(Routes.Category.SPECIAL,  "⭐", "Especial",  Color(0xFF9333EA)),
+            TabInfo(Routes.Category.GALLERY,  "📷", "Galería",   Color(0xFFF06292)),
         )
     }
 
@@ -586,25 +591,17 @@ private fun DrawingsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         itemsIndexed(drawings) { _, drawing ->
+// HomeScreen.kt — en DrawingsPage
             DrawingCard(
-                emoji           = drawing.emoji,
-                title           = drawing.title,
-                description     = drawing.description,
-                accentColor     = accentColor,
-                bgGradientStart = AppColors.Dominio,
-                bgGradientEnd   = AppColors.Expansion,
-                categoryLabel   = categoryLabelFor(categoryId),   // ver helper abajo
-                onClick         = { onDrawingClick(categoryId, drawing.id) }
+                emoji         = drawing.emoji,
+                title         = drawing.title,
+                description   = drawing.description,
+                categoryId    = categoryId,
+                accentColor   = drawing.accentColor,
+                categoryLabel = categoryLabelFor(categoryId),
+                onClick       = { onDrawingClick(categoryId, drawing.id) }
             )
         }
         item { Spacer(Modifier.height(20.dp)) }
     }
-}
-
-fun categoryLabelFor(categoryId: String): String = when (categoryId) {
-    Routes.Category.FLOWERS  -> "Flores"
-    Routes.Category.CARTOONS -> "Cartoons"
-    Routes.Category.ANIMALS  -> "Animales"
-    Routes.Category.SPECIAL  -> "Especial"
-    else -> ""
 }

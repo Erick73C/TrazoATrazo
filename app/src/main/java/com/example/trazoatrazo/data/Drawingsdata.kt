@@ -31,8 +31,10 @@ val allCategories = listOf(
     Category(Routes.Category.FLOWERS,  "🌸", "Flores",   AppColors.FlowersAccent),
     Category(Routes.Category.CARTOONS, "🎭", "Cartoons", AppColors.CartoonsAccent),
     Category(Routes.Category.ANIMALS,  "🐾", "Animales", AppColors.AnimalsAccent),
-    Category(Routes.Category.SPECIAL,  "⭐", "Especial", Color(0xFF9333EA)),
-    Category(Routes.Category.GALLERY,  "📷", "Galería",  Color(0xFFF06292)),
+    Category(Routes.Category.SPRING,   "🌱", "Primavera", Color(0xFF22C55E)),
+    Category(Routes.Category.WINTER,   "❄️", "Invierno",  Color(0xFF3B82F6)),
+    Category(Routes.Category.SPECIAL,  "⭐", "Especial",  Color(0xFF9333EA)),
+    Category(Routes.Category.GALLERY,  "📷", "Galería",   Color(0xFFF06292)),
 )
 
 // Catálogo completo
@@ -90,8 +92,46 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             emoji       = "🐈‍⬛",
             title       = "Gatito negro",
             description = "Un lindo gatito",
-            bgColor     = Color(0xFFF5F5F5),
-            accentColor = Color(0xFF1C1C1C)
+            bgColor     = Color(0xFF212121),
+            accentColor = Color(0xFFFFD700)
+        ),
+    ),
+
+    Routes.Category.SPRING to listOf(
+        DrawingItem(
+            id          = "spring_flower",
+            emoji       = "🌸",
+            title       = "Cerezo",
+            description = "Flor de primavera",
+            bgColor     = Color(0xFFFFF0F5),
+            accentColor = Color(0xFFFF69B4)
+        ),
+        DrawingItem(
+            id          = "butterfly",
+            emoji       = "🦋",
+            title       = "Mariposa",
+            description = "Colores vivos",
+            bgColor     = Color(0xFFE0F7FA),
+            accentColor = Color(0xFF00BCD4)
+        ),
+    ),
+
+    Routes.Category.WINTER to listOf(
+        DrawingItem(
+            id          = "snowman",
+            emoji       = "☃️",
+            title       = "Muñeco de Nieve",
+            description = "¡Qué frío!",
+            bgColor     = Color(0xFFF0F8FF),
+            accentColor = Color(0xFF87CEEB)
+        ),
+        DrawingItem(
+            id          = "snowflake",
+            emoji       = "❄️",
+            title       = "Copo de Nieve",
+            description = "Único y brillante",
+            bgColor     = Color(0xFFE1F5FE),
+            accentColor = Color(0xFF03A9F4)
         ),
     ),
 

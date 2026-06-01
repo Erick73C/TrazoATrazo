@@ -27,7 +27,11 @@ data class ThemeColorScheme(
     val cartoonsBg:     Color,
     val cartoonsAccent: Color,
     val animalsBg:      Color,
-    val animalsAccent:  Color
+    val animalsAccent:  Color,
+    val springBg:       Color,
+    val springAccent:   Color,
+    val winterBg:       Color,
+    val winterAccent:   Color
 )
 
 // ── Función helper ────────────────────────────────────────────────────────────
@@ -64,7 +68,11 @@ val jjkDarkScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF1A1A10),
     cartoonsAccent = Color(0xFFB45309),
     animalsBg      = Color(0xFF0F1A12),
-    animalsAccent  = Color(0xFF16A34A)
+    animalsAccent  = Color(0xFF16A34A),
+    springBg       = Color(0xFF0F1A12),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFF0F1625),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 2. AZUL NOCHE ─────────────────────────────────────────────────────────────
@@ -85,7 +93,11 @@ val midnightBlueScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF080E20),
     cartoonsAccent = Color(0xFF60A5FA),
     animalsBg      = Color(0xFF060C18),
-    animalsAccent  = Color(0xFF38BDF8)
+    animalsAccent  = Color(0xFF38BDF8),
+    springBg       = Color(0xFF0A1A10),
+    springAccent   = Color(0xFF4ADE80),
+    winterBg       = Color(0xFF081220),
+    winterAccent   = Color(0xFF60A5FA)
 )
 
 // ── 3. BOSQUE ─────────────────────────────────────────────────────────────────
@@ -106,7 +118,11 @@ val forestScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF061208),
     cartoonsAccent = Color(0xFF4ADE80),
     animalsBg      = Color(0xFF050E06),
-    animalsAccent  = Color(0xFF22C55E)
+    animalsAccent  = Color(0xFF22C55E),
+    springBg       = Color(0xFF050E07),
+    springAccent   = Color(0xFF16A34A),
+    winterBg       = Color(0xFF050B14),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 4. ÁMBAR ──────────────────────────────────────────────────────────────────
@@ -127,7 +143,11 @@ val amberScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF140C00),
     cartoonsAccent = Color(0xFFF59E0B),
     animalsBg      = Color(0xFF100A00),
-    animalsAccent  = Color(0xFFEAB308)
+    animalsAccent  = Color(0xFFEAB308),
+    springBg       = Color(0xFF101A05),
+    springAccent   = Color(0xFF84CC16),
+    winterBg       = Color(0xFF0A101A),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 5. CRIMSON ────────────────────────────────────────────────────────────────
@@ -148,7 +168,11 @@ val crimsonScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF140606),
     cartoonsAccent = Color(0xFFF87171),
     animalsBg      = Color(0xFF100505),
-    animalsAccent  = Color(0xFFEF4444)
+    animalsAccent  = Color(0xFFEF4444),
+    springBg       = Color(0xFF101A05),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFF050A1A),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 6. SAKURA NIGHT ───────────────────────────────────────────────────────────
@@ -169,7 +193,11 @@ val sakuraNightScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF1A050F),
     cartoonsAccent = Color(0xFFFF748C),
     animalsBg      = Color(0xFF15050A),
-    animalsAccent  = Color(0xFFF06292)
+    animalsAccent  = Color(0xFFF06292),
+    springBg       = Color(0xFF0A1A0F),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFF050A1A),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 7. PRIMAVERA (Light) ──────────────────────────────────────────────────────
@@ -190,7 +218,11 @@ val springGardenScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFFF0FDF4),
     cartoonsAccent = Color(0xFF22C55E),
     animalsBg      = Color(0xFFF7FEE7),
-    animalsAccent  = Color(0xFF84CC16)
+    animalsAccent  = Color(0xFF84CC16),
+    springBg       = Color(0xFFF0FDF4),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFFF0F9FF),
+    winterAccent   = Color(0xFF0EA5E9)
 )
 
 // ── 8. VERANO (Bright) ────────────────────────────────────────────────────────
@@ -211,7 +243,11 @@ val summerSunScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFFFFFBEB),
     cartoonsAccent = Color(0xFFF59E0B),
     animalsBg      = Color(0xFFFEF9C3),
-    animalsAccent  = Color(0xFFEAB308)
+    animalsAccent  = Color(0xFFEAB308),
+    springBg       = Color(0xFFF0FDF4),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFFF0F9FF),
+    winterAccent   = Color(0xFF0EA5E9)
 )
 
 // ── 9. OTOÑO (Warm) ───────────────────────────────────────────────────────────
@@ -232,7 +268,11 @@ val autumnLeavesScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFF2D150B),
     cartoonsAccent = Color(0xFFEA580C),
     animalsBg      = Color(0xFF251005),
-    animalsAccent  = Color(0xFFD97706)
+    animalsAccent  = Color(0xFFD97706),
+    springBg       = Color(0xFF1A2510),
+    springAccent   = Color(0xFF84CC16),
+    winterBg       = Color(0xFF101A25),
+    winterAccent   = Color(0xFF3B82F6)
 )
 
 // ── 10. INVIERNO (Cold/Light) ─────────────────────────────────────────────────
@@ -253,5 +293,9 @@ val winterSnowScheme = ThemeColorScheme(
     cartoonsBg     = Color(0xFFF8FAFC),
     cartoonsAccent = Color(0xFF3B82F6),
     animalsBg      = Color(0xFFF1F5F9),
-    animalsAccent  = Color(0xFF0EA5E9)
+    animalsAccent  = Color(0xFF0EA5E9),
+    springBg       = Color(0xFFF0FDF4),
+    springAccent   = Color(0xFF22C55E),
+    winterBg       = Color(0xFFF8FAFC),
+    winterAccent   = Color(0xFF3B82F6)
 )

@@ -47,4 +47,8 @@ object AppColors {
     val CartoonsAccent: Color get() = _scheme.cartoonsAccent
     val AnimalsBg:      Color get() = _scheme.animalsBg
     val AnimalsAccent:  Color get() = _scheme.animalsAccent
+    val SpringBg:       Color get() = _scheme.springBg
+    val SpringAccent:   Color get() = _scheme.springAccent
+    val WinterBg:       Color get() = _scheme.winterBg
+    val WinterAccent:   Color get() = _scheme.winterAccent
 }

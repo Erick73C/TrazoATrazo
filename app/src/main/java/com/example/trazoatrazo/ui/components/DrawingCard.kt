@@ -9,6 +9,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -23,6 +24,7 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -32,6 +34,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trazoatrazo.data.DrawingItem
+import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
 import okhttp3.internal.platform.android.AndroidLogHandler.close
 import kotlin.io.path.Path
@@ -42,28 +45,60 @@ import kotlin.io.path.moveTo
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * @param emoji       Emoji del dibujo
- * @param title       Nombre del dibujo
- * @param description Subtítulo corto
- * @param accentColor Color de acento de la categoría (barra lateral + borde + botón)
- * @param bgGradientStart  Color de inicio del gradiente de fondo (default: AppColors.Dominio)
- * @param bgGradientEnd    Color de fin del gradiente de fondo (default: AppColors.Expansion)
- * @param categoryLabel    Badge de categoría opcional ej: "Flores"
- * @param isNew            Muestra un badge "Nuevo" adicional
- * @param onClick     Acción al pulsar
+ * Tarjeta de dibujo con estilo adaptado por categoría.
+ * La categoría SPECIAL recibe tratamiento negro/dorado automáticamente.
+ *
+ * @param emoji          Emoji del dibujo
+ * @param title          Nombre del dibujo
+ * @param description    Subtítulo corto
+ * @param categoryId     ID de la categoría (Routes.Category.*) — controla el estilo
+ * @param accentColor    Color de acento (borde, barra, botón play)
+ * @param bgColor        Color de fondo de la tarjeta
+ * @param categoryLabel  Texto del badge (ej: "Flores")
+ * @param isNew          Muestra badge "Nuevo"
+ * @param onClick        Acción al pulsar
  */
 @Composable
 fun DrawingCard(
-    emoji:             String,
-    title:             String,
-    description:       String  = "",
-    accentColor:       Color   = AppColors.Tecnica,
-    bgGradientStart:   Color   = AppColors.Dominio,
-    bgGradientEnd:     Color   = AppColors.Expansion,
-    categoryLabel:     String  = "",
-    isNew:             Boolean = false,
-    onClick:           () -> Unit
+    emoji:         String,
+    title:         String,
+    description:   String  = "",
+    categoryId:    String  = "",
+    accentColor:   Color   = AppColors.Tecnica,
+    bgColor:       Color?  = null,
+    categoryLabel: String  = "",
+    isNew:         Boolean = false,
+    onClick:       () -> Unit
 ) {
+    val isSpecial = categoryId == Routes.Category.SPECIAL
+
+    // Seleccionamos el fondo temático basado en la categoría
+    val themedBg = when (categoryId) {
+        Routes.Category.FLOWERS  -> AppColors.FlowersBg
+        Routes.Category.CARTOONS -> AppColors.CartoonsBg
+        Routes.Category.ANIMALS  -> AppColors.AnimalsBg
+        Routes.Category.SPRING   -> AppColors.SpringBg
+        Routes.Category.WINTER   -> AppColors.WinterBg
+        Routes.Category.SPECIAL  -> Color(0xFF0A0A0A) // Negro fijo para Especial
+        else                     -> AppColors.Sombra
+    }
+
+    // El bgColor pasado por parámetro tiene prioridad (si no es null)
+    val cardBg      = bgColor ?: themedBg
+    val borderColor = if (isSpecial) Color(0xFFD4A017)   else accentColor
+    val titleColor = if (isSpecial) Color(0xFFD4A017) else textColorFor(cardBg)
+    val descColor  = if (isSpecial) Color(0xFF9A7A30) else subtitleColorFor(cardBg)
+    val iconBg      = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.12f)
+    else accentColor.copy(alpha = 0.16f)
+    val iconBorder  = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.45f)
+    else accentColor.copy(alpha = 0.32f)
+    val playBg      = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.15f)
+    else accentColor.copy(alpha = 0.18f)
+    val playBorder  = if (isSpecial) Color(0xFFD4A017) else accentColor.copy(alpha = 0.45f)
+    val playColor   = if (isSpecial) Color(0xFFD4A017) else accentColor
+    val shimmerTint = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.09f)
+    else Color.White.copy(alpha = 0.07f)
+
     // Animación de presión
     var pressed by remember { mutableStateOf(false) }
     val pressScale by animateFloatAsState(
@@ -72,13 +107,13 @@ fun DrawingCard(
         label         = "press"
     )
 
-    // Shimmer que recorre la tarjeta continuamente
-    val shimmerAnim = rememberInfiniteTransition(label = "shimmer")
-    val shimmerX by shimmerAnim.animateFloat(
-        initialValue  = -1f,
-        targetValue   = 2f,
+    // Shimmer continuo
+    val shimmerTrans = rememberInfiniteTransition(label = "shimmer")
+    val shimmerX by shimmerTrans.animateFloat(
+        initialValue  = -1.2f,
+        targetValue   = 2.2f,
         animationSpec = infiniteRepeatable(
-            animation  = tween(3200, easing = LinearEasing),
+            animation  = tween(3400, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
         label = "shimmerX"
@@ -88,46 +123,44 @@ fun DrawingCard(
         modifier = Modifier
             .scale(pressScale)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(20.dp))
-            // Fondo gradiente oscuro
-            .background(
-                Brush.linearGradient(
-                    colors = listOf(bgGradientStart, bgGradientEnd),
-                    start  = Offset(0f, 0f),
-                    end    = Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
-                )
-            )
-            // Borde con el color de acento
+            .clip(RoundedCornerShape(18.dp))
+            .background(cardBg)
             .drawWithContent {
                 drawContent()
+
                 // Borde exterior
                 drawRoundRect(
-                    color        = accentColor.copy(alpha = 0.45f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx()),
-                    style        = Stroke(1.2f)
+                    color        = borderColor.copy(alpha = if (isSpecial) 1f else 0.42f),
+                    cornerRadius = CornerRadius(18.dp.toPx()),
+                    style        = Stroke(width = if (isSpecial) 1.5f else 1.2f)
                 )
+
                 // Barra de acento izquierda
                 drawRoundRect(
                     brush = Brush.linearGradient(
-                        colors = listOf(accentColor, accentColor.copy(alpha = 0.4f)),
-                        start  = Offset(0f, 0f),
-                        end    = Offset(0f, size.height)
+                        colors = listOf(
+                            borderColor,
+                            borderColor.copy(alpha = 0.35f)
+                        ),
+                        start = Offset(0f, 0f),
+                        end   = Offset(0f, size.height)
                     ),
-                    topLeft      = androidx.compose.ui.geometry.Offset(0f, 0f),
-                    size         = androidx.compose.ui.geometry.Size(3.5f, size.height),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(20.dp.toPx(), 20.dp.toPx())
+                    topLeft      = Offset(0f, 8.dp.toPx()),
+                    size         = Size(3.5f, size.height - 16.dp.toPx()),
+                    cornerRadius = CornerRadius(4f)
                 )
+
                 // Shimmer
-                val shimmerStartX = size.width * shimmerX
+                val sx = size.width * shimmerX
                 drawRect(
                     brush = Brush.linearGradient(
                         colors = listOf(
                             Color.Transparent,
-                            accentColor.copy(alpha = 0.06f),
+                            shimmerTint,
                             Color.Transparent
                         ),
-                        start = Offset(shimmerStartX, 0f),
-                        end   = Offset(shimmerStartX + size.width * 0.5f, size.height)
+                        start = Offset(sx, 0f),
+                        end   = Offset(sx + size.width * 0.55f, size.height)
                     )
                 )
             }
@@ -138,57 +171,57 @@ fun DrawingCard(
                 pressed = true
                 onClick()
             }
-            .padding(start = 14.dp, end = 14.dp, top = 13.dp, bottom = 13.dp)
+            .padding(horizontal = 14.dp, vertical = 13.dp)
     ) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
+            horizontalArrangement = Arrangement.spacedBy(13.dp)
         ) {
 
-            // ── Ícono con brillo interior ────────────────────────────────
+            // ── Ícono ─────────────────────────────────────────────────────
             Box(
                 modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(accentColor.copy(alpha = 0.18f))
+                    .size(50.dp)
+                    .clip(RoundedCornerShape(13.dp))
+                    .background(iconBg)
                     .drawWithContent {
                         drawContent()
                         // Borde del ícono
                         drawRoundRect(
-                            color        = accentColor.copy(alpha = 0.35f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(14.dp.toPx()),
+                            color        = iconBorder,
+                            cornerRadius = CornerRadius(13.dp.toPx()),
                             style        = Stroke(1f)
                         )
-                        // Brillo superior (pseudo-reflejo)
+                        // Reflejo superior sutil
                         drawRoundRect(
                             brush = Brush.linearGradient(
                                 colors = listOf(
-                                    Color.White.copy(alpha = 0.12f),
+                                    Color.White.copy(alpha = 0.13f),
                                     Color.Transparent
                                 ),
                                 start = Offset(0f, 0f),
                                 end   = Offset(0f, size.height * 0.45f)
                             ),
-                            topLeft      = androidx.compose.ui.geometry.Offset(2f, 2f),
-                            size         = androidx.compose.ui.geometry.Size(size.width - 4f, size.height * 0.45f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(12.dp.toPx())
+                            topLeft      = Offset(2f, 2f),
+                            size         = Size(size.width - 4f, size.height * 0.45f),
+                            cornerRadius = CornerRadius(11.dp.toPx())
                         )
                     },
                 contentAlignment = Alignment.Center
             ) {
-                Text(emoji, fontSize = 26.sp)
+                Text(emoji, fontSize = 25.sp)
             }
 
-            // ── Texto ────────────────────────────────────────────────────
+            // ── Textos ────────────────────────────────────────────────────
             Column(
                 modifier            = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(3.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text       = title,
                     fontSize   = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = AppColors.Reversa,
+                    color      = titleColor,
                     maxLines   = 1,
                     overflow   = TextOverflow.Ellipsis
                 )
@@ -197,88 +230,104 @@ fun DrawingCard(
                     Text(
                         text     = description,
                         fontSize = 11.sp,
-                        color    = AppColors.Eco,
+                        color    = descColor,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                 }
 
-                // Badges: categoría + "Nuevo"
+                // Badges
                 if (categoryLabel.isNotEmpty() || isNew) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
-                        modifier = Modifier.padding(top = 3.dp)
+                        modifier              = Modifier.padding(top = 3.dp)
                     ) {
                         if (categoryLabel.isNotEmpty()) {
-                            CategoryBadge(
-                                label = categoryLabel,
-                                color = accentColor
-                            )
+                            DrawingBadge(label = categoryLabel, accentColor = borderColor)
                         }
                         if (isNew) {
-                            CategoryBadge(
-                                label = "Nuevo",
-                                color = Color(0xFFDC2626)
-                            )
+                            DrawingBadge(label = "Nuevo", accentColor = Color(0xFFDC2626))
                         }
                     }
                 }
             }
 
-            // ── Botón play ───────────────────────────────────────────────
+            // ── Botón play ────────────────────────────────────────────────
             Box(
                 modifier = Modifier
                     .size(34.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .background(accentColor.copy(alpha = 0.22f))
+                    .background(playBg)
                     .drawWithContent {
                         drawContent()
                         drawRoundRect(
-                            color        = accentColor.copy(alpha = 0.5f),
-                            cornerRadius = androidx.compose.ui.geometry.CornerRadius(10.dp.toPx()),
-                            style        = Stroke(1f)
+                            color        = playBorder,
+                            cornerRadius = CornerRadius(10.dp.toPx()),
+                            style        = Stroke(if (isSpecial) 1.3f else 1f)
                         )
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // Triángulo play manual (sin dependencia de íconos externos)
-                androidx.compose.foundation.Canvas(modifier = Modifier.size(12.dp)) {
+                // Triángulo play
+                Canvas(modifier = Modifier.size(11.dp)) {
                     val path = Path().apply {
-                        moveTo(size.width * 0.25f, 0f)
-                        lineTo(size.width,         size.height * 0.5f)
-                        lineTo(size.width * 0.25f, size.height)
+                        moveTo(size.width * 0.22f, 0f)
+                        lineTo(size.width,          size.height * 0.5f)
+                        lineTo(size.width * 0.22f,  size.height)
                         close()
                     }
-                    drawPath(path, color = accentColor)
+                    drawPath(path, color = playColor)
                 }
             }
+        }
+
+        // Ornamento dorado esquina superior derecha (solo Especial)
+        if (isSpecial) {
+            Text(
+                text     = "✦",
+                fontSize = 10.sp,
+                color    = Color(0xFFD4A017).copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(top = 0.dp, end = 0.dp)
+            )
         }
     }
 }
 
-// ── Badge de categoría ────────────────────────────────────────────────────────
+// ── Badge interno ─────────────────────────────────────────────────────────────
 @Composable
-private fun CategoryBadge(label: String, color: Color) {
+private fun DrawingBadge(label: String, accentColor: Color) {
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(6.dp))
-            .background(color.copy(alpha = 0.18f))
+            .clip(RoundedCornerShape(5.dp))
+            .background(accentColor.copy(alpha = 0.15f))
             .drawWithContent {
                 drawContent()
                 drawRoundRect(
-                    color        = color.copy(alpha = 0.4f),
-                    cornerRadius = androidx.compose.ui.geometry.CornerRadius(6.dp.toPx()),
+                    color        = accentColor.copy(alpha = 0.38f),
+                    cornerRadius = CornerRadius(5.dp.toPx()),
                     style        = Stroke(0.8f)
                 )
             }
             .padding(horizontal = 7.dp, vertical = 2.dp)
     ) {
         Text(
-            text      = label.uppercase(),
-            fontSize  = 8.5.sp,
-            fontWeight = FontWeight.SemiBold,
-            color     = color.copy(alpha = 0.85f),
+            text          = label.uppercase(),
+            fontSize      = 8.5.sp,
+            fontWeight    = FontWeight.SemiBold,
+            color         = accentColor.copy(alpha = 0.88f),
             letterSpacing = 0.5.sp
         )
     }
 }
+
+// Al final de DrawingCard.kt — fuera del @Composable
+private fun Color.luminance(): Float =
+    red * 0.299f + green * 0.587f + blue * 0.114f
+
+private fun textColorFor(bg: Color): Color =
+    if (bg.luminance() > 0.45f) Color(0xFF1A1A1A) else Color(0xFFEAEAEA)
+
+private fun subtitleColorFor(bg: Color): Color =
+    if (bg.luminance() > 0.45f) Color(0xFF555555) else Color(0xFF9E9E9E)

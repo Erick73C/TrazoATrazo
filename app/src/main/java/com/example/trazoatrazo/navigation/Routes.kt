@@ -21,6 +21,8 @@ object Routes {
 
         const val SHAPES   = "shapes"
         const val SPECIAL  = "special"
+        const val SPRING   = "spring"
+        const val WINTER   = "winter"
 
         const val GALLERY  = "gallery"
     }
