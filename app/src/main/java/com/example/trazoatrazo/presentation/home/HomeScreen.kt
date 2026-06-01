@@ -34,6 +34,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trazoatrazo.data.DrawingItem
 import com.example.trazoatrazo.data.drawingCatalog
 import com.example.trazoatrazo.navigation.Routes
+import com.example.trazoatrazo.ui.components.DrawingCard
 import com.example.trazoatrazo.presentation.gallery.GalleryScreen
 import com.example.trazoatrazo.presentation.home.HomeViewModel
 import com.example.trazoatrazo.presentation.home.messageColors
@@ -218,7 +219,7 @@ private fun HomeHeader(
                     color      = AppColors.Reversa
                 )
                 Text(
-                    text     = "¡Hola! Elige y disfruta ✨",
+                    text     = "¡Holaaaaaa! ✨",
                     fontSize = 11.sp,
                     color    = AppColors.Eco
                 )
@@ -585,176 +586,25 @@ private fun DrawingsPage(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         itemsIndexed(drawings) { _, drawing ->
-            HomeDrawingCard(
-                drawing     = drawing,
-                accentColor = accentColor,
-                onClick     = { onDrawingClick(categoryId, drawing.id) }
+            DrawingCard(
+                emoji           = drawing.emoji,
+                title           = drawing.title,
+                description     = drawing.description,
+                accentColor     = accentColor,
+                bgGradientStart = AppColors.Dominio,
+                bgGradientEnd   = AppColors.Expansion,
+                categoryLabel   = categoryLabelFor(categoryId),   // ver helper abajo
+                onClick         = { onDrawingClick(categoryId, drawing.id) }
             )
         }
         item { Spacer(Modifier.height(20.dp)) }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── GALLERY PLACEHOLDER ───────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun GalleryPlaceholderPage() {
-    Box(
-        modifier         = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier            = Modifier.padding(32.dp)
-        ) {
-            // Polaroid decorativo con Canvas
-            Canvas(modifier = Modifier.size(120.dp, 130.dp)) {
-                val pad   = 8f
-                val photoH = size.height * 0.73f
-
-                // Sombra
-                drawRoundRect(
-                    color        = Color.Black.copy(alpha = 0.3f),
-                    topLeft      = Offset(pad + 3f, pad + 3f),
-                    size         = Size(size.width - pad * 2, size.height - pad),
-                    cornerRadius = CornerRadius(8f)
-                )
-                // Marco polaroid
-                drawRoundRect(
-                    color        = Color(0xFF1E1B2E),
-                    topLeft      = Offset(pad, pad),
-                    size         = Size(size.width - pad * 2, size.height - pad),
-                    cornerRadius = CornerRadius(8f)
-                )
-                // Foto (zona morada)
-                drawRoundRect(
-                    brush        = Brush.linearGradient(
-                        colors = listOf(Color(0xFF2D1B69), Color(0xFF1E1B3A)),
-                        start  = Offset(0f, pad),
-                        end    = Offset(0f, pad + photoH)
-                    ),
-                    topLeft      = Offset(pad * 2, pad * 2),
-                    size         = Size(size.width - pad * 4, photoH),
-                    cornerRadius = CornerRadius(5f)
-                )
-                // Emoji de cámara en el centro de la foto
-                drawCircle(
-                    color  = Color(0xFF9333EA).copy(alpha = 0.3f),
-                    radius = 18f,
-                    center = Offset(size.width / 2f, pad * 2 + photoH / 2f)
-                )
-                // Borde exterior
-                drawRoundRect(
-                    color        = Color(0xFF9333EA).copy(alpha = 0.35f),
-                    topLeft      = Offset(pad, pad),
-                    size         = Size(size.width - pad * 2, size.height - pad),
-                    cornerRadius = CornerRadius(8f),
-                    style        = Stroke(1.5f)
-                )
-            }
-
-            Text("📷", fontSize = 32.sp, modifier = Modifier.offset(y = (-20).dp))
-
-            Spacer(Modifier.height(10.dp))
-            Text(
-                text       = "Galería de Recuerdos",
-                fontSize   = 20.sp,
-                fontWeight = FontWeight.Bold,
-                color      = AppColors.Reversa
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                text      = "Tus momentos especiales\naparecerán aquí muy pronto 🌸",
-                fontSize  = 13.sp,
-                color     = AppColors.ReversaSuave,
-                textAlign = TextAlign.Center
-            )
-        }
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ── DRAWING CARD ──────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun HomeDrawingCard(
-    drawing:     DrawingItem,
-    accentColor: Color,
-    onClick:     () -> Unit
-) {
-    var pressed by remember { mutableStateOf(false) }
-    val pressScale by animateFloatAsState(
-        targetValue   = if (pressed) 0.97f else 1f,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label         = "drawingPress"
-    )
-
-    Box(
-        modifier = Modifier
-            .scale(pressScale)
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(17.dp))
-            .background(drawing.bgColor)
-            .then(
-                Modifier.drawWithContent {
-                    drawContent()
-                    drawRoundRect(
-                        color        = accentColor.copy(alpha = 0.28f),
-                        cornerRadius = CornerRadius(17.dp.toPx()),
-                        style        = Stroke(1.2f)
-                    )
-                }
-            )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null
-            ) {
-                pressed = true
-                onClick()
-            }
-            .padding(vertical = 14.dp, horizontal = 16.dp)
-    ) {
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            // Ícono
-            Box(
-                modifier = Modifier
-                    .size(50.dp)
-                    .clip(RoundedCornerShape(13.dp))
-                    .background(accentColor.copy(alpha = 0.16f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(drawing.emoji, fontSize = 25.sp)
-            }
-
-            // Texto
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text       = drawing.title,
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color      = Color(0xFF1A1A1A)
-                )
-                Text(
-                    text     = drawing.description,
-                    fontSize = 11.sp,
-                    color    = AppColors.Eco
-                )
-            }
-
-            // Flecha
-            Box(
-                modifier = Modifier
-                    .size(30.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(accentColor.copy(alpha = 0.14f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("▶", fontSize = 12.sp, color = accentColor)
-            }
-        }
-    }
+fun categoryLabelFor(categoryId: String): String = when (categoryId) {
+    Routes.Category.FLOWERS  -> "Flores"
+    Routes.Category.CARTOONS -> "Cartoons"
+    Routes.Category.ANIMALS  -> "Animales"
+    Routes.Category.SPECIAL  -> "Especial"
+    else -> ""
 }
