@@ -20,6 +20,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.CornerRadius
@@ -58,6 +59,18 @@ import kotlin.io.path.moveTo
  * @param isNew          Muestra badge "Nuevo"
  * @param onClick        Acción al pulsar
  */
+// ── Colores fijos de la categoría Especial ────────────────────────────────────
+private object SpecialColors {
+    val Gold        = Color(0xFFD4A017)
+    val GoldBg      = Color(0xFF0A0A0A)
+    val GoldIcon    = Color(0xFFD4A017).copy(alpha = 0.12f)
+    val GoldBorder  = Color(0xFFD4A017).copy(alpha = 0.45f)
+    val GoldPlay    = Color(0xFFD4A017).copy(alpha = 0.15f)
+    val GoldShimmer = Color(0xFFD4A017).copy(alpha = 0.09f)
+    val GoldDesc    = Color(0xFF9A7A30)
+    val Ornament    = Color(0xFFD4A017).copy(alpha = 0.5f)
+}
+
 @Composable
 fun DrawingCard(
     emoji:         String,
@@ -65,49 +78,44 @@ fun DrawingCard(
     description:   String  = "",
     categoryId:    String  = "",
     accentColor:   Color   = AppColors.Tecnica,
-    bgColor:       Color?  = null,
     categoryLabel: String  = "",
     isNew:         Boolean = false,
     onClick:       () -> Unit
 ) {
     val isSpecial = categoryId == Routes.Category.SPECIAL
 
-    // Seleccionamos el fondo temático basado en la categoría
-    val themedBg = when (categoryId) {
+    // Fondo reactivo al tema por categoría
+    val cardBg = when (categoryId) {
         Routes.Category.FLOWERS  -> AppColors.FlowersBg
         Routes.Category.CARTOONS -> AppColors.CartoonsBg
         Routes.Category.ANIMALS  -> AppColors.AnimalsBg
         Routes.Category.SPRING   -> AppColors.SpringBg
         Routes.Category.WINTER   -> AppColors.WinterBg
-        Routes.Category.SPECIAL  -> Color(0xFF0A0A0A) // Negro fijo para Especial
+        Routes.Category.SPECIAL  -> SpecialColors.GoldBg
         else                     -> AppColors.Sombra
     }
 
-    // El bgColor pasado por parámetro tiene prioridad (si no es null)
-    val cardBg      = bgColor ?: themedBg
-    val borderColor = if (isSpecial) Color(0xFFD4A017)   else accentColor
-    val titleColor = if (isSpecial) Color(0xFFD4A017) else textColorFor(cardBg)
-    val descColor  = if (isSpecial) Color(0xFF9A7A30) else subtitleColorFor(cardBg)
-    val iconBg      = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.12f)
-    else accentColor.copy(alpha = 0.16f)
-    val iconBorder  = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.45f)
-    else accentColor.copy(alpha = 0.32f)
-    val playBg      = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.15f)
-    else accentColor.copy(alpha = 0.18f)
-    val playBorder  = if (isSpecial) Color(0xFFD4A017) else accentColor.copy(alpha = 0.45f)
-    val playColor   = if (isSpecial) Color(0xFFD4A017) else accentColor
-    val shimmerTint = if (isSpecial) Color(0xFFD4A017).copy(alpha = 0.09f)
-    else Color.White.copy(alpha = 0.07f)
+    // Colores derivados — solo se recalculan si cambia isSpecial, cardBg o accentColor
+    val borderColor = if (isSpecial) SpecialColors.Gold        else accentColor
+    val titleColor  = if (isSpecial) SpecialColors.Gold        else textColorFor(cardBg)
+    val descColor   = if (isSpecial) SpecialColors.GoldDesc    else subtitleColorFor(cardBg)
+    val iconBg      = if (isSpecial) SpecialColors.GoldIcon    else accentColor.copy(alpha = 0.16f)
+    val iconBorder  = if (isSpecial) SpecialColors.GoldBorder  else accentColor.copy(alpha = 0.32f)
+    val playBg      = if (isSpecial) SpecialColors.GoldPlay    else accentColor.copy(alpha = 0.18f)
+    val playBorder  = if (isSpecial) SpecialColors.Gold        else accentColor.copy(alpha = 0.45f)
+    val playColor   = if (isSpecial) SpecialColors.Gold        else accentColor
+    val shimmerTint = if (isSpecial) SpecialColors.GoldShimmer else Color.White.copy(alpha = 0.07f)
 
-    // Animación de presión
+    // Presión — vuelve a false cuando la animación termina
     var pressed by remember { mutableStateOf(false) }
     val pressScale by animateFloatAsState(
         targetValue   = if (pressed) 0.97f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        finishedListener = { pressed = false },   // ← reset automático
         label         = "press"
     )
 
-    // Shimmer continuo
+    // Shimmer — una sola instancia por tarjeta, compartida en el scope de composición
     val shimmerTrans = rememberInfiniteTransition(label = "shimmer")
     val shimmerX by shimmerTrans.animateFloat(
         initialValue  = -1.2f,
@@ -125,44 +133,49 @@ fun DrawingCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(18.dp))
             .background(cardBg)
-            .drawWithContent {
-                drawContent()
+            .drawWithCache {
+                // Geometría calculada una sola vez mientras el tamaño no cambie
+                val cornerR   = CornerRadius(18.dp.toPx())
+                val barTop    = 8.dp.toPx()
+                val barHeight = size.height - 16.dp.toPx()
+                val borderW   = if (isSpecial) 1.5f else 1.2f
+                val borderA   = if (isSpecial) 1f   else 0.42f
 
-                // Borde exterior
-                drawRoundRect(
-                    color        = borderColor.copy(alpha = if (isSpecial) 1f else 0.42f),
-                    cornerRadius = CornerRadius(18.dp.toPx()),
-                    style        = Stroke(width = if (isSpecial) 1.5f else 1.2f)
+                // Brush del gradiente de barra — fijo mientras accentColor no cambie
+                val barBrush = Brush.linearGradient(
+                    colors = listOf(borderColor, borderColor.copy(alpha = 0.35f)),
+                    start  = Offset(0f, 0f),
+                    end    = Offset(0f, size.height)
                 )
 
-                // Barra de acento izquierda
-                drawRoundRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            borderColor,
-                            borderColor.copy(alpha = 0.35f)
-                        ),
-                        start = Offset(0f, 0f),
-                        end   = Offset(0f, size.height)
-                    ),
-                    topLeft      = Offset(0f, 8.dp.toPx()),
-                    size         = Size(3.5f, size.height - 16.dp.toPx()),
-                    cornerRadius = CornerRadius(4f)
-                )
+                onDrawWithContent {
+                    drawContent()
 
-                // Shimmer
-                val sx = size.width * shimmerX
-                drawRect(
-                    brush = Brush.linearGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            shimmerTint,
-                            Color.Transparent
-                        ),
-                        start = Offset(sx, 0f),
-                        end   = Offset(sx + size.width * 0.55f, size.height)
+                    // Borde exterior
+                    drawRoundRect(
+                        color        = borderColor.copy(alpha = borderA),
+                        cornerRadius = cornerR,
+                        style        = Stroke(width = borderW)
                     )
-                )
+
+                    // Barra de acento izquierda
+                    drawRoundRect(
+                        brush        = barBrush,
+                        topLeft      = Offset(0f, barTop),
+                        size         = Size(3.5f, barHeight),
+                        cornerRadius = CornerRadius(4f)
+                    )
+
+                    // Shimmer — leído dentro del draw scope (no fuerza recomposición)
+                    val sx = size.width * shimmerX
+                    drawRect(
+                        brush = Brush.linearGradient(
+                            colors = listOf(Color.Transparent, shimmerTint, Color.Transparent),
+                            start  = Offset(sx, 0f),
+                            end    = Offset(sx + size.width * 0.55f, size.height)
+                        )
+                    )
+                }
             }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
@@ -184,28 +197,25 @@ fun DrawingCard(
                     .size(50.dp)
                     .clip(RoundedCornerShape(13.dp))
                     .background(iconBg)
-                    .drawWithContent {
-                        drawContent()
-                        // Borde del ícono
-                        drawRoundRect(
-                            color        = iconBorder,
-                            cornerRadius = CornerRadius(13.dp.toPx()),
-                            style        = Stroke(1f)
+                    .drawWithCache {
+                        val cornerR     = CornerRadius(13.dp.toPx())
+                        val innerCorner = CornerRadius(11.dp.toPx())
+                        val reflectH    = size.height * 0.45f
+                        val reflectBrush = Brush.linearGradient(
+                            colors = listOf(Color.White.copy(alpha = 0.13f), Color.Transparent),
+                            start  = Offset(0f, 0f),
+                            end    = Offset(0f, reflectH)
                         )
-                        // Reflejo superior sutil
-                        drawRoundRect(
-                            brush = Brush.linearGradient(
-                                colors = listOf(
-                                    Color.White.copy(alpha = 0.13f),
-                                    Color.Transparent
-                                ),
-                                start = Offset(0f, 0f),
-                                end   = Offset(0f, size.height * 0.45f)
-                            ),
-                            topLeft      = Offset(2f, 2f),
-                            size         = Size(size.width - 4f, size.height * 0.45f),
-                            cornerRadius = CornerRadius(11.dp.toPx())
-                        )
+                        onDrawWithContent {
+                            drawContent()
+                            drawRoundRect(color = iconBorder, cornerRadius = cornerR, style = Stroke(1f))
+                            drawRoundRect(
+                                brush        = reflectBrush,
+                                topLeft      = Offset(2f, 2f),
+                                size         = Size(size.width - 4f, reflectH),
+                                cornerRadius = innerCorner
+                            )
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -218,12 +228,12 @@ fun DrawingCard(
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
-                    text       = title,
-                    fontSize   = 15.sp,
+                    text      = title,
+                    fontSize  = 15.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color      = titleColor,
-                    maxLines   = 1,
-                    overflow   = TextOverflow.Ellipsis
+                    color     = titleColor,
+                    maxLines  = 1,
+                    overflow  = TextOverflow.Ellipsis
                 )
 
                 if (description.isNotEmpty()) {
@@ -236,7 +246,6 @@ fun DrawingCard(
                     )
                 }
 
-                // Badges
                 if (categoryLabel.isNotEmpty() || isNew) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(5.dp),
@@ -258,22 +267,21 @@ fun DrawingCard(
                     .size(34.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .background(playBg)
-                    .drawWithContent {
-                        drawContent()
-                        drawRoundRect(
-                            color        = playBorder,
-                            cornerRadius = CornerRadius(10.dp.toPx()),
-                            style        = Stroke(if (isSpecial) 1.3f else 1f)
-                        )
+                    .drawWithCache {
+                        val cornerR = CornerRadius(10.dp.toPx())
+                        val strokeW = if (isSpecial) 1.3f else 1f
+                        onDrawWithContent {
+                            drawContent()
+                            drawRoundRect(color = playBorder, cornerRadius = cornerR, style = Stroke(strokeW))
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
-                // Triángulo play
                 Canvas(modifier = Modifier.size(11.dp)) {
                     val path = Path().apply {
                         moveTo(size.width * 0.22f, 0f)
-                        lineTo(size.width,          size.height * 0.5f)
-                        lineTo(size.width * 0.22f,  size.height)
+                        lineTo(size.width,         size.height * 0.5f)
+                        lineTo(size.width * 0.22f, size.height)
                         close()
                     }
                     drawPath(path, color = playColor)
@@ -281,34 +289,35 @@ fun DrawingCard(
             }
         }
 
-        // Ornamento dorado esquina superior derecha (solo Especial)
+        // Ornamento dorado — solo categoría Especial
         if (isSpecial) {
             Text(
                 text     = "✦",
                 fontSize = 10.sp,
-                color    = Color(0xFFD4A017).copy(alpha = 0.5f),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(top = 0.dp, end = 0.dp)
+                color    = SpecialColors.Ornament,
+                modifier = Modifier.align(Alignment.TopEnd)
             )
         }
     }
 }
 
-// ── Badge interno ─────────────────────────────────────────────────────────────
+// ── Badge ─────────────────────────────────────────────────────────────────────
 @Composable
 private fun DrawingBadge(label: String, accentColor: Color) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(5.dp))
             .background(accentColor.copy(alpha = 0.15f))
-            .drawWithContent {
-                drawContent()
-                drawRoundRect(
-                    color        = accentColor.copy(alpha = 0.38f),
-                    cornerRadius = CornerRadius(5.dp.toPx()),
-                    style        = Stroke(0.8f)
-                )
+            .drawWithCache {
+                val cornerR = CornerRadius(5.dp.toPx())
+                onDrawWithContent {
+                    drawContent()
+                    drawRoundRect(
+                        color        = accentColor.copy(alpha = 0.38f),
+                        cornerRadius = cornerR,
+                        style        = Stroke(0.8f)
+                    )
+                }
             }
             .padding(horizontal = 7.dp, vertical = 2.dp)
     ) {
@@ -322,7 +331,7 @@ private fun DrawingBadge(label: String, accentColor: Color) {
     }
 }
 
-// Al final de DrawingCard.kt — fuera del @Composable
+// ── Helpers de contraste ──────────────────────────────────────────────────────
 private fun Color.luminance(): Float =
     red * 0.299f + green * 0.587f + blue * 0.114f
 

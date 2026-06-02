@@ -1,7 +1,8 @@
 package com.example.trazoatrazo.utils
 
+import androidx.compose.runtime.Stable
 import com.example.trazoatrazo.navigation.Routes
-
+@Stable
 fun categoryLabelFor(categoryId: String): String = when (categoryId) {
     Routes.Category.FLOWERS  -> "Flores"
     Routes.Category.CARTOONS -> "Cartoons"

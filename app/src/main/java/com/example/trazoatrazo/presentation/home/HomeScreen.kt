@@ -169,7 +169,6 @@ fun HomeScreen(
                     else ->
                         DrawingsPage(
                             categoryId     = tab.categoryId,
-                            accentColor    = tab.accentColor,
                             onDrawingClick = onDrawingClick
                         )
                 }
@@ -549,11 +548,12 @@ private fun CategoryTabRow(
 // ─────────────────────────────────────────────────────────────────────────────
 // ── DRAWINGS PAGE ─────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
+// ── DRAWINGS PAGE ─────────────────────────────────────────────────────────────
 @Composable
 private fun DrawingsPage(
-    categoryId:    String,
-    accentColor:   Color,
+    categoryId:     String,
     onDrawingClick: (categoryId: String, drawingId: String) -> Unit
+    // accentColor eliminado — ya no se usa aquí
 ) {
     val drawings = drawingCatalog[categoryId] ?: emptyList()
 
@@ -590,8 +590,10 @@ private fun DrawingsPage(
         contentPadding      = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        itemsIndexed(drawings) { _, drawing ->
-// HomeScreen.kt — en DrawingsPage
+        itemsIndexed(
+            items = drawings,
+            key   = { _, drawing -> drawing.id }   // ← estabilidad de lista
+        ) { _, drawing ->
             DrawingCard(
                 emoji         = drawing.emoji,
                 title         = drawing.title,
