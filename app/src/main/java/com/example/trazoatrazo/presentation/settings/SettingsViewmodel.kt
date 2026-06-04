@@ -19,17 +19,20 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val _selectedTheme = MutableStateFlow(AppTheme.JJK_DARK)
     val selectedTheme: StateFlow<AppTheme> = _selectedTheme.asStateFlow()
 
-    // init: carga el tema al arrancar la app
+
+    private val _themeReady = MutableStateFlow(false)
+    val themeReady: StateFlow<Boolean> = _themeReady.asStateFlow()
+
     init {
         viewModelScope.launch {
             themePrefs.getThemeFlow().collect { savedTheme ->
                 _selectedTheme.value = savedTheme
                 AppColors.applyTheme(savedTheme)
+                _themeReady.value = true   // primer valor recibido, ya es seguro dibujar
             }
         }
     }
 
-    // Seleccionar nuevo tema
     fun selectTheme(theme: AppTheme) {
         viewModelScope.launch {
             _selectedTheme.value = theme

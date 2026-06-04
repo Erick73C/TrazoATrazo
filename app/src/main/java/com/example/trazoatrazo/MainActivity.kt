@@ -15,13 +15,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            // Inicializamos el ViewModel aquí para que cargue el tema desde el DataStore al arrancar
-            val settingsViewModel: SettingsViewModel = viewModel()
-
             TrazoATrazoTheme {
                 AppNavigation()
             }
         }
     }
 }
-
