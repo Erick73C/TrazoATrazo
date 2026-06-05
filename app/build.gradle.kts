@@ -1,22 +1,19 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
     namespace = "com.example.trazoatrazo"
-    compileSdk {
-        version = release(36) {
-            minorApiLevel = 1
-        }
-    }
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.trazoatrazo"
         minSdk = 24
-        targetSdk = 36
+        targetSdk = 35
         versionCode = 3
-        versionName = "2.5"
+        versionName = "2.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -36,6 +33,9 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    kotlinOptions {
+        jvmTarget = "11"
     }
 }
 
@@ -58,7 +58,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    implementation("androidx.navigation:navigation-compose:2.9.8")
+    implementation("androidx.navigation:navigation-compose:2.8.5")
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     // En app/build.gradle.kts
     implementation(libs.coil.compose)

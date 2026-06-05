@@ -1,4 +1,4 @@
-package com.example.trazoatrazo.drawings.Animals
+package com.example.trazoatrazo.drawings.animals
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
@@ -14,7 +14,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons

@@ -1,4 +1,4 @@
-package com.example.trazoatrazo.drawings.Animals
+package com.example.trazoatrazo.drawings.animals
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

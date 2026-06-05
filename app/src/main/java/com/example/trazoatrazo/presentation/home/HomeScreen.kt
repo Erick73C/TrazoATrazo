@@ -1,3 +1,5 @@
+package com.example.trazoatrazo.presentation.home
+
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas

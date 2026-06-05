@@ -1,4 +1,4 @@
-package com.example.trazoatrazo.drawings.Shapes
+package com.example.trazoatrazo.drawings.shapes
 
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
