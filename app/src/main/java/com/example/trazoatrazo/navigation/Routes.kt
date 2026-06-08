@@ -51,6 +51,10 @@ object Routes {
 
         const val SNOWMAN = "snowman"
 
+        const val SNOWFLAKE = "snowflake"
+
+        const val BUTTERFLY = "butterfly"
+
         const val carta = "Carta"
     }
 }

@@ -1,5 +1,7 @@
 package com.example.trazoatrazo.navigation
 
+import com.example.trazoatrazo.drawings.spring.ButterflyScreen
+import com.example.trazoatrazo.drawings.spring.CherryTreeScreen
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,8 +24,8 @@ import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
 import com.example.trazoatrazo.drawings.shapes.HeartScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen
-import com.example.trazoatrazo.drawings.spring.CherryTreeScreen
 import com.example.trazoatrazo.drawings.winter.SnowmanScreen
+import com.example.trazoatrazo.drawings.winter.SnowflakeScreen
 import com.example.trazoatrazo.presentation.home.HomeScreen
 import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
@@ -87,9 +89,11 @@ fun AppNavigation(
                         }
                         Routes.Category.SPRING -> when (drawingId) {
                             Routes.Drawings.CHERRY_TREE -> CherryTreeScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.BUTTERFLY -> ButterflyScreen(onBack = { navController.popBackStack() })
                         }
                         Routes.Category.WINTER -> when (drawingId) {
                             Routes.Drawings.SNOWMAN -> SnowmanScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.SNOWFLAKE -> SnowflakeScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
