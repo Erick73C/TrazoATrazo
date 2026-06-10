@@ -99,40 +99,43 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
 
     Routes.Category.SPRING to listOf(
         DrawingItem(
-            id          = "spring_flower",
+            id          = Routes.Drawings.CHERRY_TREE,
             emoji       = "🌸",
             title       = "Cerezo",
             description = "Flor de primavera",
-            bgColor     = Color(0xFFFFF0F5),
-            accentColor = Color(0xFFFF69B4)
+            accentColor = Color(0xFFFF91A4)
         ),
         DrawingItem(
-            id          = "butterfly",
+            id          = Routes.Drawings.BUTTERFLY,
             emoji       = "🦋",
             title       = "Mariposa",
             description = "Colores vivos",
-            bgColor     = Color(0xFFE0F7FA),
             accentColor = Color(0xFF00BCD4)
         ),
     ),
 
     Routes.Category.WINTER to listOf(
         DrawingItem(
-            id          = "snowman",
+            id          = Routes.Drawings.SNOWMAN,
             emoji       = "☃️",
             title       = "Muñeco de Nieve",
             description = "¡Qué frío!",
-            bgColor     = Color(0xFFF0F8FF),
-            accentColor = Color(0xFF87CEEB)
+            accentColor = Color(0xFF0288D1)
         ),
         DrawingItem(
-            id          = "snowflake",
-            emoji       = "❄️",
-            title       = "Copo de Nieve",
-            description = "Único y brillante",
-            bgColor     = Color(0xFFE1F5FE),
-            accentColor = Color(0xFF03A9F4)
+            id          = Routes.Drawings.CHRISTMAS_TREE,
+            emoji       = "🎄",
+            title       = "Árbol de Navidad",
+            description = "Luces y estrellas",
+            accentColor = Color(0xFF2E7D32)
         ),
+        DrawingItem(
+            id = Routes.Drawings.COPONIEVE,
+            emoji = "❄️",
+            title = "Copo de nieve",
+            description = "Cascadas de copos de nieve",
+            accentColor = Color(0xFF0288D1)
+        )
     ),
 
     Routes.Category.SPECIAL to listOf(

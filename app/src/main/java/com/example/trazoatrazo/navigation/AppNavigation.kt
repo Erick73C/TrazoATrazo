@@ -24,8 +24,9 @@ import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
 import com.example.trazoatrazo.drawings.shapes.HeartScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen
-import com.example.trazoatrazo.drawings.winter.SnowmanScreen
+import com.example.trazoatrazo.drawings.winter.ChristmasTreeScreen
 import com.example.trazoatrazo.drawings.winter.SnowflakeScreen
+import com.example.trazoatrazo.drawings.winter.SnowmanScreen
 import com.example.trazoatrazo.presentation.home.HomeScreen
 import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
@@ -93,7 +94,8 @@ fun AppNavigation(
                         }
                         Routes.Category.WINTER -> when (drawingId) {
                             Routes.Drawings.SNOWMAN -> SnowmanScreen(onBack = { navController.popBackStack() })
-                            Routes.Drawings.SNOWFLAKE -> SnowflakeScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.CHRISTMAS_TREE -> ChristmasTreeScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.COPONIEVE -> SnowflakeScreen(onBack = { navController.popBackStack() })
                         }
                     }
                 }
