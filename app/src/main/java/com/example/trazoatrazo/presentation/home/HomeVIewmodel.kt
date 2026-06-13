@@ -3,6 +3,7 @@ package com.example.trazoatrazo.presentation.home
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
+import com.example.trazoatrazo.utils.luminance
 import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -15,17 +16,16 @@ import kotlinx.coroutines.flow.update
 val messageColors = listOf(
     Color(0xFFEAEAEA), Color(0xFFC8A8F0), Color(0xFF9333EA),
     Color(0xFFFFD700), Color(0xFFFF6B8A), Color(0xFF4FC3F7),
-    Color(0xFF81C784), Color(0xFFFFB74D), Color(0xFFE0E0E0),
+    Color(0xFFFFB74D), Color(0xFFE0E0E0),
     Color(0xFFF48FB1), Color(0xFFCE93D8), Color(0xFF90CAF9),
-    Color(0xFF80CBC4), Color(0xFFA5D6A7), Color(0xFFFFF59D),
+    Color(0xFFA5D6A7), Color(0xFFFFF59D),
     Color(0xFFFFCC80), Color(0xFFFF8A80), Color(0xFFB0BEC5),
     Color(0xFF7986CB), Color(0xFFFF8A65), Color(0xFFDCE775),
-    Color(0xFF4DD0E1), Color(0xFFC5E1A5), Color(0xFFF8BBD0),
-    Color(0xFFF06292), Color(0xFFFFF176), Color(0xFFFFB300),
+    Color(0xFFC5E1A5), Color(0xFFF06292), Color(0xFFFFB300),
     Color(0xFFB39DDB), Color(0xFF81D4FA), Color(0xFFB2DFDB),
-    Color(0xFFF0E68C), Color(0xFFE1BEE7), Color(0xFFFFA07A),
+    Color(0xFFF0E68C), Color(0xFFE1BEE7),
     Color(0xFFA1887F), Color(0xFF9575CD), Color(0xFF4DB6AC),
-    Color(0xFFD4E157), Color(0xFFFFD54F), Color(0xFFBA68C8),
+    Color(0xFFD4E157), Color(0xFFFFD54F),
     Color(0xFF42A5F5), Color(0xFF80DEEA), Color(0xFFF48FB1),
 )
 
@@ -100,13 +100,28 @@ class HomeViewModel : ViewModel() {
     )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    fun onMessageTap() {
+    fun onMessageTap(background: Color) {
         _uiState.update { current ->
-            val nextColor = (current.colorIndex + 1) % messageColors.size
-            val nextMsg   = welcomeMessages
+            val isDarkBg = background.luminance() <= 0.45f
+            var nextIdx  = (current.colorIndex + 1) % messageColors.size
+
+            // Buscar un color que contraste bien con el fondo actual
+            for (i in 0 until messageColors.size) {
+                val candidate = messageColors[nextIdx]
+                val candLum   = candidate.luminance()
+                
+                // Si fondo oscuro, queremos luminancia alta (colores claros)
+                // Si fondo claro, queremos luminancia baja (colores oscuros)
+                val isGoodContrast = if (isDarkBg) candLum > 0.42f else candLum < 0.58f
+                
+                if (isGoodContrast) break
+                nextIdx = (nextIdx + 1) % messageColors.size
+            }
+
+            val nextMsg = welcomeMessages
                 .filter { it != current.welcomeMessage }
                 .random()
-            current.copy(welcomeMessage = nextMsg, colorIndex = nextColor)
+            current.copy(welcomeMessage = nextMsg, colorIndex = nextIdx)
         }
     }
 }

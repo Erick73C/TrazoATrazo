@@ -34,12 +34,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.trazoatrazo.data.DrawingItem
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
-import okhttp3.internal.platform.android.AndroidLogHandler.close
-import kotlin.io.path.Path
-import kotlin.io.path.moveTo
+import com.example.trazoatrazo.utils.subtitleColorFor
+import com.example.trazoatrazo.utils.textColorFor
 
 // ─────────────────────────────────────────────────────────────────────────────
 // DrawingCard — v2.2  Componente unificado para HomeScreen y CategoryScreen
@@ -330,13 +328,3 @@ private fun DrawingBadge(label: String, accentColor: Color) {
         )
     }
 }
-
-// ── Helpers de contraste ──────────────────────────────────────────────────────
-private fun Color.luminance(): Float =
-    red * 0.299f + green * 0.587f + blue * 0.114f
-
-private fun textColorFor(bg: Color): Color =
-    if (bg.luminance() > 0.45f) Color(0xFF1A1A1A) else Color(0xFFEAEAEA)
-
-private fun subtitleColorFor(bg: Color): Color =
-    if (bg.luminance() > 0.45f) Color(0xFF555555) else Color(0xFF9E9E9E)

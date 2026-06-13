@@ -41,6 +41,7 @@ import com.example.trazoatrazo.presentation.gallery.GalleryScreen
 import com.example.trazoatrazo.presentation.home.HomeViewModel
 import com.example.trazoatrazo.presentation.home.messageColors
 import com.example.trazoatrazo.ui.theme.AppColors
+import com.example.trazoatrazo.utils.adaptiveColorFor
 import com.example.trazoatrazo.utils.categoryLabelFor
 import kotlinx.coroutines.launch
 
@@ -139,11 +140,14 @@ fun HomeScreen(
             )
 
             // ── WELCOME + ENVELOPE ────────────────────────────────────────────
+            val currentMessageColor = messageColors[uiState.colorIndex]
+                .adaptiveColorFor(AppColors.Sombra)
+
             WelcomeSection(
                 message      = uiState.welcomeMessage,
-                messageColor = messageColors[uiState.colorIndex],
+                messageColor = currentMessageColor,
                 animValue    = welcomeAnim.value,
-                onMessageTap = viewModel::onMessageTap,
+                onMessageTap = { viewModel.onMessageTap(AppColors.Sombra) },
                 onEnvelopeTap = onLetterClick
             )
 
@@ -225,7 +229,7 @@ private fun HomeHeader(
                     color      = AppColors.Reversa
                 )
                 Text(
-                    text     = "¡Holaaaaaa! ✨",
+                    text     = "¡HOLAAAAA! ✨, Version: 2.9",
                     fontSize = 11.sp,
                     color    = AppColors.Eco
                 )

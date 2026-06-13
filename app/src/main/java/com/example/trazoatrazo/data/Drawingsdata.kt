@@ -7,15 +7,6 @@ import kotlin.collections.emptyList
 import androidx.compose.runtime.Immutable
 
 // Modelos centralizados
-
-@Immutable
-data class Category(
-    val id:          String,
-    val emoji:       String,
-    val title:       String,
-    val accentColor: Color
-)
-
 @Immutable
 data class DrawingItem(
     val id:          String,
@@ -24,17 +15,6 @@ data class DrawingItem(
     val description: String,
     val bgColor:     Color = AppColors.Sombra,
     val accentColor: Color = AppColors.FlowersAccent
-)
-
-// Lista de categorías
-val allCategories = listOf(
-    Category(Routes.Category.FLOWERS,  "🌸", "Flores",   AppColors.FlowersAccent),
-    Category(Routes.Category.CARTOONS, "🎭", "Cartoons", AppColors.CartoonsAccent),
-    Category(Routes.Category.ANIMALS,  "🐾", "Animales", AppColors.AnimalsAccent),
-    Category(Routes.Category.SPRING,   "🌱", "Primavera", Color(0xFF22C55E)),
-    Category(Routes.Category.WINTER,   "❄️", "Invierno",  Color(0xFF3B82F6)),
-    Category(Routes.Category.SPECIAL,  "⭐", "Especial",  Color(0xFF9333EA)),
-    Category(Routes.Category.GALLERY,  "📷", "Galería",   Color(0xFFF06292)),
 )
 
 // Catálogo completo
@@ -75,6 +55,27 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             description = "14 de febrero",
             bgColor     = Color(0xFFFFEBEE),
             accentColor = Color(0xFFE91E63)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.BATMAN,
+            emoji       = "🦇",
+            title       = "Batman",
+            description = "El caballero de la noche",
+            accentColor = Color(0xFFFFD700)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.TROFEO,
+            emoji       = "🏆",
+            title       = "Trofeo Inovatec",
+            description = "Felicidades por tu logro",
+            accentColor = Color(0xFFFFA000)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.HARLEY,
+            emoji       = "🤡",
+            title       = "Harley Quinn",
+            description = "Princesa del crimen",
+            accentColor = Color(0xFFD32F2F)
         ),
     ),
 
