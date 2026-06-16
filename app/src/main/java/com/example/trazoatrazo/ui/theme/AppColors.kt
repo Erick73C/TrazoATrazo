@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import com.example.trazoatrazo.ui.background.BackgroundConfig
 
 val LocalAppColors = compositionLocalOf<ThemeColorScheme> { jjkDarkScheme }
 

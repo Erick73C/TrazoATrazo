@@ -44,6 +44,10 @@ import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.utils.adaptiveColorFor
 import com.example.trazoatrazo.utils.categoryLabelFor
 import kotlinx.coroutines.launch
+import com.example.trazoatrazo.ui.background.DynamicBackground
+import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
+import com.example.trazoatrazo.presentation.settings.SettingsViewModel
+import com.example.trazoatrazo.ui.theme.LocalAppColors
 
 @Immutable
 private data class TabInfo(
@@ -96,34 +100,17 @@ fun HomeScreen(
     val pagerState     = rememberPagerState(pageCount = { homeTabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColors.Vacio)
+    // ── Obtener tema y config del CompositionLocal ────────────────────────────
+//    val settingsViewModel: SettingsViewModel = viewModel()
+//    val selectedTheme by settingsViewModel.selectedTheme.collectAsStateWithLifecycle()
+
+    DynamicBackground(
+        theme   = LocalAppColors.current.appTheme,
+        config  = LocalBackgroundConfig.current,
+        bgColor = AppColors.Vacio
     ) {
         // ── Fondo decorativo ──────────────────────────────────────────────────
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            // Halo morado arriba-derecha
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(AppColors.Maldicion.copy(alpha = 0.20f), Color.Transparent),
-                    center = Offset(size.width * 0.88f, size.height * 0.06f),
-                    radius = size.width * 0.55f
-                ),
-                radius = size.width * 0.55f,
-                center = Offset(size.width * 0.88f, size.height * 0.06f)
-            )
-            // Halo índigo abajo-izquierda
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(AppColors.Expansion.copy(alpha = 0.15f), Color.Transparent),
-                    center = Offset(size.width * 0.08f, size.height * 0.92f),
-                    radius = size.width * 0.48f
-                ),
-                radius = size.width * 0.48f,
-                center = Offset(size.width * 0.08f, size.height * 0.92f)
-            )
-        }
+
 
         Column(modifier = Modifier.fillMaxSize()) {
 
@@ -229,7 +216,8 @@ private fun HomeHeader(
                     color      = AppColors.Reversa
                 )
                 Text(
-                    text     = "¡HOLAAAAA! ✨, Version: 2.9",
+                    text     = "¡HOLAAAAA! ✨, " +
+                                "V 3.0",
                     fontSize = 11.sp,
                     color    = AppColors.Eco
                 )
@@ -380,7 +368,7 @@ private fun WelcomeSection(
                 // Glow detrás del sobre
                 drawCircle(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0xFF9333EA).copy(alpha = 0.25f), Color.Transparent),
+                        colors = listOf(AppColors.Maldicion.copy(alpha = 0.25f), Color.Transparent),
                         center = Offset(w / 2f, h / 2f),
                         radius = w * 0.65f
                     ),
@@ -404,7 +392,7 @@ private fun WelcomeSection(
                 // Cuerpo del sobre
                 drawRoundRect(
                     brush        = Brush.linearGradient(
-                        colors = listOf(Color(0xFF2D1B69), Color(0xFF1E1B3A)),
+                        colors = listOf(AppColors.Sombra, AppColors.Dominio),
                         start  = Offset(0f, bodyTop),
                         end    = Offset(0f, bodyTop + bodyH)
                     ),
@@ -413,9 +401,9 @@ private fun WelcomeSection(
                     cornerRadius = CornerRadius(10f)
                 )
 
-                // Borde morado del cuerpo
+                // Borde del cuerpo
                 drawRoundRect(
-                    color        = Color(0xFF9333EA).copy(alpha = 0.55f),
+                    color        = AppColors.Maldicion.copy(alpha = 0.55f),
                     topLeft      = Offset(bodyLeft, bodyTop),
                     size         = Size(bodyW, bodyH),
                     cornerRadius = CornerRadius(10f),
@@ -428,20 +416,20 @@ private fun WelcomeSection(
                     lineTo(w / 2f, bodyTop + bodyH * 0.44f)
                     lineTo(bodyLeft + bodyW - 2f, bodyTop + 2f)
                 }
-                drawPath(flapPath, color = Color(0xFF6B21A8).copy(alpha = 0.8f), style = Stroke(2f))
+                drawPath(flapPath, color = AppColors.Expansion.copy(alpha = 0.85f), style = Stroke(2.2f))
 
                 // Líneas laterales de doblez
                 drawLine(
-                    color       = Color(0xFF6B21A8).copy(alpha = 0.4f),
+                    color       = AppColors.Expansion.copy(alpha = 0.65f),
                     start       = Offset(bodyLeft + 2f, bodyTop + bodyH - 2f),
                     end         = Offset(w / 2f, bodyTop + bodyH * 0.44f),
-                    strokeWidth = 1f
+                    strokeWidth = 1.8f
                 )
                 drawLine(
-                    color       = Color(0xFF6B21A8).copy(alpha = 0.4f),
+                    color       = AppColors.Expansion.copy(alpha = 0.65f),
                     start       = Offset(bodyLeft + bodyW - 2f, bodyTop + bodyH - 2f),
                     end         = Offset(w / 2f, bodyTop + bodyH * 0.44f),
-                    strokeWidth = 1f
+                    strokeWidth = 1.8f
                 )
 
                 // Corazón sello al centro
@@ -453,17 +441,17 @@ private fun WelcomeSection(
                     cubicTo(hx - hr * 2f, hy - hr * 0.8f, hx - hr * 2f, hy + hr * 1.2f, hx, hy + hr * 2.2f)
                     cubicTo(hx + hr * 2f, hy + hr * 1.2f, hx + hr * 2f, hy - hr * 0.8f, hx, hy + hr * 0.5f)
                 }
-                drawPath(heartGlow, color = Color(0xFFE91E63).copy(alpha = 0.18f))
+                drawPath(heartGlow, color = AppColors.KiEspiritual.copy(alpha = 0.18f))
 
-                drawCircle(Color(0xFFE91E63), hr, Offset(hx - hr * 0.55f, hy - hr * 0.1f))
-                drawCircle(Color(0xFFE91E63), hr, Offset(hx + hr * 0.55f, hy - hr * 0.1f))
+                drawCircle(AppColors.KiEspiritual, hr, Offset(hx - hr * 0.55f, hy - hr * 0.1f))
+                drawCircle(AppColors.KiEspiritual, hr, Offset(hx + hr * 0.55f, hy - hr * 0.1f))
                 val heartFill = Path().apply {
                     moveTo(hx - hr * 1.15f, hy + hr * 0.2f)
                     lineTo(hx, hy + hr * 1.5f)
                     lineTo(hx + hr * 1.15f, hy + hr * 0.2f)
                     close()
                 }
-                drawPath(heartFill, color = Color(0xFFE91E63))
+                drawPath(heartFill, color = AppColors.KiEspiritual)
 
                 // Estrellitas decorativas
                 val stars = listOf(

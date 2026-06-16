@@ -21,6 +21,9 @@ import com.example.trazoatrazo.drawings.animals.TurtleScreen
 import com.example.trazoatrazo.drawings.flowers.FlowerScreen
 import com.example.trazoatrazo.drawings.flowers.GirasolScreen
 import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
+import com.example.trazoatrazo.drawings.cartoons.BatmanScreen
+import com.example.trazoatrazo.drawings.cartoons.HarleyScreen
+import com.example.trazoatrazo.drawings.cartoons.TrofeoScreen
 import com.example.trazoatrazo.drawings.shapes.HeartScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen
@@ -32,6 +35,7 @@ import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.LocalAppColors
+import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
 import com.example.trazoatrazo.ui.theme.themeColorSchemeFor
 
 @Composable
@@ -41,9 +45,11 @@ fun AppNavigation(
     val settingsViewModel: SettingsViewModel = viewModel()
     val selectedTheme by settingsViewModel.selectedTheme.collectAsStateWithLifecycle()
     val themeReady    by settingsViewModel.themeReady.collectAsStateWithLifecycle()
+    val backgroundConfig by settingsViewModel.backgroundConfig.collectAsStateWithLifecycle()
 
     CompositionLocalProvider(
-        LocalAppColors provides themeColorSchemeFor(selectedTheme)
+        LocalAppColors provides themeColorSchemeFor(selectedTheme),
+        LocalBackgroundConfig provides backgroundConfig
     ) {
         if (!themeReady) {
             Box(
@@ -77,6 +83,9 @@ fun AppNavigation(
                         }
                         Routes.Category.CARTOONS -> when (drawingId) {
                             Routes.Drawings.HEART -> HeartScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.BATMAN -> BatmanScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.TROFEO -> TrofeoScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.HARLEY -> HarleyScreen(onBack = { navController.popBackStack() })
                         }
                         Routes.Category.ANIMALS -> when (drawingId) {
                             Routes.Drawings.TURTLE -> TurtleScreen(onBack = { navController.popBackStack() })
@@ -102,7 +111,12 @@ fun AppNavigation(
 
                 composable(Routes.LETTER) { LetterContentScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.LETTER_CONTENT) { LetterContentScreen(onBack = { navController.popBackStack() }) }
-                composable(Routes.SETTINGS) { SettingsScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(
+                        viewModel = settingsViewModel,
+                        onBack    = { navController.popBackStack() }
+                    )
+                }
             }
         }
     }

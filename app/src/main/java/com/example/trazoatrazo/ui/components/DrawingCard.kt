@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -83,14 +84,22 @@ fun DrawingCard(
     val isSpecial = categoryId == Routes.Category.SPECIAL
 
     // Fondo reactivo al tema por categoría
+    // Usamos Sombra como base y aplicamos un tinte sutil del color de acento
+    // para que la tarjeta se integre perfectamente con cualquier tema.
     val cardBg = when (categoryId) {
-        Routes.Category.FLOWERS  -> AppColors.FlowersBg
-        Routes.Category.CARTOONS -> AppColors.CartoonsBg
-        Routes.Category.ANIMALS  -> AppColors.AnimalsBg
-        Routes.Category.SPRING   -> AppColors.SpringBg
-        Routes.Category.WINTER   -> AppColors.WinterBg
-        Routes.Category.SPECIAL  -> SpecialColors.GoldBg
-        else                     -> AppColors.Sombra
+        Routes.Category.SPECIAL -> SpecialColors.GoldBg
+        else -> {
+            val base = AppColors.Sombra
+            val accent = when (categoryId) {
+                Routes.Category.FLOWERS  -> AppColors.FlowersAccent
+                Routes.Category.CARTOONS -> AppColors.CartoonsAccent
+                Routes.Category.ANIMALS  -> AppColors.AnimalsAccent
+                Routes.Category.SPRING   -> AppColors.SpringAccent
+                Routes.Category.WINTER   -> AppColors.WinterAccent
+                else -> Color.Transparent
+            }
+            if (accent != Color.Transparent) lerp(base, accent, 0.08f) else base
+        }
     }
 
     // Colores derivados — solo se recalculan si cambia isSpecial, cardBg o accentColor

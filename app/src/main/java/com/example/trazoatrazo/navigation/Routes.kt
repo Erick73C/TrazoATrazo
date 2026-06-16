@@ -18,8 +18,6 @@ object Routes {
         const val FLOWERS  = "flowers"
         const val CARTOONS = "cartoons"
         const val ANIMALS  = "animals"
-
-        const val SHAPES   = "shapes"
         const val SPECIAL  = "special"
         const val SPRING   = "spring"
         const val WINTER   = "winter"
@@ -38,8 +36,10 @@ object Routes {
     object Drawings {
         const val GIRASOL = "girasol"
         const val FLORES  = "flores"
-        const val CARTOON = "cartoon"
         const val HEART   = "heart"
+        const val BATMAN  = "batman"
+        const val TROFEO  = "trofeo"
+        const val HARLEY  = "harley"
 
         const val TURTLE = "turtle"
 

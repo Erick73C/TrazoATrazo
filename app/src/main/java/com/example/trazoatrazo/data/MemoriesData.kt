@@ -133,7 +133,7 @@ val memoriesList: List<Memory> = listOf(
         category = MemoryCategory.PROGRAMAS
     ),
     Memory(
-        id = 17,
+        id = 18,
         drawableRes = R.drawable.recuerdo_programa_pastel_de_cumpleanos_uno,
         title = "Programa pastel de cumpleaños 🎂",
         description =  "El segundo programa de pastel de cumpleaños, que queria mejorar por el primero que te di jaja",

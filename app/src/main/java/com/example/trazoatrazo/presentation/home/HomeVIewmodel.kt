@@ -92,7 +92,12 @@ class HomeViewModel : ViewModel() {
         "🖥️ Los voy a volver a meter al itsur, pero hora a sistemas para que sean mas felices",
         "🔘 Esta app no la pueden usar los que le van al real Madrid ",
         "👨‍🦲 App creada por erickzen :O",
-        "🎮 Hay que jugar jaja"
+        "🎮 Hay que jugar jaja",
+        "👻 Te extraño ",
+        "🍔 Te invito una hamburguesa",
+        "🤔 Como te va? ",
+        "💰 Me prestas 100000$ ? jaja",
+        "🐸 Rebeck"
     )
 
     private val _uiState = MutableStateFlow(

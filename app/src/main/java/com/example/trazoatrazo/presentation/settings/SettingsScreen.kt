@@ -1,5 +1,6 @@
 package com.example.trazoatrazo.presentation.settings
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -8,9 +9,15 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,11 +27,14 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
+import com.example.trazoatrazo.ui.background.BackgroundConfig
+import com.example.trazoatrazo.ui.background.SpecialParticleType
 import com.example.trazoatrazo.ui.theme.*
 
 // ── SettingsScreen ────────────────────────────────────────────────────────────
@@ -33,9 +43,9 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
     onBack:    () -> Unit
 ) {
-    val selectedTheme by viewModel.selectedTheme.collectAsStateWithLifecycle()
+    val selectedTheme    by viewModel.selectedTheme.collectAsStateWithLifecycle()
+    val backgroundConfig by viewModel.backgroundConfig.collectAsStateWithLifecycle()
 
-    // Animación de entrada
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         screenAnim.animateTo(1f, tween(550, easing = EaseOutCubic))
@@ -60,11 +70,11 @@ fun SettingsScreen(
         }
 
         LazyColumn(
-            modifier        = Modifier
+            modifier       = Modifier
                 .fillMaxSize()
                 .alpha(screenAnim.value)
                 .offset(y = ((1f - screenAnim.value) * 30).dp),
-            contentPadding  = PaddingValues(bottom = 60.dp)
+            contentPadding = PaddingValues(bottom = 60.dp)
         ) {
 
             // ── Header ────────────────────────────────────────────────────────
@@ -80,14 +90,13 @@ fun SettingsScreen(
             // ── Sección: Tema ─────────────────────────────────────────────────
             item {
                 SectionTitle(
-                    emoji = "🎨",
-                    title = "Tema de la app",
+                    emoji    = "🎨",
+                    title    = "Tema de la app",
                     subtitle = "Elige el estilo visual · Se guarda automáticamente"
                 )
                 Spacer(Modifier.height(16.dp))
             }
 
-            // ── Grid 2×N de temas ─────────────────────────────────────────────
             item {
                 ThemeGrid(
                     selectedTheme = selectedTheme,
@@ -95,9 +104,48 @@ fun SettingsScreen(
                 )
             }
 
-            // ── Sección: Próximamente ──────────────────────────────────────────
+            // ── Sección: Fondo dinámico ───────────────────────────────────────
             item {
-                Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(36.dp))
+                HorizontalDivider(
+                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
+                    thickness = 1.dp,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+                Spacer(Modifier.height(28.dp))
+                SectionTitle(
+                    emoji    = "✨",
+                    title    = "Fondo dinámico",
+                    subtitle = "Efectos visuales de fondo · Tenues y cinematográficos"
+                )
+                Spacer(Modifier.height(20.dp))
+            }
+
+            // Efectos individuales
+            item {
+                BackgroundEffectsSection(
+                    config    = backgroundConfig,
+                    viewModel = viewModel
+                )
+            }
+
+            // Reset al default del tema
+            item {
+                Spacer(Modifier.height(16.dp))
+                ResetBackgroundButton(
+                    onClick = viewModel::resetBackgroundToThemeDefault
+                )
+            }
+
+            // ── Sección: Próximamente ─────────────────────────────────────────
+            item {
+                Spacer(Modifier.height(36.dp))
+                HorizontalDivider(
+                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
+                    thickness = 1.dp,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+                Spacer(Modifier.height(28.dp))
                 SectionTitle(
                     emoji    = "⚙️",
                     title    = "Más ajustes",
@@ -109,6 +157,482 @@ fun SettingsScreen(
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── BACKGROUND EFFECTS SECTION ────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun BackgroundEffectsSection(
+    config: BackgroundConfig,
+    viewModel: SettingsViewModel
+) {
+    Column(
+        modifier            = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // CATÁLOGO DE PARTÍCULAS (Nuevo Diseño)
+        ParticleCatalogCard(
+            activeTypes = config.activeTypes,
+            enabled     = config.particles.enabled,
+            intensity   = config.particles.intensity,
+            onToggle    = viewModel::setParticlesEnabled,
+            onSlider    = viewModel::setParticlesIntensity,
+            onTypeClick = viewModel::toggleParticleType
+        )
+
+        // Estrellas
+        EffectToggleCard(
+            emoji     = "⭐",
+            title     = "Estrellas",
+            subtitle  = "Destellos tenues con parpadeo suave",
+            enabled   = config.stars.enabled,
+            intensity = config.stars.intensity,
+            onToggle  = viewModel::setStarsEnabled,
+            onSlider  = viewModel::setStarsIntensity
+        )
+
+        // Pétalos
+        EffectToggleCard(
+            emoji     = "🌸",
+            title     = "Pétalos",
+            subtitle  = "Pétalos cayendo suavemente",
+            enabled   = config.petals.enabled,
+            intensity = config.petals.intensity,
+            onToggle  = viewModel::setPetalsEnabled,
+            onSlider  = viewModel::setPetalsIntensity
+        )
+
+        // Grain
+        EffectToggleCard(
+            emoji     = "🎞️",
+            title     = "Grain cinematográfico",
+            subtitle  = "Ruido de película analógica muy tenue",
+            enabled   = config.grain.enabled,
+            intensity = config.grain.intensity,
+            onToggle  = viewModel::setGrainEnabled,
+            onSlider  = viewModel::setGrainIntensity
+        )
+
+        // Brillo
+        EffectToggleCard(
+            emoji     = "🌟",
+            title     = "Brillo sutil",
+            subtitle  = "Halo radial pulsante en las esquinas",
+            enabled   = config.glow.enabled,
+            intensity = config.glow.intensity,
+            onToggle  = viewModel::setGlowEnabled,
+            onSlider  = viewModel::setGlowIntensity
+        )
+
+        // Velocidad global
+        SpeedSliderCard(
+            speed    = config.speed,
+            onSlider = viewModel::setBackgroundSpeed
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── PARTICLE CATALOG CARD ─────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ParticleCatalogCard(
+    activeTypes: List<SpecialParticleType>,
+    enabled:     Boolean,
+    intensity:   Float,
+    onToggle:    (Boolean) -> Unit,
+    onSlider:    (Float) -> Unit,
+    onTypeClick: (SpecialParticleType) -> Unit
+) {
+    val cardAlpha by animateFloatAsState(if (enabled) 1f else 0.5f, label = "alpha")
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(cardAlpha)
+            .clip(RoundedCornerShape(20.dp))
+            .background(AppColors.Sombra)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Cabecera
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.Maldicion.copy(alpha = 0.15f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🌌", fontSize = 20.sp)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text("Catálogo de Partículas", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                Text("Mezcla tus formas favoritas", fontSize = 11.sp, color = AppColors.Eco)
+            }
+            BgToggle(checked = enabled, onChecked = onToggle)
+        }
+
+        if (enabled) {
+            // Slider
+            Column {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("Intensidad", fontSize = 11.sp, color = AppColors.Eco, modifier = Modifier.width(70.dp))
+                    Slider(
+                        value = intensity,
+                        onValueChange = onSlider,
+                        colors = SliderDefaults.colors(thumbColor = AppColors.Tecnica, activeTrackColor = AppColors.Maldicion)
+                    )
+                }
+            }
+
+            // Grid de Catálogo
+            Text("Selecciona una o varias formas:", fontSize = 10.sp, color = AppColors.ReversaSuave, fontWeight = FontWeight.SemiBold)
+            
+            // Usamos un simple Row de LazyRow para que quepa en el LazyColumn madre
+            // O una cuadrícula manual si son pocos. Hagamos un LazyRow de Grid para scroll horizontal
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SpecialParticleType.entries.forEach { type ->
+                    val isSelected = activeTypes.contains(type)
+                    ParticleCatalogItem(
+                        type       = type,
+                        isSelected = isSelected,
+                        onClick    = { onTypeClick(type) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ParticleCatalogItem(
+    type: SpecialParticleType,
+    isSelected: Boolean,
+    onClick: () -> Unit
+) {
+    val bgColor by animateColorAsState(if (isSelected) AppColors.Maldicion.copy(alpha = 0.25f) else AppColors.Dominio, label = "bg")
+    val borderColor by animateColorAsState(if (isSelected) AppColors.Maldicion else Color.Transparent, label = "border")
+    val scale by animateFloatAsState(if (isSelected) 1.05f else 1f, label = "scale")
+
+    Column(
+        modifier = Modifier
+            .scale(scale)
+            .width(64.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(bgColor)
+            .border(1.dp, borderColor, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(type.emoji, fontSize = 22.sp)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = type.displayName,
+            fontSize = 8.sp,
+            color = if (isSelected) Color.White else AppColors.Eco,
+            textAlign = TextAlign.Center,
+            lineHeight = 10.sp,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── EFFECT TOGGLE CARD ────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun EffectToggleCard(
+    emoji:     String,
+    title:     String,
+    subtitle:  String,
+    enabled:   Boolean,
+    intensity: Float,
+    onToggle:  (Boolean) -> Unit,
+    onSlider:  (Float) -> Unit,
+    content:   @Composable (() -> Unit)? = null
+) {
+    val cardAlpha by animateFloatAsState(
+        targetValue   = if (enabled) 1f else 0.5f,
+        animationSpec = tween(250),
+        label         = "cardAlpha"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .alpha(cardAlpha)
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Sombra)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Fila superior: emoji + texto + toggle
+        Row(
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(emoji, fontSize = 22.sp)
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text       = title,
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = AppColors.Reversa
+                )
+                Text(
+                    text     = subtitle,
+                    fontSize = 11.sp,
+                    color    = AppColors.Eco,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+            // Toggle personalizado
+            BgToggle(
+                checked   = enabled,
+                onChecked = onToggle
+            )
+        }
+
+        // Slider de intensidad — solo visible si está activado
+        if (enabled) {
+            Row(
+                modifier          = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text     = "Intensidad",
+                    fontSize = 11.sp,
+                    color    = AppColors.Eco,
+                    modifier = Modifier.width(72.dp)
+                )
+                Slider(
+                    value         = intensity,
+                    onValueChange = onSlider,
+                    valueRange    = 0f..1f,
+                    modifier      = Modifier.weight(1f),
+                    colors        = SliderDefaults.colors(
+                        thumbColor       = AppColors.Tecnica,
+                        activeTrackColor = AppColors.Maldicion,
+                        inactiveTrackColor = AppColors.Dominio
+                    )
+                )
+                Text(
+                    text     = "${(intensity * 100).toInt()}%",
+                    fontSize = 11.sp,
+                    color    = AppColors.KiEspiritual,
+                    modifier = Modifier
+                        .width(36.dp)
+                        .padding(start = 8.dp)
+                )
+            }
+            // Contenido adicional si existe
+            content?.invoke()
+        }
+    }
+}
+
+// Extensiones para SpecialParticleType
+private val SpecialParticleType.emoji: String get() = when(this) {
+    SpecialParticleType.NONE -> "🔮"
+    SpecialParticleType.SNOWFLAKE -> "❄️"
+    SpecialParticleType.PETAL -> "🌸"
+    SpecialParticleType.LEAF -> "🍃"
+    SpecialParticleType.SPARKLE -> "✨"
+    SpecialParticleType.SUN_RAY -> "☀️"
+    SpecialParticleType.BUBBLE -> "🫧"
+    SpecialParticleType.STAR_OUTLINE -> "⭐"
+    SpecialParticleType.RAINDROP -> "💧"
+    SpecialParticleType.FIREFLY -> "🏮"
+    SpecialParticleType.EMBER -> "🔥"
+    SpecialParticleType.CRYSTAL -> "💎"
+}
+
+private val SpecialParticleType.displayName: String get() = when(this) {
+    SpecialParticleType.NONE -> "Puntos"
+    SpecialParticleType.SNOWFLAKE -> "Nieve"
+    SpecialParticleType.PETAL -> "Pétalos"
+    SpecialParticleType.LEAF -> "Hojas"
+    SpecialParticleType.SPARKLE -> "Destellos"
+    SpecialParticleType.SUN_RAY -> "Sol"
+    SpecialParticleType.BUBBLE -> "Burbujas"
+    SpecialParticleType.STAR_OUTLINE -> "Estrellas"
+    SpecialParticleType.RAINDROP -> "Lluvia"
+    SpecialParticleType.FIREFLY -> "Luz"
+    SpecialParticleType.EMBER -> "Chispas"
+    SpecialParticleType.CRYSTAL -> "Cristal"
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── SPEED SLIDER CARD ─────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun SpeedSliderCard(
+    speed:    Float,
+    onSlider: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Sombra)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("🌀", fontSize = 22.sp)
+            Spacer(Modifier.width(12.dp))
+            Column {
+                Text(
+                    text       = "Velocidad",
+                    fontSize   = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color      = AppColors.Reversa
+                )
+                Text(
+                    text     = "Qué tan rápido se mueven los efectos",
+                    fontSize = 11.sp,
+                    color    = AppColors.Eco,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+            }
+        }
+
+        Row(
+            modifier          = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text     = "🐌",
+                fontSize = 14.sp,
+                modifier = Modifier.padding(end = 8.dp)
+            )
+            Slider(
+                value         = speed,
+                onValueChange = onSlider,
+                valueRange    = 0.25f..2.0f,
+                modifier      = Modifier.weight(1f),
+                colors        = SliderDefaults.colors(
+                    thumbColor         = AppColors.Tecnica,
+                    activeTrackColor   = AppColors.Maldicion,
+                    inactiveTrackColor = AppColors.Dominio
+                )
+            )
+            Text(
+                text     = "🐇",
+                fontSize = 14.sp,
+                modifier = Modifier.padding(start = 8.dp)
+            )
+        }
+
+        // Etiqueta textual de velocidad
+        val speedLabel = when {
+            speed < 0.6f  -> "Muy lento"
+            speed < 0.9f  -> "Lento"
+            speed < 1.1f  -> "Normal"
+            speed < 1.5f  -> "Rápido"
+            else          -> "Muy rápido"
+        }
+        Text(
+            text      = speedLabel,
+            fontSize  = 11.sp,
+            color     = AppColors.KiEspiritual,
+            modifier  = Modifier.align(Alignment.CenterHorizontally)
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── BG TOGGLE ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun BgToggle(
+    checked:   Boolean,
+    onChecked: (Boolean) -> Unit
+) {
+    val trackColor by animateColorAsState(
+        targetValue   = if (checked) AppColors.Maldicion else AppColors.Dominio,
+        animationSpec = tween(250),
+        label         = "trackColor"
+    )
+    val thumbOffset by animateFloatAsState(
+        targetValue   = if (checked) 1f else 0f,
+        animationSpec = spring(stiffness = Spring.StiffnessMedium),
+        label         = "thumbOffset"
+    )
+
+    Box(
+        modifier = Modifier
+            .width(48.dp)
+            .height(26.dp)
+            .clip(RoundedCornerShape(13.dp))
+            .background(trackColor)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication        = null,
+                onClick           = { onChecked(!checked) }
+            )
+    ) {
+        Box(
+            modifier = Modifier
+                .padding(3.dp)
+                .size(20.dp)
+                .offset(x = (thumbOffset * 22).dp)
+                .clip(CircleShape)
+                .background(Color.White)
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── RESET BUTTON ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun ResetBackgroundButton(onClick: () -> Unit) {
+    Box(
+        modifier          = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        contentAlignment  = Alignment.Center
+    ) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(12.dp))
+                .background(AppColors.Dominio)
+                .border(
+                    width = 1.dp,
+                    color = AppColors.Expansion.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(12.dp)
+                )
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication        = null,
+                    onClick           = onClick
+                )
+                .padding(horizontal = 20.dp, vertical = 10.dp)
+        ) {
+            Text(
+                text      = "↺  Restaurar defaults del tema",
+                fontSize  = 12.sp,
+                color     = AppColors.Eco,
+                fontWeight = FontWeight.Medium
+            )
+        }
+    }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── HEADER ────────────────────────────────────────────────────────────────────
@@ -192,7 +716,7 @@ private fun ThemeGrid(
     selectedTheme: AppTheme,
     onThemeSelect: (AppTheme) -> Unit
 ) {
-    val themes = AppTheme.values().toList()
+    val themes = AppTheme.entries.toList()
     val pairs  = themes.chunked(2)   // Filas de 2 columnas
 
     Column(
@@ -224,6 +748,20 @@ private fun ThemeGrid(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ── COLOR SWATCH ──────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun ColorSwatch(color: Color) {
+    Box(
+        modifier = Modifier
+            .size(12.dp)
+            .clip(CircleShape)
+            .background(color)
+    )
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
 // ── THEME CARD ────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
@@ -235,12 +773,7 @@ private fun ThemeCard(
 ) {
     val scheme = themeColorSchemeFor(theme)
 
-    // Animación de borde al seleccionar
-    val borderAlpha by animateFloatAsState(
-        targetValue   = if (isSelected) 1f else 0f,
-        animationSpec = tween(250),
-        label         = "borderAlpha"
-    )
+    // Animación de escala al seleccionar
     val cardScale by animateFloatAsState(
         targetValue   = if (isSelected) 1.03f else 1f,
         animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
@@ -302,7 +835,7 @@ private fun ThemeCard(
 
             // Nombre del tema
             Text(
-                text       = theme.displayName,
+                text       = " ${theme.displayName}",
                 fontSize   = 14.sp,
                 fontWeight = FontWeight.Bold,
                 color      = scheme.reversa
@@ -340,19 +873,6 @@ private fun ThemeCard(
             }
         }
     }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ── COLOR SWATCH ──────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun ColorSwatch(color: Color) {
-    Box(
-        modifier = Modifier
-            .size(12.dp)
-            .clip(CircleShape)
-            .background(color)
-    )
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

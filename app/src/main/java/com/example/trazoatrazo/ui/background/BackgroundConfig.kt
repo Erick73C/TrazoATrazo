@@ -1,0 +1,124 @@
+package com.example.trazoatrazo.ui.background
+
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.compositionLocalOf
+import com.example.trazoatrazo.ui.theme.AppTheme
+
+// ── Configuración de un efecto individual ─────────────────────────────────────
+@Immutable
+data class EffectConfig(
+    val enabled:   Boolean = true,
+    val intensity: Float   = 0.5f    // 0f = invisible, 1f = máximo
+)
+
+// ── Configuración completa del fondo dinámico ─────────────────────────────────
+@Immutable
+data class BackgroundConfig(
+    val particles:    EffectConfig = EffectConfig(),
+    val activeTypes:  List<SpecialParticleType> = listOf(SpecialParticleType.NONE),
+    val stars:        EffectConfig = EffectConfig(),
+    val petals:       EffectConfig = EffectConfig(enabled = false),
+    val grain:        EffectConfig = EffectConfig(),
+    val glow:         EffectConfig = EffectConfig(),
+    val speed:        Float        = 1.0f   // multiplicador global de velocidad
+)
+
+// ── CompositionLocal para proveer el config al árbol de Compose ───────────────
+val LocalBackgroundConfig = compositionLocalOf { BackgroundConfig() }
+
+// ── Configs por defecto para cada tema ───────────────────────────────────────
+fun defaultBackgroundConfigFor(theme: AppTheme): BackgroundConfig = when (theme) {
+
+    AppTheme.JJK_DARK -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.45f),
+        activeTypes  = listOf(SpecialParticleType.STAR_OUTLINE, SpecialParticleType.SPARKLE),
+        stars        = EffectConfig(enabled = true,  intensity = 0.50f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.30f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.40f)
+    )
+
+    AppTheme.MIDNIGHT_BLUE -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.45f),
+        activeTypes  = listOf(SpecialParticleType.RAINDROP, SpecialParticleType.BUBBLE),
+        stars        = EffectConfig(enabled = true,  intensity = 0.60f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.45f)
+    )
+
+    AppTheme.FOREST -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.40f),
+        activeTypes  = listOf(SpecialParticleType.FIREFLY, SpecialParticleType.LEAF),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.40f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.35f)
+    )
+
+    AppTheme.AMBER -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.35f),
+        activeTypes  = listOf(SpecialParticleType.EMBER, SpecialParticleType.SUN_RAY),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.45f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.35f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.50f)
+    )
+
+    AppTheme.CRIMSON -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.45f),
+        activeTypes  = listOf(SpecialParticleType.SPARKLE, SpecialParticleType.STAR_OUTLINE),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.40f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.45f)
+    )
+
+    AppTheme.SAKURA_NIGHT -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.30f),
+        activeTypes  = listOf(SpecialParticleType.FIREFLY, SpecialParticleType.PETAL),
+        stars        = EffectConfig(enabled = true,  intensity = 0.40f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.55f),
+        grain        = ParcelableEffectConfig(false, 0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.50f)
+    )
+
+    AppTheme.SPRING_GARDEN -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.35f),
+        activeTypes  = listOf(SpecialParticleType.CRYSTAL, SpecialParticleType.PETAL),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.50f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.35f)
+    )
+
+    AppTheme.SUMMER_SUN -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.30f),
+        activeTypes  = listOf(SpecialParticleType.SUN_RAY, SpecialParticleType.BUBBLE),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.45f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.55f)
+    )
+
+    AppTheme.AUTUMN_LEAVES -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.40f),
+        activeTypes  = listOf(SpecialParticleType.LEAF, SpecialParticleType.EMBER),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.50f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.35f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.45f)
+    )
+
+    AppTheme.WINTER_SNOW -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.50f),
+        activeTypes  = listOf(SpecialParticleType.SNOWFLAKE, SpecialParticleType.CRYSTAL),
+        stars        = EffectConfig(enabled = true,  intensity = 0.45f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.40f)
+    )
+}
+
+// Helper temporal por un pequeño error de tipeo previo
+private fun ParcelableEffectConfig(enabled: Boolean, intensity: Float) = EffectConfig(enabled, intensity)

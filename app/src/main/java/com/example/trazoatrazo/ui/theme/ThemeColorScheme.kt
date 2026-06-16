@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 // Modelo de esquema de colores
 @Immutable
 data class ThemeColorScheme(
+    val appTheme: AppTheme,
     // Fondos
     val vacio:        Color,
     val sombra:       Color,
@@ -52,6 +53,7 @@ fun themeColorSchemeFor(theme: AppTheme): ThemeColorScheme = when (theme) {
 // ── 1. JJK OSCURO (morado · default actual) ───────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 val jjkDarkScheme = ThemeColorScheme(
+    appTheme = AppTheme.JJK_DARK,
     vacio        = Color(0xFF0A0A0A),
     sombra       = Color(0xFF141414),
     dominio      = Color(0xFF1E1E2E),
@@ -77,6 +79,7 @@ val jjkDarkScheme = ThemeColorScheme(
 
 // ── 2. AZUL NOCHE ─────────────────────────────────────────────────────────────
 val midnightBlueScheme = ThemeColorScheme(
+    appTheme = AppTheme.MIDNIGHT_BLUE,
     vacio        = Color(0xFF060B14),
     sombra       = Color(0xFF0D1525),
     dominio      = Color(0xFF162040),
@@ -102,6 +105,7 @@ val midnightBlueScheme = ThemeColorScheme(
 
 // ── 3. BOSQUE ─────────────────────────────────────────────────────────────────
 val forestScheme = ThemeColorScheme(
+    appTheme = AppTheme.FOREST,
     vacio        = Color(0xFF050E07),
     sombra       = Color(0xFF0C1A0E),
     dominio      = Color(0xFF142818),
@@ -127,6 +131,7 @@ val forestScheme = ThemeColorScheme(
 
 // ── 4. ÁMBAR ──────────────────────────────────────────────────────────────────
 val amberScheme = ThemeColorScheme(
+    appTheme = AppTheme.AMBER,
     vacio        = Color(0xFF0D0904),
     sombra       = Color(0xFF1C1408),
     dominio      = Color(0xFF2A1E0A),
@@ -152,6 +157,7 @@ val amberScheme = ThemeColorScheme(
 
 // ── 5. CRIMSON ────────────────────────────────────────────────────────────────
 val crimsonScheme = ThemeColorScheme(
+    appTheme = AppTheme.CRIMSON,
     vacio        = Color(0xFF0D0505),
     sombra       = Color(0xFF1A0808),
     dominio      = Color(0xFF2A0E0E),
@@ -177,6 +183,7 @@ val crimsonScheme = ThemeColorScheme(
 
 // ── 6. SAKURA NIGHT ───────────────────────────────────────────────────────────
 val sakuraNightScheme = ThemeColorScheme(
+    appTheme = AppTheme.SAKURA_NIGHT,
     vacio        = Color(0xFF0F050A),
     sombra       = Color(0xFF1A0A14),
     dominio      = Color(0xFF2A1520),
@@ -202,6 +209,7 @@ val sakuraNightScheme = ThemeColorScheme(
 
 // ── 7. PRIMAVERA (Light) ──────────────────────────────────────────────────────
 val springGardenScheme = ThemeColorScheme(
+    appTheme = AppTheme.SPRING_GARDEN,
     vacio        = Color(0xFFF0FDF4),
     sombra       = Color(0xFFDCFCE7),
     dominio      = Color(0xFFBBF7D0),
@@ -227,6 +235,7 @@ val springGardenScheme = ThemeColorScheme(
 
 // ── 8. VERANO (Bright) ────────────────────────────────────────────────────────
 val summerSunScheme = ThemeColorScheme(
+    appTheme = AppTheme.SUMMER_SUN,
     vacio        = Color(0xFFFFFBEB),
     sombra       = Color(0xFFFEF3C7),
     dominio      = Color(0xFFFDE68A),
@@ -252,6 +261,7 @@ val summerSunScheme = ThemeColorScheme(
 
 // ── 9. OTOÑO (Warm) ───────────────────────────────────────────────────────────
 val autumnLeavesScheme = ThemeColorScheme(
+    appTheme = AppTheme.AUTUMN_LEAVES,
     vacio        = Color(0xFF2A1810),
     sombra       = Color(0xFF3D251A),
     dominio      = Color(0xFF5C3626),
@@ -277,6 +287,7 @@ val autumnLeavesScheme = ThemeColorScheme(
 
 // ── 10. INVIERNO (Cold/Light) ─────────────────────────────────────────────────
 val winterSnowScheme = ThemeColorScheme(
+    appTheme = AppTheme.WINTER_SNOW,
     vacio        = Color(0xFFF8FAFC),
     sombra       = Color(0xFFF1F5F9),
     dominio      = Color(0xFFE2E8F0),
