@@ -79,7 +79,7 @@ fun defaultBackgroundConfigFor(theme: AppTheme): BackgroundConfig = when (theme)
         activeTypes  = listOf(SpecialParticleType.FIREFLY, SpecialParticleType.PETAL),
         stars        = EffectConfig(enabled = true,  intensity = 0.40f),
         petals       = EffectConfig(enabled = true,  intensity = 0.55f),
-        grain        = ParcelableEffectConfig(false, 0f),
+        grain        = EffectConfig(enabled = false, intensity = 0f),
         glow         = EffectConfig(enabled = true,  intensity = 0.50f)
     )
 
@@ -118,7 +118,22 @@ fun defaultBackgroundConfigFor(theme: AppTheme): BackgroundConfig = when (theme)
         grain        = EffectConfig(enabled = false, intensity = 0.0f),
         glow         = EffectConfig(enabled = true,  intensity = 0.40f)
     )
-}
 
-// Helper temporal por un pequeño error de tipeo previo
-private fun ParcelableEffectConfig(enabled: Boolean, intensity: Float) = EffectConfig(enabled, intensity)
+    AppTheme.VALENTINE -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.45f),
+        activeTypes  = listOf(SpecialParticleType.HEART_S, SpecialParticleType.PETAL),
+        stars        = EffectConfig(enabled = true,  intensity = 0.35f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.40f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.50f)
+    )
+
+    AppTheme.CYBERPUNK -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.55f),
+        activeTypes  = listOf(SpecialParticleType.SQUARE_DOT, SpecialParticleType.SPARKLE),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.45f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.60f)
+    )
+}

@@ -27,7 +27,9 @@ enum class SpecialParticleType {
     RAINDROP,        // gota de lluvia — Midnight Blue
     FIREFLY,         // círculo con halo luminoso — Forest, Sakura Night
     EMBER,           // chispa pequeña irregular — Amber, Autumn
-    CRYSTAL          // rombo/diamante — Winter, Spring
+    CRYSTAL,         // rombo/diamante — Winter, Spring
+    HEART_S,         // corazón pequeño — Valentín
+    SQUARE_DOT       // cuadrado / pixel — Cyberpunk
 }
 
 fun specialParticleTypeFor(theme: AppTheme): SpecialParticleType = when (theme) {
@@ -41,6 +43,8 @@ fun specialParticleTypeFor(theme: AppTheme): SpecialParticleType = when (theme) 
     AppTheme.JJK_DARK      -> SpecialParticleType.STAR_OUTLINE
     AppTheme.CRIMSON       -> SpecialParticleType.SPARKLE
     AppTheme.MIDNIGHT_BLUE -> SpecialParticleType.RAINDROP
+    AppTheme.VALENTINE     -> SpecialParticleType.HEART_S
+    AppTheme.CYBERPUNK     -> SpecialParticleType.SQUARE_DOT
 }
 
 // ══════════════════════════════════════════════════════════════════════════════

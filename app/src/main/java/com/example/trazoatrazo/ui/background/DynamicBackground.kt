@@ -17,6 +17,8 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import com.example.trazoatrazo.ui.theme.AppTheme
@@ -457,6 +459,37 @@ fun DynamicBackground(
                                             drawPath(
                                                 reflectPath,
                                                 color.copy(alpha = alpha * 0.20f)
+                                            )
+                                        }
+                                    }
+
+                                    SpecialParticleType.HEART_S -> {
+                                        val rot = particleRotation(p, floatT) * 0.4f
+                                        withTransform({ rotate(rot, center) }) {
+                                            val h = p.radius * 1.5f
+                                            val path = Path().apply {
+                                                moveTo(x, y + h * 0.4f)
+                                                cubicTo(x - h, y - h * 0.6f, x - h * 0.5f, y - h * 1.2f, x, y - h * 0.4f)
+                                                cubicTo(x + h * 0.5f, y - h * 1.2f, x + h, y - h * 0.6f, x, y + h * 0.4f)
+                                            }
+                                            drawPath(path, color)
+                                        }
+                                    }
+
+                                    SpecialParticleType.SQUARE_DOT -> {
+                                        val rot = particleRotation(p, floatT)
+                                        withTransform({ rotate(rot, center) }) {
+                                            drawRect(
+                                                color = color,
+                                                topLeft = Offset(x - p.radius * 0.8f, y - p.radius * 0.8f),
+                                                size = androidx.compose.ui.geometry.Size(p.radius * 1.6f, p.radius * 1.6f)
+                                            )
+                                            // Borde neón
+                                            drawRect(
+                                                color = color.copy(alpha = alpha * 0.4f),
+                                                topLeft = Offset(x - p.radius * 1.1f, y - p.radius * 1.1f),
+                                                size = androidx.compose.ui.geometry.Size(p.radius * 2.2f, p.radius * 2.2f),
+                                                style = Stroke(width = 1f)
                                             )
                                         }
                                     }

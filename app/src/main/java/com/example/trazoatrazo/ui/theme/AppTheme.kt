@@ -54,5 +54,15 @@ enum class AppTheme(
         displayName = "Invierno",
         emoji       = "❄️",
         description = "Frío · Nieve y\npureza cristalina"
+    ),
+    VALENTINE(
+        displayName = "San Valentín",
+        emoji       = "💝",
+        description = "Rosa · Dulzura\ny amor suave"
+    ),
+    CYBERPUNK(
+        displayName = "Cyberpunk",
+        emoji       = "🕹️",
+        description = "Neón · Futuro\ndigital y vibrante"
     )
 }

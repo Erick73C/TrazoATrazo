@@ -458,6 +458,8 @@ private val SpecialParticleType.emoji: String get() = when(this) {
     SpecialParticleType.FIREFLY -> "🏮"
     SpecialParticleType.EMBER -> "🔥"
     SpecialParticleType.CRYSTAL -> "💎"
+    SpecialParticleType.HEART_S -> "❤️"
+    SpecialParticleType.SQUARE_DOT -> "🟦"
 }
 
 private val SpecialParticleType.displayName: String get() = when(this) {
@@ -473,6 +475,8 @@ private val SpecialParticleType.displayName: String get() = when(this) {
     SpecialParticleType.FIREFLY -> "Luz"
     SpecialParticleType.EMBER -> "Chispas"
     SpecialParticleType.CRYSTAL -> "Cristal"
+    SpecialParticleType.HEART_S -> "Corazones"
+    SpecialParticleType.SQUARE_DOT -> "Pixeles"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -101,6 +101,15 @@ fun defaultGlowsFor(theme: AppTheme): List<GlowData> = when (theme) {
     AppTheme.WINTER_SNOW -> listOf(
         GlowData(0.50f, 0.25f, 0.60f, 0.0f, 0.4f)
     )
+    AppTheme.VALENTINE -> listOf(
+        GlowData(0.50f, 0.12f, 0.62f, 0.0f, 0.5f),
+        GlowData(0.88f, 0.80f, 0.40f, 1.4f, 0.6f)
+    )
+    AppTheme.CYBERPUNK -> listOf(
+        GlowData(0.10f, 0.08f, 0.58f, 0.0f, 0.8f),
+        GlowData(0.90f, 0.88f, 0.50f, 1.0f, 0.9f)
+    )
+
 }
 
 // ── Color del glow adaptivo al fondo ─────────────────────────────────────────
@@ -131,6 +140,8 @@ fun glowColor(
         AppTheme.SUMMER_SUN    -> Color(0xFFF59E0B).copy(alpha = alpha)
         AppTheme.AUTUMN_LEAVES -> Color(0xFFC2410C).copy(alpha = alpha)
         AppTheme.WINTER_SNOW   -> Color(0xFF3B82F6).copy(alpha = alpha)
+        AppTheme.VALENTINE     -> Color(0xFFE91E63).copy(alpha = alpha)  // Rosa intenso
+        AppTheme.CYBERPUNK     -> Color(0xFF00E5FF).copy(alpha = alpha)  // Cian neón
     }
 }
 
@@ -158,6 +169,8 @@ fun particleColor(
         AppTheme.SUMMER_SUN    -> Color(0xFF78350F)   // oscuro para fondo amarillo
         AppTheme.AUTUMN_LEAVES -> Color(0xFF7C2D12)   // oscuro para fondo naranja
         AppTheme.WINTER_SNOW   -> Color(0xFF1E3A5F)   // oscuro para fondo azul claro
+        AppTheme.VALENTINE     -> Color(0xFFFFB7C5)  // Rosa pálido
+        AppTheme.CYBERPUNK     -> Color(0xFF00E5FF)  // Cian neón
     }
 
     // Si el fondo es claro y el color base también es claro, lo oscurecemos
@@ -202,6 +215,9 @@ fun starColor(
             AppTheme.SPRING_GARDEN -> Color(0xFF4ADE80)
             AppTheme.SUMMER_SUN    -> Color(0xFFFBBF24)
             AppTheme.AUTUMN_LEAVES -> Color(0xFFFFED4A)
+            AppTheme.VALENTINE     -> Color(0xFF880E4F)
+            AppTheme.CYBERPUNK     -> Color(0xFF006064)
+//            else                   -> Color(0xFF1A1A2E)
         }
     }
 }
@@ -216,6 +232,8 @@ fun petalBaseColor(theme: AppTheme): Color = when (theme) {
     AppTheme.SAKURA_NIGHT  -> Color(0xFFFFB7D5)
     AppTheme.SPRING_GARDEN -> Color(0xFF6EE7B7)
     AppTheme.SUMMER_SUN    -> Color(0xFFFDE68A)
-    AppTheme.AUTUMN_LEAVES -> Color(0xFFFB923C)
+    AppTheme.AUTUMN_LEAVES -> Color(0xFFFA6F02)
     AppTheme.WINTER_SNOW   -> Color(0xFFBAE6FD)
+    AppTheme.VALENTINE     -> Color(0xFFFF80AB)
+    AppTheme.CYBERPUNK     -> Color(0xFF18FFFF)
 }

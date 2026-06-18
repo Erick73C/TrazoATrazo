@@ -47,6 +47,8 @@ fun themeColorSchemeFor(theme: AppTheme): ThemeColorScheme = when (theme) {
     AppTheme.SUMMER_SUN    -> summerSunScheme
     AppTheme.AUTUMN_LEAVES -> autumnLeavesScheme
     AppTheme.WINTER_SNOW   -> winterSnowScheme
+    AppTheme.VALENTINE     -> valentineScheme
+    AppTheme.CYBERPUNK     -> cyberpunkScheme
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -308,5 +310,57 @@ val winterSnowScheme = ThemeColorScheme(
     springBg       = Color(0xFFF0FDF4),
     springAccent   = Color(0xFF22C55E),
     winterBg       = Color(0xFFF8FAFC),
+    winterAccent   = Color(0xFF3B82F6)
+)
+
+// ── 11. VALENTINE (Pink/Soft) ──────────────────────────────────────────────────
+val valentineScheme = ThemeColorScheme(
+    appTheme = AppTheme.VALENTINE,
+    vacio        = Color(0xFFFFF5F7),
+    sombra       = Color(0xFFFFE4E9),
+    dominio      = Color(0xFFFFD1DC),
+    maldicion    = Color(0xFFE91E63),
+    tecnica      = Color(0xFFFF4081),
+    kiEspiritual = Color(0xFFFF80AB),
+    expansion    = Color(0xFFFFE4E9),
+    eco          = Color(0xFFAD1457),
+    sukuna       = Color(0xFFC2185B),
+    reversa      = Color(0xFF880E4F),
+    reversaSuave = Color(0xFFC2185B),
+    flowersBg      = Color(0xFFFFF0F5),
+    flowersAccent  = Color(0xFFFF4081),
+    cartoonsBg     = Color(0xFFFFF5F7),
+    cartoonsAccent = Color(0xFFF06292),
+    animalsBg      = Color(0xFFFCE4EC),
+    animalsAccent  = Color(0xFFEC407A),
+    springBg       = Color(0xFFFDF2F4),
+    springAccent   = Color(0xFFF48FB1),
+    winterBg       = Color(0xFFF0F9FF),
+    winterAccent   = Color(0xFF0EA5E9)
+)
+
+// ── 12. CYBERPUNK (Neon/Dark) ──────────────────────────────────────────────────
+val cyberpunkScheme = ThemeColorScheme(
+    appTheme = AppTheme.CYBERPUNK,
+    vacio        = Color(0xFF050505),
+    sombra       = Color(0xFF0A0A15),
+    dominio      = Color(0xFF0D0D25),
+    maldicion    = Color(0xFF00FFCC),
+    tecnica      = Color(0xFF00E5FF),
+    kiEspiritual = Color(0xFFBCFF00),
+    expansion    = Color(0xFF1A1A3A),
+    eco          = Color(0xFF0091EA),
+    sukuna       = Color(0xFFFF0055),
+    reversa      = Color(0xFFE0E0E0),
+    reversaSuave = Color(0xFF00FFCC),
+    flowersBg      = Color(0xFF08081A),
+    flowersAccent  = Color(0xFF00FFCC),
+    cartoonsBg     = Color(0xFF050505),
+    cartoonsAccent = Color(0xFFFF0055),
+    animalsBg      = Color(0xFF0A0A20),
+    animalsAccent  = Color(0xFF00E5FF),
+    springBg       = Color(0xFF05150A),
+    springAccent   = Color(0xFF00FF41),
+    winterBg       = Color(0xFF050B14),
     winterAccent   = Color(0xFF3B82F6)
 )
