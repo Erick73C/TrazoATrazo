@@ -22,9 +22,9 @@ import com.example.trazoatrazo.drawings.animals.TurtleScreen
 import com.example.trazoatrazo.drawings.flowers.FlowerScreen
 import com.example.trazoatrazo.drawings.flowers.GirasolScreen
 import com.example.trazoatrazo.drawings.flowers.ImprovedSunflowerScreen
-import com.example.trazoatrazo.drawings.cartoons.BatmanScreen
-import com.example.trazoatrazo.drawings.cartoons.HarleyScreen
-import com.example.trazoatrazo.drawings.cartoons.TrofeoScreen
+import com.example.trazoatrazo.drawings.shapes.BatmanScreen
+import com.example.trazoatrazo.drawings.shapes.HarleyScreen
+import com.example.trazoatrazo.drawings.shapes.TrofeoScreen
 import com.example.trazoatrazo.drawings.shapes.HeartScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen

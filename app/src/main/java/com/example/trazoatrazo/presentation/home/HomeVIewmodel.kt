@@ -130,7 +130,7 @@ class HomeViewModel : ViewModel() {
         "🌸 Detrás de cada dibujo había una razón para sonreír",
         "🌻 El girasol fue el primero, pero no el último",
         "💛 A veces el código también puede decir te aprecio",
-        "✨ Algunas líneas de código fueron escritas pensando en ti",
+//        "✨ Algunas líneas de código fueron escritas pensando en ti",
         "🌷 Espero que estos pequeños detalles te acompañen siempre",
     )
 

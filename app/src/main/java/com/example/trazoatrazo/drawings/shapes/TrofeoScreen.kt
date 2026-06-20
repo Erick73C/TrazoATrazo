@@ -1,4 +1,4 @@
-package com.example.trazoatrazo.drawings.cartoons
+package com.example.trazoatrazo.drawings.shapes
 
 import androidx.compose.runtime.Composable
 import com.example.trazoatrazo.ui.components.BackMenuButton

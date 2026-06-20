@@ -45,11 +45,11 @@ fun SettingsScreen(
 ) {
     val selectedTheme    by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val backgroundConfig by viewModel.backgroundConfig.collectAsStateWithLifecycle()
-    val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
+    val selectedFont     by viewModel.selectedFont.collectAsStateWithLifecycle()
 
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
-        screenAnim.animateTo(1f, tween(550, easing = EaseOutCubic))
+        screenAnim.animateTo(1f, tween(600, easing = EaseOutCubic))
     }
 
     Box(
@@ -57,130 +57,72 @@ fun SettingsScreen(
             .fillMaxSize()
             .background(AppColors.Vacio)
     ) {
-        // ── Fondo decorativo ──────────────────────────────────────────────────
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawCircle(
-                brush = Brush.radialGradient(
-                    colors = listOf(AppColors.Maldicion.copy(alpha = 0.14f), Color.Transparent),
-                    center = Offset(size.width * 0.15f, size.height * 0.08f),
-                    radius = size.width * 0.55f
-                ),
-                radius = size.width * 0.55f,
-                center = Offset(size.width * 0.15f, size.height * 0.08f)
-            )
-        }
+        Column(modifier = Modifier.fillMaxSize()) {
+            SettingsHeader(onBack = onBack)
 
-        LazyColumn(
-            modifier       = Modifier
-                .fillMaxSize()
-                .alpha(screenAnim.value)
-                .offset(y = ((1f - screenAnim.value) * 30).dp),
-            contentPadding = PaddingValues(bottom = 60.dp)
-        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .alpha(screenAnim.value)
+                    .offset(y = ((1f - screenAnim.value) * 15).dp),
+                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
+                verticalArrangement = Arrangement.spacedBy(32.dp)
+            ) {
+                // ── SECCIÓN 1: TEMAS ──────────────────────────────────────────
+                item {
+                    MinimalSectionHeader(title = "Temas", emoji = "🎨")
+                    Spacer(Modifier.height(16.dp))
+                    ThemeGrid(selectedTheme = selectedTheme, onThemeSelect = viewModel::selectTheme)
+                }
 
-            // ── Header ────────────────────────────────────────────────────────
-            item {
-                SettingsHeader(onBack = onBack)
-                HorizontalDivider(
-                    color     = AppColors.Maldicion.copy(alpha = 0.3f),
-                    thickness = 1.dp
-                )
-                Spacer(Modifier.height(24.dp))
-            }
+                // ── SECCIÓN 2: TIPOGRAFÍA ─────────────────────────────────────
+                item {
+                    MinimalSectionHeader(title = "Tipografía", emoji = "🔤")
+                    Spacer(Modifier.height(16.dp))
+                    FontGrid(selectedFont = selectedFont, onFontSelect = viewModel::selectFont)
+                }
 
-            // ── Sección: Tema ─────────────────────────────────────────────────
-            item {
-                SectionTitle(
-                    emoji    = "🎨",
-                    title    = "Tema de la app",
-                    subtitle = "Elige el estilo visual · Se guarda automáticamente"
-                )
-                Spacer(Modifier.height(16.dp))
-            }
+                // ── SECCIÓN 3: PARTÍCULAS Y EFECTOS ───────────────────────────
+                item {
+                    MinimalSectionHeader(title = "Partículas y Efectos", emoji = "✨")
+                    Spacer(Modifier.height(16.dp))
+                    BackgroundEffectsSection(
+                        config = backgroundConfig,
+                        viewModel = viewModel
+                    )
+                }
 
-            item {
-                ThemeGrid(
-                    selectedTheme = selectedTheme,
-                    onThemeSelect = viewModel::selectTheme
-                )
-            }
-
-            // ── Sección: Fondo dinámico ───────────────────────────────────────
-            item {
-                Spacer(Modifier.height(36.dp))
-                HorizontalDivider(
-                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
-                    thickness = 1.dp,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
-                )
-                Spacer(Modifier.height(28.dp))
-                SectionTitle(
-                    emoji    = "✨",
-                    title    = "Fondo dinámico",
-                    subtitle = "Efectos visuales de fondo · Tenues y cinematográficos"
-                )
-                Spacer(Modifier.height(20.dp))
-            }
-
-            // Efectos individuales
-            item {
-                BackgroundEffectsSection(
-                    config    = backgroundConfig,
-                    viewModel = viewModel
-                )
-            }
-
-            // Reset al default del tema
-            item {
-                Spacer(Modifier.height(16.dp))
-                ResetBackgroundButton(
-                    onClick = viewModel::resetBackgroundToThemeDefault
-                )
-            }
-
-            // ── Sección: Próximamente ─────────────────────────────────────────
-            item {
-                Spacer(Modifier.height(36.dp))
-                HorizontalDivider(
-                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
-                    thickness = 1.dp,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
-                )
-                Spacer(Modifier.height(28.dp))
-                SectionTitle(
-                    emoji    = "⚙️",
-                    title    = "Más ajustes",
-                    subtitle = "Próximamente más opciones aquí"
-                )
-                Spacer(Modifier.height(16.dp))
-                ComingSoonCard()
-            }
-            // ── Sección: Tipografía ───────────────────────────────────────────────────
-            item {
-                Spacer(Modifier.height(36.dp))
-                HorizontalDivider(
-                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
-                    thickness = 1.dp,
-                    modifier  = Modifier.padding(horizontal = 20.dp)
-                )
-                Spacer(Modifier.height(28.dp))
-                SectionTitle(
-                    emoji    = "🔤",
-                    title    = "Tipografía",
-                    subtitle = "Elige el estilo de texto de la app"
-                )
-                Spacer(Modifier.height(16.dp))
-            }
-
-            item {
-                FontGrid(
-                    selectedFont = selectedFont,
-                    onFontSelect = viewModel::selectFont
-                )
+                // ── SECCIÓN 4: SISTEMA ────────────────────────────────────────
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    ResetBackgroundButton(onClick = viewModel::resetBackgroundToThemeDefault)
+                }
             }
         }
     }
 }
+
+/**
+ * Cabecera de sección minimalista sin cajas pesadas.
+ */
+@Composable
+private fun MinimalSectionHeader(title: String, emoji: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.padding(start = 4.dp)
+    ) {
+        Text(emoji, fontSize = 18.sp)
+        Text(
+            text = title,
+            fontSize = 19.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.Reversa,
+            letterSpacing = (-0.5).sp
+        )
+    }
+}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── BACKGROUND EFFECTS SECTION ────────────────────────────────────────────────
@@ -191,9 +133,7 @@ private fun BackgroundEffectsSection(
     viewModel: SettingsViewModel
 ) {
     Column(
-        modifier            = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+        modifier            = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         // CATÁLOGO DE PARTÍCULAS (Nuevo Diseño)
@@ -206,49 +146,24 @@ private fun BackgroundEffectsSection(
             onTypeClick = viewModel::toggleParticleType
         )
 
-        // Estrellas
-        EffectToggleCard(
-            emoji     = "⭐",
-            title     = "Estrellas",
-            subtitle  = "Destellos tenues con parpadeo suave",
-            enabled   = config.stars.enabled,
-            intensity = config.stars.intensity,
-            onToggle  = viewModel::setStarsEnabled,
-            onSlider  = viewModel::setStarsIntensity
+        val effects = listOf(
+            EffectData("⭐", "Estrellas", config.stars.enabled, config.stars.intensity, viewModel::setStarsEnabled, viewModel::setStarsIntensity),
+            EffectData("🌸", "Pétalos", config.petals.enabled, config.petals.intensity, viewModel::setPetalsEnabled, viewModel::setPetalsIntensity),
+            EffectData("🌟", "Brillo", config.glow.enabled, config.glow.intensity, viewModel::setGlowEnabled, viewModel::setGlowIntensity),
+            EffectData("🎞️", "Grain", config.grain.enabled, config.grain.intensity, viewModel::setGrainEnabled, viewModel::setGrainIntensity)
         )
 
-        // Pétalos
-        EffectToggleCard(
-            emoji     = "🌸",
-            title     = "Pétalos",
-            subtitle  = "Pétalos cayendo suavemente",
-            enabled   = config.petals.enabled,
-            intensity = config.petals.intensity,
-            onToggle  = viewModel::setPetalsEnabled,
-            onSlider  = viewModel::setPetalsIntensity
-        )
-
-        // Grain
-        EffectToggleCard(
-            emoji     = "🎞️",
-            title     = "Grain cinematográfico",
-            subtitle  = "Ruido de película analógica muy tenue",
-            enabled   = config.grain.enabled,
-            intensity = config.grain.intensity,
-            onToggle  = viewModel::setGrainEnabled,
-            onSlider  = viewModel::setGrainIntensity
-        )
-
-        // Brillo
-        EffectToggleCard(
-            emoji     = "🌟",
-            title     = "Brillo sutil",
-            subtitle  = "Halo radial pulsante en las esquinas",
-            enabled   = config.glow.enabled,
-            intensity = config.glow.intensity,
-            onToggle  = viewModel::setGlowEnabled,
-            onSlider  = viewModel::setGlowIntensity
-        )
+        effects.forEach { effect ->
+            EffectToggleCard(
+                emoji = effect.emoji,
+                title = effect.title,
+                subtitle = "", 
+                enabled = effect.enabled,
+                intensity = effect.intensity,
+                onToggle = effect.onToggle,
+                onSlider = effect.onSlider
+            )
+        }
 
         // Velocidad global
         SpeedSliderCard(
@@ -257,6 +172,16 @@ private fun BackgroundEffectsSection(
         )
     }
 }
+
+private data class EffectData(
+    val emoji: String,
+    val title: String,
+    val enabled: Boolean,
+    val intensity: Float,
+    val onToggle: (Boolean) -> Unit,
+    val onSlider: (Float) -> Unit
+)
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── PARTICLE CATALOG CARD ─────────────────────────────────────────────────────
@@ -316,7 +241,7 @@ private fun ParticleCatalogCard(
 
             // Grid de Catálogo
             Text("Selecciona una o varias formas:", fontSize = 10.sp, color = AppColors.ReversaSuave, fontWeight = FontWeight.SemiBold)
-            
+
             // Usamos un simple Row de LazyRow para que quepa en el LazyColumn madre
             // O una cuadrícula manual si son pocos. Hagamos un LazyRow de Grid para scroll horizontal
             FlowRow(
@@ -632,9 +557,7 @@ private fun BgToggle(
 @Composable
 private fun ResetBackgroundButton(onClick: () -> Unit) {
     Box(
-        modifier          = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp),
+        modifier          = Modifier.fillMaxWidth(),
         contentAlignment  = Alignment.Center
     ) {
         Box(
@@ -707,36 +630,7 @@ private fun SettingsHeader(onBack: () -> Unit) {
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── SECTION TITLE ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-@Composable
-private fun SectionTitle(emoji: String, title: String, subtitle: String) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-    ) {
-        Row(
-            verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(emoji, fontSize = 18.sp)
-            Text(
-                text       = title,
-                fontSize   = 17.sp,
-                fontWeight = FontWeight.Bold,
-                color      = AppColors.Reversa
-            )
-        }
-        Text(
-            text     = subtitle,
-            fontSize = 11.sp,
-            color    = AppColors.Eco,
-            modifier = Modifier.padding(top = 3.dp, start = 26.dp)
-        )
-    }
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ── THEME GRID ────────────────────────────────────────────────────────────────
@@ -750,9 +644,7 @@ private fun ThemeGrid(
     val pairs  = themes.chunked(2)   // Filas de 2 columnas
 
     Column(
-        modifier            = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier            = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         pairs.forEach { pair ->
@@ -913,7 +805,6 @@ private fun ComingSoonCard() {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 20.dp)
             .clip(RoundedCornerShape(16.dp))
             .background(AppColors.Sombra)
             .padding(20.dp)
@@ -954,9 +845,7 @@ private fun FontGrid(
     val pairs = fonts.chunked(2)
 
     Column(
-        modifier            = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+        modifier            = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         pairs.forEach { pair ->
