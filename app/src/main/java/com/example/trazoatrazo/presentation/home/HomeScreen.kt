@@ -48,6 +48,8 @@ import com.example.trazoatrazo.ui.background.DynamicBackground
 import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
 import com.example.trazoatrazo.ui.theme.LocalAppColors
+import com.example.trazoatrazo.ui.theme.LocalAppFont
+import com.example.trazoatrazo.ui.theme.fontFamilyFor
 
 @Immutable
 private data class TabInfo(
@@ -331,6 +333,7 @@ private fun WelcomeSection(
 
                 Text(
                     text       = message,
+                    fontFamily = fontFamilyFor(LocalAppFont.current),
                     fontSize   = 13.5.sp,
                     fontWeight = FontWeight.Medium,
                     color      = messageColor,

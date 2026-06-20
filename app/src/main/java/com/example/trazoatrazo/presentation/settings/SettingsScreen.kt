@@ -45,6 +45,7 @@ fun SettingsScreen(
 ) {
     val selectedTheme    by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val backgroundConfig by viewModel.backgroundConfig.collectAsStateWithLifecycle()
+    val selectedFont by viewModel.selectedFont.collectAsStateWithLifecycle()
 
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -153,6 +154,29 @@ fun SettingsScreen(
                 )
                 Spacer(Modifier.height(16.dp))
                 ComingSoonCard()
+            }
+            // ── Sección: Tipografía ───────────────────────────────────────────────────
+            item {
+                Spacer(Modifier.height(36.dp))
+                HorizontalDivider(
+                    color     = AppColors.Maldicion.copy(alpha = 0.2f),
+                    thickness = 1.dp,
+                    modifier  = Modifier.padding(horizontal = 20.dp)
+                )
+                Spacer(Modifier.height(28.dp))
+                SectionTitle(
+                    emoji    = "🔤",
+                    title    = "Tipografía",
+                    subtitle = "Elige el estilo de texto de la app"
+                )
+                Spacer(Modifier.height(16.dp))
+            }
+
+            item {
+                FontGrid(
+                    selectedFont = selectedFont,
+                    onFontSelect = viewModel::selectFont
+                )
             }
         }
     }
@@ -460,6 +484,7 @@ private val SpecialParticleType.emoji: String get() = when(this) {
     SpecialParticleType.CRYSTAL -> "💎"
     SpecialParticleType.HEART_S -> "❤️"
     SpecialParticleType.SQUARE_DOT -> "🟦"
+    SpecialParticleType.SHINE_STARDUST -> "✨"
 }
 
 private val SpecialParticleType.displayName: String get() = when(this) {
@@ -477,6 +502,7 @@ private val SpecialParticleType.displayName: String get() = when(this) {
     SpecialParticleType.CRYSTAL -> "Cristal"
     SpecialParticleType.HEART_S -> "Corazones"
     SpecialParticleType.SQUARE_DOT -> "Pixeles"
+    SpecialParticleType.SHINE_STARDUST -> "Polvo de Oro"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -912,6 +938,130 @@ private fun ComingSoonCard() {
                 textAlign = TextAlign.Center,
                 lineHeight = 18.sp
             )
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── FONT GRID ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun FontGrid(
+    selectedFont: AppFont,
+    onFontSelect: (AppFont) -> Unit
+) {
+    val fonts = AppFont.values().toList()
+    val pairs = fonts.chunked(2)
+
+    Column(
+        modifier            = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        pairs.forEach { pair ->
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                pair.forEach { font ->
+                    FontCard(
+                        modifier   = Modifier.weight(1f),
+                        font       = font,
+                        isSelected = font == selectedFont,
+                        onClick    = { onFontSelect(font) }
+                    )
+                }
+                if (pair.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── FONT CARD ─────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun FontCard(
+    modifier:   Modifier,
+    font:       AppFont,
+    isSelected: Boolean,
+    onClick:    () -> Unit
+) {
+    val cardScale by animateFloatAsState(
+        targetValue   = if (isSelected) 1.03f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label         = "fontCardScale"
+    )
+
+    Box(
+        modifier = modifier
+            .scale(cardScale)
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Sombra)
+            .then(
+                if (isSelected)
+                    Modifier.border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(AppColors.Tecnica, AppColors.KiEspiritual)
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                else
+                    Modifier.border(
+                        width = 1.dp,
+                        color = AppColors.Eco.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication        = null,
+                onClick           = onClick
+            )
+            .padding(14.dp)
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            Text(font.emoji, fontSize = 22.sp)
+            Spacer(Modifier.height(8.dp))
+
+            // Preview real con la tipografía de la opción
+            Text(
+                text       = font.displayName,
+                fontFamily = fontFamilyFor(font),
+                fontSize   = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color      = AppColors.Reversa
+            )
+
+            Spacer(Modifier.height(4.dp))
+
+            Text(
+                text       = font.description,
+                fontSize   = 10.sp,
+                color      = AppColors.Eco,
+                lineHeight = 13.sp
+            )
+        }
+
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(24.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.linearGradient(
+                            colors = listOf(AppColors.Maldicion, AppColors.Tecnica)
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✓", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }

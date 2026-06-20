@@ -64,5 +64,10 @@ enum class AppTheme(
         displayName = "Cyberpunk",
         emoji       = "🕹️",
         description = "Neón · Futuro\ndigital y vibrante"
+    ),
+    GOLDEN_NIGHT(
+        displayName = "Noche de Oro",
+        emoji       = "✨",
+        description = "Especial · Elegancia\nen negro y dorado"
     )
 }

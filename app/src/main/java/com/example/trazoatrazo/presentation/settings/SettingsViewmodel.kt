@@ -16,6 +16,8 @@ import com.example.trazoatrazo.ui.background.EffectConfig
 import com.example.trazoatrazo.ui.background.SpecialParticleType
 import com.example.trazoatrazo.ui.background.defaultBackgroundConfigFor
 import kotlinx.coroutines.flow.flatMapLatest
+import com.example.trazoatrazo.data.FontPreferences
+import com.example.trazoatrazo.ui.theme.AppFont
 
 
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
@@ -33,6 +35,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     // ── Fondo dinámico ────────────────────────────────────────────────────────
     private val _backgroundConfig = MutableStateFlow(BackgroundConfig())
     val backgroundConfig: StateFlow<BackgroundConfig> = _backgroundConfig.asStateFlow()
+    //── Tipografía dinamica ────────────────────────────────────────────────────────
+    private val fontPrefs = FontPreferences(application)
+    private val _selectedFont = MutableStateFlow(AppFont.QUICKSAND)
+    val selectedFont: StateFlow<AppFont> = _selectedFont.asStateFlow()
 
     // ── Init ──────────────────────────────────────────────────────────────────
     init {
@@ -54,6 +60,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
                 .collect { config ->
                     _backgroundConfig.value = config
                 }
+        }
+
+        viewModelScope.launch {
+            fontPrefs.getFontFlow().collect { savedFont ->
+                _selectedFont.value = savedFont
+            }
         }
     }
 
@@ -149,5 +161,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun resetBackgroundToThemeDefault() {
         viewModelScope.launch { backgroundPrefs.resetToThemeDefault() }
+    }
+
+    fun selectFont(font: AppFont) {
+        viewModelScope.launch {
+            _selectedFont.value = font
+            fontPrefs.saveFont(font)
+        }
     }
 }

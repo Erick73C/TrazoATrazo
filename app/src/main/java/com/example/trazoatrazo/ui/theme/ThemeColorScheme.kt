@@ -49,6 +49,7 @@ fun themeColorSchemeFor(theme: AppTheme): ThemeColorScheme = when (theme) {
     AppTheme.WINTER_SNOW   -> winterSnowScheme
     AppTheme.VALENTINE     -> valentineScheme
     AppTheme.CYBERPUNK     -> cyberpunkScheme
+    AppTheme.GOLDEN_NIGHT  -> goldenNightScheme
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -310,6 +311,32 @@ val winterSnowScheme = ThemeColorScheme(
     springBg       = Color(0xFFF0FDF4),
     springAccent   = Color(0xFF22C55E),
     winterBg       = Color(0xFFF8FAFC),
+    winterAccent   = Color(0xFF3B82F6)
+)
+
+// ── 13. NOCHE DE ORO (Black/Gold) ──────────────────────────────────────────────
+val goldenNightScheme = ThemeColorScheme(
+    appTheme = AppTheme.GOLDEN_NIGHT,
+    vacio        = Color(0xFF050505),
+    sombra       = Color(0xFF0A0A0A),
+    dominio      = Color(0xFF141414),
+    maldicion    = Color(0xFFD4A017),
+    tecnica      = Color(0xFFFFD700),
+    kiEspiritual = Color(0xFFF5E6C8),
+    expansion    = Color(0xFF1A1A1A),
+    eco          = Color(0xFF9A7A30),
+    sukuna       = Color(0xFFB91C1C),
+    reversa      = Color(0xFFF5E6C8),
+    reversaSuave = Color(0xFFD4A017),
+    flowersBg      = Color(0xFF0D0D0D),
+    flowersAccent  = Color(0xFFD4A017),
+    cartoonsBg     = Color(0xFF0A0A0A),
+    cartoonsAccent = Color(0xFFFFD700),
+    animalsBg      = Color(0xFF050505),
+    animalsAccent  = Color(0xFFF5E6C8),
+    springBg       = Color(0xFF0D0D0D),
+    springAccent   = Color(0xFFD4A017),
+    winterBg       = Color(0xFF0A101A),
     winterAccent   = Color(0xFF3B82F6)
 )
 

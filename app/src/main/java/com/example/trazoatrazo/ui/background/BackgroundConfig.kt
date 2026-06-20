@@ -136,4 +136,13 @@ fun defaultBackgroundConfigFor(theme: AppTheme): BackgroundConfig = when (theme)
         grain        = EffectConfig(enabled = true,  intensity = 0.45f),
         glow         = EffectConfig(enabled = true,  intensity = 0.60f)
     )
+
+    AppTheme.GOLDEN_NIGHT -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.50f),
+        activeTypes  = listOf(SpecialParticleType.SHINE_STARDUST, SpecialParticleType.SPARKLE),
+        stars        = EffectConfig(enabled = true,  intensity = 0.40f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.25f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.55f)
+    )
 }

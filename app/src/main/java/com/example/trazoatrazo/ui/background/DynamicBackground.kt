@@ -494,6 +494,25 @@ fun DynamicBackground(
                                         }
                                     }
 
+                                    SpecialParticleType.SHINE_STARDUST -> {
+                                        val rot = particleRotation(p, floatT)
+                                        // Círculo central
+                                        drawCircle(color, p.radius * 0.5f, center)
+                                        // Destellos cruzados
+                                        withTransform({ rotate(rot, center) }) {
+                                            for (i in 0 until 2) {
+                                                withTransform({ rotate(i * 90f, center) }) {
+                                                    drawLine(
+                                                        color       = color.copy(alpha = alpha * 0.8f),
+                                                        start       = Offset(x, y - p.radius * 1.5f),
+                                                        end         = Offset(x, y + p.radius * 1.5f),
+                                                        strokeWidth = p.radius * 0.25f
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+
                                     SpecialParticleType.NONE -> {
                                         drawCircle(color = color, radius = p.radius, center = center)
                                     }

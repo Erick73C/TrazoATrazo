@@ -13,9 +13,6 @@ import kotlin.random.Random
 // ══════════════════════════════════════════════════════════════════════════════
 // GRAIN — Ruido cinematográfico estático muy tenue
 // ══════════════════════════════════════════════════════════════════════════════
-// ══════════════════════════════════════════════════════════════════════════════
-// GRAIN
-// ══════════════════════════════════════════════════════════════════════════════
 
 @Immutable
 data class GrainPoint(
@@ -109,7 +106,10 @@ fun defaultGlowsFor(theme: AppTheme): List<GlowData> = when (theme) {
         GlowData(0.10f, 0.08f, 0.58f, 0.0f, 0.8f),
         GlowData(0.90f, 0.88f, 0.50f, 1.0f, 0.9f)
     )
-
+    AppTheme.GOLDEN_NIGHT -> listOf(
+        GlowData(0.50f, 0.10f, 0.65f, 0.0f, 0.5f),
+        GlowData(0.20f, 0.85f, 0.45f, 1.2f, 0.4f)
+    )
 }
 
 // ── Color del glow adaptivo al fondo ─────────────────────────────────────────
@@ -140,8 +140,9 @@ fun glowColor(
         AppTheme.SUMMER_SUN    -> Color(0xFFF59E0B).copy(alpha = alpha)
         AppTheme.AUTUMN_LEAVES -> Color(0xFFC2410C).copy(alpha = alpha)
         AppTheme.WINTER_SNOW   -> Color(0xFF3B82F6).copy(alpha = alpha)
-        AppTheme.VALENTINE     -> Color(0xFFE91E63).copy(alpha = alpha)  // Rosa intenso
-        AppTheme.CYBERPUNK     -> Color(0xFF00E5FF).copy(alpha = alpha)  // Cian neón
+        AppTheme.VALENTINE     -> Color(0xFFE91E63).copy(alpha = alpha)
+        AppTheme.CYBERPUNK     -> Color(0xFF00FFCC).copy(alpha = alpha)
+        AppTheme.GOLDEN_NIGHT  -> Color(0xFFD4A017).copy(alpha = alpha)
     }
 }
 
@@ -169,8 +170,9 @@ fun particleColor(
         AppTheme.SUMMER_SUN    -> Color(0xFF78350F)   // oscuro para fondo amarillo
         AppTheme.AUTUMN_LEAVES -> Color(0xFF7C2D12)   // oscuro para fondo naranja
         AppTheme.WINTER_SNOW   -> Color(0xFF1E3A5F)   // oscuro para fondo azul claro
-        AppTheme.VALENTINE     -> Color(0xFFFFB7C5)  // Rosa pálido
-        AppTheme.CYBERPUNK     -> Color(0xFF00E5FF)  // Cian neón
+        AppTheme.VALENTINE     -> Color(0xFFFFB7C5)
+        AppTheme.CYBERPUNK     -> Color(0xFF00E5FF)
+        AppTheme.GOLDEN_NIGHT  -> Color(0xFFFFD700)
     }
 
     // Si el fondo es claro y el color base también es claro, lo oscurecemos
@@ -201,6 +203,7 @@ fun starColor(
             AppTheme.AUTUMN_LEAVES -> Color(0xFF7C2D12)
             AppTheme.WINTER_SNOW   -> Color(0xFF1E3A5F)
             AppTheme.AMBER         -> Color(0xFF78350F)
+            AppTheme.VALENTINE     -> Color(0xFFAD1457)
             else                   -> Color(0xFF1A1A2E)
         }
     } else {
@@ -209,15 +212,15 @@ fun starColor(
             AppTheme.MIDNIGHT_BLUE,
             AppTheme.CRIMSON,
             AppTheme.SAKURA_NIGHT,
-            AppTheme.WINTER_SNOW   -> Color.White
+            AppTheme.WINTER_SNOW,
+            AppTheme.CYBERPUNK     -> Color.White
+            AppTheme.GOLDEN_NIGHT  -> Color(0xFFFDE68A)
             AppTheme.FOREST        -> Color(0xFFBBF7D0)
             AppTheme.AMBER         -> Color(0xFFFDE68A)
             AppTheme.SPRING_GARDEN -> Color(0xFF4ADE80)
             AppTheme.SUMMER_SUN    -> Color(0xFFFBBF24)
             AppTheme.AUTUMN_LEAVES -> Color(0xFFFFED4A)
-            AppTheme.VALENTINE     -> Color(0xFF880E4F)
-            AppTheme.CYBERPUNK     -> Color(0xFF006064)
-//            else                   -> Color(0xFF1A1A2E)
+            AppTheme.VALENTINE     -> Color(0xFFFFC0CB)
         }
     }
 }
@@ -232,8 +235,9 @@ fun petalBaseColor(theme: AppTheme): Color = when (theme) {
     AppTheme.SAKURA_NIGHT  -> Color(0xFFFFB7D5)
     AppTheme.SPRING_GARDEN -> Color(0xFF6EE7B7)
     AppTheme.SUMMER_SUN    -> Color(0xFFFDE68A)
-    AppTheme.AUTUMN_LEAVES -> Color(0xFFFA6F02)
+    AppTheme.AUTUMN_LEAVES -> Color(0xFFFB923C)
     AppTheme.WINTER_SNOW   -> Color(0xFFBAE6FD)
     AppTheme.VALENTINE     -> Color(0xFFFF80AB)
-    AppTheme.CYBERPUNK     -> Color(0xFF18FFFF)
+    AppTheme.CYBERPUNK     -> Color(0xFF00FFCC)
+    AppTheme.GOLDEN_NIGHT  -> Color(0xFFFFD700)
 }
