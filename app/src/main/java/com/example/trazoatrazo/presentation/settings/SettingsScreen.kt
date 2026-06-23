@@ -28,8 +28,11 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
@@ -63,8 +66,10 @@ fun SettingsScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .alpha(screenAnim.value)
-                    .offset(y = ((1f - screenAnim.value) * 15).dp),
+                    .graphicsLayer {
+                        alpha = screenAnim.value
+                        translationY = (1f - screenAnim.value) * 15.dp.toPx()
+                    },
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, bottom = 40.dp),
                 verticalArrangement = Arrangement.spacedBy(32.dp)
             ) {
@@ -132,6 +137,15 @@ private fun BackgroundEffectsSection(
     config: BackgroundConfig,
     viewModel: SettingsViewModel
 ) {
+    val effects = remember(config) {
+        listOf(
+            EffectData("⭐", "Estrellas", config.stars.enabled, config.stars.intensity, viewModel::setStarsEnabled, viewModel::setStarsIntensity),
+            EffectData("🌸", "Pétalos", config.petals.enabled, config.petals.intensity, viewModel::setPetalsEnabled, viewModel::setPetalsIntensity),
+            EffectData("🌟", "Brillo", config.glow.enabled, config.glow.intensity, viewModel::setGlowEnabled, viewModel::setGlowIntensity),
+            EffectData("🎞️", "Grain", config.grain.enabled, config.grain.intensity, viewModel::setGrainEnabled, viewModel::setGrainIntensity)
+        )
+    }
+
     Column(
         modifier            = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -144,13 +158,6 @@ private fun BackgroundEffectsSection(
             onToggle    = viewModel::setParticlesEnabled,
             onSlider    = viewModel::setParticlesIntensity,
             onTypeClick = viewModel::toggleParticleType
-        )
-
-        val effects = listOf(
-            EffectData("⭐", "Estrellas", config.stars.enabled, config.stars.intensity, viewModel::setStarsEnabled, viewModel::setStarsIntensity),
-            EffectData("🌸", "Pétalos", config.petals.enabled, config.petals.intensity, viewModel::setPetalsEnabled, viewModel::setPetalsIntensity),
-            EffectData("🌟", "Brillo", config.glow.enabled, config.glow.intensity, viewModel::setGlowEnabled, viewModel::setGlowIntensity),
-            EffectData("🎞️", "Grain", config.grain.enabled, config.grain.intensity, viewModel::setGrainEnabled, viewModel::setGrainIntensity)
         )
 
         effects.forEach { effect ->
@@ -201,7 +208,7 @@ private fun ParticleCatalogCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(cardAlpha)
+            .graphicsLayer { alpha = cardAlpha }
             .clip(RoundedCornerShape(20.dp))
             .background(AppColors.Sombra)
             .padding(16.dp),
@@ -275,7 +282,10 @@ private fun ParticleCatalogItem(
 
     Column(
         modifier = Modifier
-            .scale(scale)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .width(64.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(bgColor)
@@ -321,7 +331,7 @@ private fun EffectToggleCard(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(cardAlpha)
+            .graphicsLayer { alpha = cardAlpha }
             .clip(RoundedCornerShape(16.dp))
             .background(AppColors.Sombra)
             .padding(16.dp),
@@ -544,7 +554,7 @@ private fun BgToggle(
             modifier = Modifier
                 .padding(3.dp)
                 .size(20.dp)
-                .offset(x = (thumbOffset * 22).dp)
+                .offset { IntOffset((thumbOffset * 22.dp.toPx()).toInt(), 0) }
                 .clip(CircleShape)
                 .background(Color.White)
         )
@@ -704,7 +714,10 @@ private fun ThemeCard(
 
     Box(
         modifier = modifier
-            .scale(cardScale)
+            .graphicsLayer {
+                scaleX = cardScale
+                scaleY = cardScale
+            }
             .aspectRatio(0.88f)
             .clip(RoundedCornerShape(18.dp))
             .background(
@@ -887,7 +900,10 @@ private fun FontCard(
 
     Box(
         modifier = modifier
-            .scale(cardScale)
+            .graphicsLayer {
+                scaleX = cardScale
+                scaleY = cardScale
+            }
             .clip(RoundedCornerShape(16.dp))
             .background(AppColors.Sombra)
             .then(

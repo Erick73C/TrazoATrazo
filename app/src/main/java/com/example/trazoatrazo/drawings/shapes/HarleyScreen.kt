@@ -125,7 +125,7 @@ fun HarleyScreen(onBack: () -> Unit) {
             drawHarleyQuinnAnimated(
                 centerX = size.width / 2,
                 centerY = size.height / 2.3f,
-                scale = 2.6f,
+                scale = 2.0f,
                 headAnim = headAnim.value,
                 earsAnim = earsAnim.value,
                 faceAnim = faceAnim.value,

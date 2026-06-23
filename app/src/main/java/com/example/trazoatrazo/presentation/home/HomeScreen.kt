@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -102,9 +103,10 @@ fun HomeScreen(
     val pagerState     = rememberPagerState(pageCount = { homeTabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    // ── Obtener tema y config del CompositionLocal ────────────────────────────
-//    val settingsViewModel: SettingsViewModel = viewModel()
-//    val selectedTheme by settingsViewModel.selectedTheme.collectAsStateWithLifecycle()
+    // Lambdas estables para evitar recomposiciones en animaciones
+    val headerAnimProvider  = remember { { headerAnim.value } }
+    val welcomeAnimProvider = remember { { welcomeAnim.value } }
+    val tabsAnimProvider    = remember { { tabsAnim.value } }
 
     DynamicBackground(
         theme   = LocalAppColors.current.appTheme,
@@ -118,8 +120,8 @@ fun HomeScreen(
 
             // ── HEADER ────────────────────────────────────────────────────────
             HomeHeader(
-                animValue       = headerAnim.value,
-                onSettingsClick = onSettingsClick
+                animValueProvider = headerAnimProvider,
+                onSettingsClick   = onSettingsClick
             )
 
             // ── DIVIDER ───────────────────────────────────────────────────────
@@ -129,23 +131,25 @@ fun HomeScreen(
             )
 
             // ── WELCOME + ENVELOPE ────────────────────────────────────────────
-            val currentMessageColor = messageColors[uiState.colorIndex]
-                .adaptiveColorFor(AppColors.Sombra)
+            val currentMessageColor = remember(uiState.colorIndex) {
+                messageColors[uiState.colorIndex]
+                    .adaptiveColorFor(AppColors.Sombra)
+            }
 
             WelcomeSection(
-                message      = uiState.welcomeMessage,
-                messageColor = currentMessageColor,
-                animValue    = welcomeAnim.value,
-                onMessageTap = { viewModel.onMessageTap(AppColors.Sombra) },
-                onEnvelopeTap = onLetterClick
+                message           = uiState.welcomeMessage,
+                messageColor      = currentMessageColor,
+                animValueProvider = welcomeAnimProvider,
+                onMessageTap      = { viewModel.onMessageTap(AppColors.Sombra) },
+                onEnvelopeTap     = onLetterClick
             )
 
             // ── TAB ROW ───────────────────────────────────────────────────────
             CategoryTabRow(
-                tabs          = homeTabs,
-                selectedIndex = pagerState.currentPage,
-                animValue     = tabsAnim.value,
-                onTabClick    = { index ->
+                tabs              = homeTabs,
+                selectedIndex     = pagerState.currentPage,
+                animValueProvider = tabsAnimProvider,
+                onTabClick        = { index ->
                     coroutineScope.launch { pagerState.animateScrollToPage(index) }
                 }
             )
@@ -177,13 +181,17 @@ fun HomeScreen(
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun HomeHeader(
-    animValue:       Float,
-    onSettingsClick: () -> Unit
+    animValueProvider: () -> Float,
+    onSettingsClick:   () -> Unit
 ) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .scale(animValue)
+            .graphicsLayer {
+                val scale = animValueProvider()
+                scaleX = scale
+                scaleY = scale
+            }
             .padding(top = 52.dp, bottom = 16.dp, start = 22.dp, end = 22.dp)
     ) {
         Row(
@@ -249,11 +257,11 @@ private fun HomeHeader(
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun WelcomeSection(
-    message:      String,
-    messageColor: Color,
-    animValue:    Float,
-    onMessageTap: () -> Unit,
-    onEnvelopeTap: () -> Unit
+    message:           String,
+    messageColor:      Color,
+    animValueProvider: () -> Float,
+    onMessageTap:      () -> Unit,
+    onEnvelopeTap:     () -> Unit
 ) {
     // Flotación del sobre
     val infiniteTransition = rememberInfiniteTransition(label = "envelope_float")
@@ -279,8 +287,11 @@ private fun WelcomeSection(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(animValue)
-            .offset(y = ((1f - animValue) * 20).dp)
+            .graphicsLayer { alpha = animValueProvider() }
+            .offset {
+                val v = animValueProvider()
+                IntOffset(0, ((1f - v) * 20).dp.roundToPx())
+            }
             .padding(horizontal = 18.dp, vertical = 12.dp),
         verticalAlignment     = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp)
@@ -354,8 +365,8 @@ private fun WelcomeSection(
         Box(
             modifier = Modifier
                 .size(72.dp)
-                .offset(y = envelopeOffsetY.dp)
-                .rotate(envelopeRotation)
+                .offset { IntOffset(0, envelopeOffsetY.dp.roundToPx()) }
+                .graphicsLayer { rotationZ = envelopeRotation }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication        = null,
@@ -475,15 +486,15 @@ private fun WelcomeSection(
 // ─────────────────────────────────────────────────────────────────────────────
 @Composable
 private fun CategoryTabRow(
-    tabs:          List<TabInfo>,
-    selectedIndex: Int,
-    animValue:     Float,
-    onTabClick:    (Int) -> Unit
+    tabs:              List<TabInfo>,
+    selectedIndex:     Int,
+    animValueProvider: () -> Float,
+    onTabClick:        (Int) -> Unit
 ) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(animValue)
+            .graphicsLayer { alpha = animValueProvider() }
             .background(AppColors.Sombra)
             .padding(horizontal = 6.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
