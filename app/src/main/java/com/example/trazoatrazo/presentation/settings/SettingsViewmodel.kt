@@ -5,12 +5,15 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.trazoatrazo.data.BackgroundPreferences
 import com.example.trazoatrazo.data.FontPreferences
+import com.example.trazoatrazo.data.SystemPreferences
 import com.example.trazoatrazo.data.ThemePreferences
 import com.example.trazoatrazo.ui.background.BackgroundConfig
 import com.example.trazoatrazo.ui.background.SpecialParticleType
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.AppFont
 import com.example.trazoatrazo.ui.theme.AppTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -19,6 +22,7 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     private val themePrefs = ThemePreferences(application)
     private val backgroundPrefs = BackgroundPreferences(application)
     private val fontPrefs = FontPreferences(application)
+    private val systemPrefs = SystemPreferences(application)
 
     // ── Tema ──────────────────────────────────────────────────────────────────
     private val _themeReady = MutableStateFlow(false)
@@ -35,16 +39,25 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = AppTheme.JJK_DARK
         )
 
-    // ── Fondo dinámico ────────────────────────────────────────────────────────
-    // Reacciona automáticamente al cambio de tema y a las preferencias guardadas
-    val backgroundConfig: StateFlow<BackgroundConfig> = selectedTheme
-        .flatMapLatest { theme -> backgroundPrefs.getConfigFlow(theme) }
-        .distinctUntilChanged() // Evita emisiones si el objeto config es idéntico
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = BackgroundConfig()
-        )
+    // ── Fondo dinámico (Optimizado con Cache Local) ───────────────────────────
+    // Usamos un StateFlow interno para actualizaciones instantáneas en la UI
+    private val _backgroundConfig = MutableStateFlow(BackgroundConfig())
+    val backgroundConfig: StateFlow<BackgroundConfig> = _backgroundConfig.asStateFlow()
+
+    init {
+        // Sincronizar el estado local con la persistencia (DataStore)
+        viewModelScope.launch {
+            selectedTheme.flatMapLatest { theme ->
+                backgroundPrefs.getConfigFlow(theme)
+            }.collect { config ->
+                // Solo actualizamos si el usuario no está interactuando activamente
+                // o si el cambio viene de un cambio de tema
+                if (persistJob == null || !persistJob!!.isActive) {
+                    _backgroundConfig.value = config
+                }
+            }
+        }
+    }
 
     // ── Tipografía dinámica ───────────────────────────────────────────────────
     val selectedFont: StateFlow<AppFont> = fontPrefs.getFontFlow()
@@ -54,15 +67,30 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = AppFont.QUICKSAND
         )
 
-    // ── Helper para actualizar y guardar la config ────────────────────────────
+    // ── Sistema ───────────────────────────────────────────────────────────────
+    val immersiveMode: StateFlow<Boolean> = systemPrefs.getImmersiveModeFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false
+        )
+
+    // ── Helper para actualizar instantáneamente y persistir con retraso ───────
+    private var persistJob: Job? = null
+    
     private fun updateConfig(update: (BackgroundConfig) -> BackgroundConfig) {
-        val current = backgroundConfig.value
+        val current = _backgroundConfig.value
         val updated = update(current)
         
-        // Optimización: Solo guardamos si realmente hubo un cambio en los datos
         if (current == updated) return
 
-        viewModelScope.launch {
+        // 1. Actualización inmediata en el estado de la UI
+        _backgroundConfig.value = updated
+
+        // 2. Persistencia con "Debounce" (retraso) para no saturar el disco
+        persistJob?.cancel()
+        persistJob = viewModelScope.launch {
+            delay(300) // Esperar 300ms de inactividad antes de guardar en DataStore
             backgroundPrefs.saveConfig(updated)
         }
     }
@@ -142,6 +170,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         if (selectedFont.value == font) return
         viewModelScope.launch {
             fontPrefs.saveFont(font)
+        }
+    }
+
+    fun setImmersiveMode(enabled: Boolean) {
+        viewModelScope.launch {
+            systemPrefs.saveImmersiveMode(enabled)
         }
     }
 }

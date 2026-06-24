@@ -13,6 +13,14 @@ object Routes {
     const val LETTER   = "letter"
     const val LETTER_CONTENT = "letter_content"
 
+    const val MY_CREATIONS = "my_creations"
+
+    const val PIXEL_EDITOR_NEW  = "pixel_editor_new"
+
+    const val PIXEL_EDITOR_EDIT = "pixel_editor_edit/{artworkId}"
+
+    fun pixelEditorEdit(artworkId: String) = "pixel_editor_edit/$artworkId"
+
     // ── Categorías ───────────────────────────────────────────────────────────
     object Category {
         const val FLOWERS  = "flowers"
@@ -55,6 +63,8 @@ object Routes {
         const val COPONIEVE = "copo"
 
         const val BUTTERFLY = "butterfly"
+
+        const val PIXEL_EDITOR = "pixel_editor"
 
         const val carta = "Carta"
     }

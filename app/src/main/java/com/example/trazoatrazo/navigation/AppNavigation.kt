@@ -14,9 +14,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.trazoatrazo.drawings.animals.CatBlackScreen
 import com.example.trazoatrazo.drawings.animals.TurtleScreen
 import com.example.trazoatrazo.drawings.flowers.FlowerScreen
@@ -28,10 +30,13 @@ import com.example.trazoatrazo.drawings.shapes.TrofeoScreen
 import com.example.trazoatrazo.drawings.shapes.HeartScreen
 import com.example.trazoatrazo.drawings.special.EnvelopeScreen
 import com.example.trazoatrazo.drawings.special.LetterContentScreen
+import com.example.trazoatrazo.drawings.special.PixelEditorScreen
 import com.example.trazoatrazo.drawings.winter.ChristmasTreeScreen
 import com.example.trazoatrazo.drawings.winter.SnowflakeScreen
 import com.example.trazoatrazo.drawings.winter.SnowmanScreen
 import com.example.trazoatrazo.presentation.home.HomeScreen
+import com.example.trazoatrazo.presentation.pixeleditor.MyCreationsScreen
+import com.example.trazoatrazo.presentation.pixeleditor.PixelArtViewModel
 import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
 import com.example.trazoatrazo.ui.theme.AppColors
@@ -50,6 +55,7 @@ fun AppNavigation(
     val themeReady    by settingsViewModel.themeReady.collectAsStateWithLifecycle()
     val backgroundConfig by settingsViewModel.backgroundConfig.collectAsStateWithLifecycle()
     val selectedFont     by settingsViewModel.selectedFont.collectAsStateWithLifecycle()
+    val pixelArtViewModel: PixelArtViewModel = viewModel()
 
     CompositionLocalProvider(
         LocalAppColors provides themeColorSchemeFor(selectedTheme),
@@ -76,7 +82,8 @@ fun AppNavigation(
                             navController.navigate(Routes.drawing(categoryId, drawingId))
                         },
                         onLetterClick = { navController.navigate(Routes.LETTER) },
-                        onSettingsClick = { navController.navigate(Routes.SETTINGS) }
+                        onSettingsClick = { navController.navigate(Routes.SETTINGS) },
+                        onMyCreationsClick = { navController.navigate(Routes.MY_CREATIONS) }
                     )
                 }
 
@@ -130,8 +137,37 @@ fun AppNavigation(
                         onBack = { navController.popBackStack() }
                     )
                 }
+
+                // 🆕 ── "Mis Creaciones" + Editor de píxeles ──────────────────────
+                composable(Routes.MY_CREATIONS) {
+                    MyCreationsScreen(
+                        viewModel      = pixelArtViewModel,
+                        onBack         = { navController.popBackStack() },
+                        onNewCreation  = { navController.navigate(Routes.PIXEL_EDITOR_NEW) },
+                        onOpenCreation = { id -> navController.navigate(Routes.pixelEditorEdit(id)) }
+                    )
+                }
+
+                composable(Routes.PIXEL_EDITOR_NEW) {
+                    PixelEditorScreen(
+                        viewModel = pixelArtViewModel,
+                        onBack = { navController.popBackStack() }
+                    )
+                }
+
+                composable(
+                    route = Routes.PIXEL_EDITOR_EDIT,
+                    arguments = listOf(navArgument("artworkId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    PixelEditorScreen(
+                        viewModel = pixelArtViewModel,
+                        existingArtworkId = backStackEntry.arguments?.getString("artworkId"),
+                        onBack = { navController.popBackStack() }
+                    )
+                }
             }
         }
         }
+
     }
 }

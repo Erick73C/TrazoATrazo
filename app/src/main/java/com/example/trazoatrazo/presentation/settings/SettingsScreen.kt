@@ -49,6 +49,7 @@ fun SettingsScreen(
     val selectedTheme    by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val backgroundConfig by viewModel.backgroundConfig.collectAsStateWithLifecycle()
     val selectedFont     by viewModel.selectedFont.collectAsStateWithLifecycle()
+    val immersiveMode    by viewModel.immersiveMode.collectAsStateWithLifecycle()
 
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -99,7 +100,13 @@ fun SettingsScreen(
 
                 // ── SECCIÓN 4: SISTEMA ────────────────────────────────────────
                 item {
-                    Spacer(Modifier.height(8.dp))
+                    MinimalSectionHeader(title = "Sistema", emoji = "⚙️")
+                    Spacer(Modifier.height(16.dp))
+                    SystemSettingsSection(
+                        immersiveMode = immersiveMode,
+                        onImmersiveModeChange = viewModel::setImmersiveMode
+                    )
+                    Spacer(Modifier.height(24.dp))
                     ResetBackgroundButton(onClick = viewModel::resetBackgroundToThemeDefault)
                 }
             }
@@ -557,6 +564,74 @@ private fun BgToggle(
                 .offset { IntOffset((thumbOffset * 22.dp.toPx()).toInt(), 0) }
                 .clip(CircleShape)
                 .background(Color.White)
+        )
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── SYSTEM SETTINGS SECTION ──────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun SystemSettingsSection(
+    immersiveMode: Boolean,
+    onImmersiveModeChange: (Boolean) -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        SystemToggleCard(
+            emoji = "📱",
+            title = "Modo Inmersivo",
+            subtitle = "Oculta los botones de navegación y la barra de estado",
+            enabled = immersiveMode,
+            onToggle = onImmersiveModeChange
+        )
+    }
+}
+
+@Composable
+private fun SystemToggleCard(
+    emoji:     String,
+    title:     String,
+    subtitle:  String,
+    enabled:   Boolean,
+    onToggle:  (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Sombra)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClick = { onToggle(!enabled) }
+            )
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(emoji, fontSize = 22.sp)
+        Spacer(Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text       = title,
+                fontSize   = 14.sp,
+                fontWeight = FontWeight.SemiBold,
+                color      = AppColors.Reversa
+            )
+            Text(
+                text     = subtitle,
+                fontSize = 11.sp,
+                color    = AppColors.Eco,
+                modifier = Modifier.padding(top = 2.dp)
+            )
+        }
+        
+        // El toggle visual
+        BgToggle(
+            checked   = enabled,
+            onChecked = onToggle
         )
     }
 }

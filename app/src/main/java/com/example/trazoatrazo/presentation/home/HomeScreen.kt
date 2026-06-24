@@ -67,7 +67,8 @@ fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
     onDrawingClick: (categoryId: String, drawingId: String) -> Unit,
     onLetterClick:  () -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    onMyCreationsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -121,7 +122,8 @@ fun HomeScreen(
             // ── HEADER ────────────────────────────────────────────────────────
             HomeHeader(
                 animValueProvider = headerAnimProvider,
-                onSettingsClick   = onSettingsClick
+                onSettingsClick   = onSettingsClick,
+                onMyCreationsClick = onMyCreationsClick
             )
 
             // ── DIVIDER ───────────────────────────────────────────────────────
@@ -182,7 +184,8 @@ fun HomeScreen(
 @Composable
 private fun HomeHeader(
     animValueProvider: () -> Float,
-    onSettingsClick:   () -> Unit
+    onSettingsClick:   () -> Unit,
+    onMyCreationsClick: () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -231,6 +234,21 @@ private fun HomeHeader(
                     fontSize = 11.sp,
                     color    = AppColors.Eco
                 )
+            }
+
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(AppColors.Sombra)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication        = null,
+                        onClick           = onMyCreationsClick
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🖼️", fontSize = 18.sp)
             }
 
             // Botón ajustes
