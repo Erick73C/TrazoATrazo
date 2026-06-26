@@ -30,7 +30,8 @@ enum class SpecialParticleType {
     CRYSTAL,         // rombo/diamante — Winter, Spring
     HEART_S,         // corazón pequeño — Valentín
     SQUARE_DOT,      // cuadrado / pixel — Cyberpunk
-    SHINE_STARDUST   // punto con destello — Noche de Oro
+    SHINE_STARDUST,  // punto con destello — Noche de Oro
+    WAVE             // onda / curva — Océano
 }
 
 fun specialParticleTypeFor(theme: AppTheme): SpecialParticleType = when (theme) {
@@ -47,6 +48,9 @@ fun specialParticleTypeFor(theme: AppTheme): SpecialParticleType = when (theme) 
     AppTheme.VALENTINE     -> SpecialParticleType.HEART_S
     AppTheme.CYBERPUNK     -> SpecialParticleType.SQUARE_DOT
     AppTheme.GOLDEN_NIGHT  -> SpecialParticleType.SHINE_STARDUST
+    AppTheme.OCEAN_TIDE    -> SpecialParticleType.WAVE
+    AppTheme.RUBY_RED      -> SpecialParticleType.SPARKLE
+    AppTheme.SUNSET_PARTY  -> SpecialParticleType.SUN_RAY
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -232,5 +236,5 @@ fun petalAlpha(
         else              -> 1f
     }
     // Más visible: subido de 0.55 a 0.75
-    return (edgeFade * 0.75f * baseIntensity).coerceIn(0f, 1f)
+    return (edgeFade * 0.95f * baseIntensity).coerceIn(0f, 1f)
 }

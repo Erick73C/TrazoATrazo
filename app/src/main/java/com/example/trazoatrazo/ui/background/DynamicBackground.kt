@@ -513,6 +513,28 @@ fun DynamicBackground(
                                         }
                                     }
 
+                                    SpecialParticleType.WAVE -> {
+                                        val rot = particleRotation(p, floatT)
+                                        withTransform({ rotate(rot, center) }) {
+                                            val path = Path().apply {
+                                                moveTo(x - p.radius * 1.5f, y)
+                                                cubicTo(
+                                                    x - p.radius * 0.5f, y - p.radius * 1.5f,
+                                                    x + p.radius * 0.5f, y + p.radius * 1.5f,
+                                                    x + p.radius * 1.5f, y
+                                                )
+                                            }
+                                            drawPath(
+                                                path  = path,
+                                                color = color,
+                                                style = Stroke(
+                                                    width = p.radius * 0.35f,
+                                                    cap   = androidx.compose.ui.graphics.StrokeCap.Round
+                                                )
+                                            )
+                                        }
+                                    }
+
                                     SpecialParticleType.NONE -> {
                                         drawCircle(color = color, radius = p.radius, center = center)
                                     }

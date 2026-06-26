@@ -1,7 +1,6 @@
 package com.example.trazoatrazo.ui.background
 
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.example.trazoatrazo.ui.theme.AppTheme
 import com.example.trazoatrazo.utils.luminance
@@ -110,6 +109,18 @@ fun defaultGlowsFor(theme: AppTheme): List<GlowData> = when (theme) {
         GlowData(0.50f, 0.10f, 0.65f, 0.0f, 0.5f),
         GlowData(0.20f, 0.85f, 0.45f, 1.2f, 0.4f)
     )
+    AppTheme.OCEAN_TIDE -> listOf(
+        GlowData(0.50f, 0.10f, 0.60f, 0.0f, 0.5f),
+        GlowData(0.15f, 0.85f, 0.45f, 1.0f, 0.6f)
+    )
+    AppTheme.RUBY_RED -> listOf(
+        GlowData(0.50f, 0.20f, 0.55f, 0.0f, 0.5f),
+        GlowData(0.85f, 0.80f, 0.40f, 0.8f, 0.7f)
+    )
+    AppTheme.SUNSET_PARTY -> listOf(
+        GlowData(0.50f, 0.05f, 0.65f, 0.0f, 0.4f),
+        GlowData(0.20f, 0.90f, 0.42f, 1.2f, 0.6f)
+    )
 }
 
 // ── Color del glow adaptivo al fondo ─────────────────────────────────────────
@@ -143,6 +154,9 @@ fun glowColor(
         AppTheme.VALENTINE     -> Color(0xFFE91E63).copy(alpha = alpha)
         AppTheme.CYBERPUNK     -> Color(0xFF00FFCC).copy(alpha = alpha)
         AppTheme.GOLDEN_NIGHT  -> Color(0xFFD4A017).copy(alpha = alpha)
+        AppTheme.OCEAN_TIDE    -> Color(0xFF00BCD4).copy(alpha = alpha)
+        AppTheme.RUBY_RED      -> Color(0xFFDC2626).copy(alpha = alpha)
+        AppTheme.SUNSET_PARTY  -> Color(0xFFF43F5E).copy(alpha = alpha)
     }
 }
 
@@ -173,6 +187,9 @@ fun particleColor(
         AppTheme.VALENTINE     -> Color(0xFFFFB7C5)
         AppTheme.CYBERPUNK     -> Color(0xFF00E5FF)
         AppTheme.GOLDEN_NIGHT  -> Color(0xFFFFD700)
+        AppTheme.OCEAN_TIDE    -> Color(0xFF006064)
+        AppTheme.RUBY_RED      -> Color(0xFF7F0000)
+        AppTheme.SUNSET_PARTY  -> Color(0xFFE91E63)
     }
 
     // Si el fondo es claro y el color base también es claro, lo oscurecemos
@@ -204,6 +221,9 @@ fun starColor(
             AppTheme.WINTER_SNOW   -> Color(0xFF1E3A5F)
             AppTheme.AMBER         -> Color(0xFF78350F)
             AppTheme.VALENTINE     -> Color(0xFFAD1457)
+            AppTheme.OCEAN_TIDE    -> Color(0xFF006064)
+            AppTheme.RUBY_RED      -> Color(0xFF7F1D1D)
+            AppTheme.SUNSET_PARTY  -> Color(0xFF881337)
             else                   -> Color(0xFF1A1A2E)
         }
     } else {
@@ -221,6 +241,9 @@ fun starColor(
             AppTheme.SUMMER_SUN    -> Color(0xFFFBBF24)
             AppTheme.AUTUMN_LEAVES -> Color(0xFFFFED4A)
             AppTheme.VALENTINE     -> Color(0xFFFFC0CB)
+            AppTheme.OCEAN_TIDE    -> Color(0xFF80DEEA)
+            AppTheme.RUBY_RED      -> Color(0xFFFCA5A5)
+            AppTheme.SUNSET_PARTY  -> Color(0xFFFDA4AF)
         }
     }
 }
@@ -240,4 +263,7 @@ fun petalBaseColor(theme: AppTheme): Color = when (theme) {
     AppTheme.VALENTINE     -> Color(0xFFFF80AB)
     AppTheme.CYBERPUNK     -> Color(0xFF00FFCC)
     AppTheme.GOLDEN_NIGHT  -> Color(0xFFFFD700)
+    AppTheme.OCEAN_TIDE    -> Color(0xFF00BCD4)
+    AppTheme.RUBY_RED      -> Color(0xFFDC2626)
+    AppTheme.SUNSET_PARTY  -> Color(0xFFF43F5E)
 }

@@ -45,7 +45,8 @@ fun MyCreationsScreen(
     viewModel:      PixelArtViewModel,
     onBack:         () -> Unit,
     onNewCreation:  () -> Unit,
-    onOpenCreation: (artworkId: String) -> Unit
+    onOpenCreation: (artworkId: String) -> Unit,
+    onReplay:       (artworkId: String) -> Unit   // 🆕
 ) {
     val artworks by viewModel.artworks.collectAsStateWithLifecycle()
     var artworkToDelete by remember { mutableStateOf<PixelArtwork?>(null) }
@@ -72,13 +73,13 @@ fun MyCreationsScreen(
                         CreationCard(
                             artwork  = artwork,
                             onClick  = { onOpenCreation(artwork.id) },
+                            onReplay = { onReplay(artwork.id) },
                             onDelete = { artworkToDelete = artwork }
                         )
                     }
                 }
             }
 
-            // ── Botón nueva creación ───────────────────────────────────────
             Box(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Button(
                     onClick  = onNewCreation,
@@ -176,6 +177,7 @@ private fun EmptyCreationsState(modifier: Modifier = Modifier) {
 private fun CreationCard(
     artwork:  PixelArtwork,
     onClick:  () -> Unit,
+    onReplay: () -> Unit,   // 🆕
     onDelete: () -> Unit
 ) {
     val cardAnim = remember { Animatable(0f) }
@@ -219,7 +221,24 @@ private fun CreationCard(
             )
         }
 
-        // Botón eliminar — esquina superior derecha
+        // 🆕 Reproducir — esquina superior izquierda
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .size(26.dp)
+                .clip(CircleShape)
+                .background(AppColors.Maldicion.copy(alpha = 0.85f))
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication        = null,
+                    onClick           = onReplay
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("▶️", fontSize = 10.sp)
+        }
+
+        // Eliminar — esquina superior derecha
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
@@ -238,7 +257,6 @@ private fun CreationCard(
     }
 }
 
-// ── Mini-canvas de solo lectura para previsualizar una creación ────────────────
 @Composable
 fun PixelArtworkThumbnail(artwork: PixelArtwork, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.background(Color.White)) {

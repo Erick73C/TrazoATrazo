@@ -21,7 +21,8 @@ data class PixelArtwork(
     val id: String,
     val name: String,
     val gridSize: Int,
-    val pixels: List<Color?>,   // null = transparente
+    val pixels: List<Color?>,       // null = transparente
+    val paintOrder: List<Int> = emptyList(),   // orden en que se pintó cada índice
     val createdAt: Long
 )
 
@@ -34,8 +35,6 @@ private object PixelArtKeys {
     val ARTWORKS = stringPreferencesKey("pixel_artworks")
 }
 
-// Separadores ASCII de control — nunca aparecen en texto escrito por el usuario,
-// así evitamos tener que "escapar" el nombre de la obra
 private const val FIELD_SEP  = '\u001F'
 private const val RECORD_SEP = '\u001E'
 
@@ -61,7 +60,6 @@ class PixelArtworkPreferences(private val context: Context) {
         }
     }
 
-    // ── Codificación de una lista de obras ────────────────────────────────────
     private fun encodeAll(list: List<PixelArtwork>): String =
         list.joinToString(RECORD_SEP.toString()) { encodeOne(it) }
 
@@ -69,32 +67,43 @@ class PixelArtworkPreferences(private val context: Context) {
         if (raw.isBlank()) emptyList()
         else raw.split(RECORD_SEP).mapNotNull { decodeOne(it) }
 
-    // ── Codificación de una sola obra ──────────────────────────────────────────
     private fun encodeOne(artwork: PixelArtwork): String {
         val pixelsHex = artwork.pixels.joinToString("") { color ->
             String.format("%08X", (color ?: Color.Transparent).toArgb())
         }
+        val paintOrderCsv = artwork.paintOrder.joinToString(",")
         return listOf(
             artwork.id,
             artwork.name,
             artwork.gridSize.toString(),
             artwork.createdAt.toString(),
-            pixelsHex
+            pixelsHex,
+            paintOrderCsv
         ).joinToString(FIELD_SEP.toString())
     }
 
     private fun decodeOne(raw: String): PixelArtwork? {
         val parts = raw.split(FIELD_SEP)
-        if (parts.size != 5) return null
+        // Soporte para versiones anteriores (5 campos) y la actual (6 campos)
+        if (parts.size < 5) return null
+        
         return try {
             PixelArtwork(
-                id        = parts[0],
-                name      = parts[1],
-                gridSize  = parts[2].toInt(),
-                createdAt = parts[3].toLong(),
-                pixels    = parts[4].chunked(8).map { hex ->
-                    val argb = hex.toLong(16).toInt()
-                    if (argb == 0) null else Color(argb)
+                id         = parts[0],
+                name       = parts[1],
+                gridSize   = parts[2].toInt(),
+                createdAt  = parts[3].toLongOrNull() ?: System.currentTimeMillis(),
+                pixels     = parts[4].chunked(8).map { hex ->
+                    try {
+                        val argb = hex.toLong(16).toInt()
+                        if (argb == 0) null else Color(argb)
+                    } catch (e: Exception) { null }
+                },
+                // El campo 5 (paintOrder) es opcional para compatibilidad con versiones previas
+                paintOrder = if (parts.size >= 6 && parts[5].isNotBlank()) {
+                    parts[5].split(",").mapNotNull { it.toIntOrNull() }
+                } else {
+                    emptyList()
                 }
             )
         } catch (e: Exception) {

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -36,6 +37,7 @@ import com.example.trazoatrazo.drawings.winter.SnowflakeScreen
 import com.example.trazoatrazo.drawings.winter.SnowmanScreen
 import com.example.trazoatrazo.presentation.home.HomeScreen
 import com.example.trazoatrazo.presentation.pixeleditor.MyCreationsScreen
+import com.example.trazoatrazo.presentation.pixeleditor.PixelArtReplayScreen
 import com.example.trazoatrazo.presentation.pixeleditor.PixelArtViewModel
 import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
@@ -114,6 +116,11 @@ fun AppNavigation(
                                 onBack = { navController.popBackStack() },
                                 onReadLetter = { navController.navigate(Routes.LETTER_CONTENT) }
                             )
+                            Routes.Drawings.PIXEL_EDITOR -> PixelEditorScreen(
+                                viewModel = pixelArtViewModel,
+                                onBack    = { navController.popBackStack() },
+                                onReplay  = { id -> navController.navigate(Routes.pixelReplay(id)) }
+                            )
                         }
 
                         Routes.Category.SPRING -> when (drawingId) {
@@ -138,32 +145,51 @@ fun AppNavigation(
                     )
                 }
 
-                // 🆕 ── "Mis Creaciones" + Editor de píxeles ──────────────────────
+                // ── "Mis Creaciones" + Editor de píxeles ──────────────────────
                 composable(Routes.MY_CREATIONS) {
                     MyCreationsScreen(
                         viewModel      = pixelArtViewModel,
                         onBack         = { navController.popBackStack() },
                         onNewCreation  = { navController.navigate(Routes.PIXEL_EDITOR_NEW) },
-                        onOpenCreation = { id -> navController.navigate(Routes.pixelEditorEdit(id)) }
+                        onOpenCreation = { id -> navController.navigate(Routes.pixelEditorEdit(id)) },
+                        onReplay       = { id -> navController.navigate(Routes.pixelReplay(id)) }
                     )
                 }
 
                 composable(Routes.PIXEL_EDITOR_NEW) {
                     PixelEditorScreen(
                         viewModel = pixelArtViewModel,
-                        onBack = { navController.popBackStack() }
+                        onBack    = { navController.popBackStack() },
+                        onReplay  = { id -> navController.navigate(Routes.pixelReplay(id)) }
                     )
                 }
 
                 composable(
-                    route = Routes.PIXEL_EDITOR_EDIT,
+                    route     = Routes.PIXEL_EDITOR_EDIT,
                     arguments = listOf(navArgument("artworkId") { type = NavType.StringType })
                 ) { backStackEntry ->
                     PixelEditorScreen(
-                        viewModel = pixelArtViewModel,
-                        existingArtworkId = backStackEntry.arguments?.getString("artworkId"),
-                        onBack = { navController.popBackStack() }
+                        viewModel          = pixelArtViewModel,
+                        existingArtworkId  = backStackEntry.arguments?.getString("artworkId"),
+                        onBack             = { navController.popBackStack() },
+                        onReplay           = { id -> navController.navigate(Routes.pixelReplay(id)) }
                     )
+                }
+
+                composable(
+                    route     = Routes.PIXEL_REPLAY,
+                    arguments = listOf(navArgument("artworkId") { type = NavType.StringType })
+                ) { backStackEntry ->
+                    val id = backStackEntry.arguments?.getString("artworkId")
+                    val artwork = id?.let { pixelArtViewModel.findById(it) }
+                    if (artwork != null) {
+                        PixelArtReplayScreen(
+                            artwork = artwork,
+                            onBack  = { navController.popBackStack() }
+                        )
+                    } else {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                    }
                 }
             }
         }

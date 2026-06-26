@@ -69,5 +69,20 @@ enum class AppTheme(
         displayName = "Noche de Oro",
         emoji       = "✨",
         description = "Especial · Elegancia\nen negro y dorado"
+    ),
+    OCEAN_TIDE(
+        displayName = "Marea Oceánica",
+        emoji       = "🐬",
+        description = "Azul vivo · Brisa\nmarina y frescura"
+    ),
+    RUBY_RED(
+        displayName = "Rojo Suave",
+        emoji       = "🎈",
+        description = "Rojo vibrante ·\nPasión y energía"
+    ),
+    SUNSET_PARTY(
+        displayName = "Naranja Suave",
+        emoji       = "🍊",
+        description = "Naranja y Rosa ·\nAtardecer tropical"
     )
 }

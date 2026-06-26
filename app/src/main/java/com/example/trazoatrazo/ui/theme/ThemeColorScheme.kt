@@ -50,6 +50,9 @@ fun themeColorSchemeFor(theme: AppTheme): ThemeColorScheme = when (theme) {
     AppTheme.VALENTINE     -> valentineScheme
     AppTheme.CYBERPUNK     -> cyberpunkScheme
     AppTheme.GOLDEN_NIGHT  -> goldenNightScheme
+    AppTheme.OCEAN_TIDE    -> oceanTideScheme
+    AppTheme.RUBY_RED      -> rubyRedScheme
+    AppTheme.SUNSET_PARTY  -> sunsetPartyScheme
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -390,4 +393,82 @@ val cyberpunkScheme = ThemeColorScheme(
     springAccent   = Color(0xFF00FF41),
     winterBg       = Color(0xFF050B14),
     winterAccent   = Color(0xFF3B82F6)
+)
+
+// ── 14. MAREA OCEÁNICA (Vibrante / Light) ────────────────────────────────────
+val oceanTideScheme = ThemeColorScheme(
+    appTheme = AppTheme.OCEAN_TIDE,
+    vacio        = Color(0xFFE0F7FA),
+    sombra       = Color(0xFFB2EBF2),
+    dominio      = Color(0xFF80DEEA),
+    maldicion    = Color(0xFF00ACC1),
+    tecnica      = Color(0xFF00BCD4),
+    kiEspiritual = Color(0xFF26C6DA),
+    expansion    = Color(0xFFB2EBF2),
+    eco          = Color(0xFF00838F),
+    sukuna       = Color(0xFFD32F2F),
+    reversa      = Color(0xFF006064),
+    reversaSuave = Color(0xFF0097A7),
+    flowersBg      = Color(0xFFE0F2F1),
+    flowersAccent  = Color(0xFF009688),
+    cartoonsBg     = Color(0xFFE1F5FE),
+    cartoonsAccent = Color(0xFF03A9F4),
+    animalsBg      = Color(0xFFE0F7FA),
+    animalsAccent  = Color(0xFF00BCD4),
+    springBg       = Color(0xFFF1F8E9),
+    springAccent   = Color(0xFF8BC34A),
+    winterBg       = Color(0xFFE3F2FD),
+    winterAccent   = Color(0xFF2196F3)
+)
+
+// ── 15. ROJO RUBÍ (Vibrante / Light) ──────────────────────────────────────────
+val rubyRedScheme = ThemeColorScheme(
+    appTheme = AppTheme.RUBY_RED,
+    vacio        = Color(0xFFFEF2F2),
+    sombra       = Color(0xFFFEE2E2),
+    dominio      = Color(0xFFFECACA),
+    maldicion    = Color(0xFFB91C1C),
+    tecnica      = Color(0xFFDC2626),
+    kiEspiritual = Color(0xFFEF4444),
+    expansion    = Color(0xFFFEE2E2),
+    eco          = Color(0xFF991B1B),
+    sukuna       = Color(0xFF7F1D1D),
+    reversa      = Color(0xFF450A0A),
+    reversaSuave = Color(0xFF7F1D1D),
+    flowersBg      = Color(0xFFFFF1F2),
+    flowersAccent  = Color(0xFFE11D48),
+    cartoonsBg     = Color(0xFFFFF7ED),
+    cartoonsAccent = Color(0xFFEA580C),
+    animalsBg      = Color(0xFFFEF2F2),
+    animalsAccent  = Color(0xFFDC2626),
+    springBg       = Color(0xFFF0FDF4),
+    springAccent   = Color(0xFF16A34A),
+    winterBg       = Color(0xFFF0F9FF),
+    winterAccent   = Color(0xFF0284C7)
+)
+
+// ── 16. FIESTA SUNSET (Vibrante / Light) ──────────────────────────────────────
+val sunsetPartyScheme = ThemeColorScheme(
+    appTheme = AppTheme.SUNSET_PARTY,
+    vacio        = Color(0xFFFFF7ED),
+    sombra       = Color(0xFFFFEDD5),
+    dominio      = Color(0xFFFED7AA),
+    maldicion    = Color(0xFFBE123C),
+    tecnica      = Color(0xFFF43F5E),
+    kiEspiritual = Color(0xFFFB923C),
+    expansion    = Color(0xFFFFEDD5),
+    eco          = Color(0xFF9F1239),
+    sukuna       = Color(0xFF881337),
+    reversa      = Color(0xFF4C0519),
+    reversaSuave = Color(0xFF9F1239),
+    flowersBg      = Color(0xFFFFF1F2),
+    flowersAccent  = Color(0xFFF43F5E),
+    cartoonsBg     = Color(0xFFFFFBEB),
+    cartoonsAccent = Color(0xFFD97706),
+    animalsBg      = Color(0xFFFFF7ED),
+    animalsAccent  = Color(0xFFFB923C),
+    springBg       = Color(0xFFF0FDF4),
+    springAccent   = Color(0xFF16A34A),
+    winterBg       = Color(0xFFF0F9FF),
+    winterAccent   = Color(0xFF0284C7)
 )

@@ -145,4 +145,31 @@ fun defaultBackgroundConfigFor(theme: AppTheme): BackgroundConfig = when (theme)
         grain        = EffectConfig(enabled = true,  intensity = 0.25f),
         glow         = EffectConfig(enabled = true,  intensity = 0.55f)
     )
+
+    AppTheme.OCEAN_TIDE -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.50f),
+        activeTypes  = listOf(SpecialParticleType.BUBBLE, SpecialParticleType.WAVE),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.40f)
+    )
+
+    AppTheme.RUBY_RED -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.50f),
+        activeTypes  = listOf(SpecialParticleType.SPARKLE, SpecialParticleType.EMBER),
+        stars        = EffectConfig(enabled = false, intensity = 0.0f),
+        petals       = EffectConfig(enabled = false, intensity = 0.0f),
+        grain        = EffectConfig(enabled = true,  intensity = 0.30f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.45f)
+    )
+
+    AppTheme.SUNSET_PARTY -> BackgroundConfig(
+        particles    = EffectConfig(enabled = true,  intensity = 0.55f),
+        activeTypes  = listOf(SpecialParticleType.SUN_RAY, SpecialParticleType.PETAL),
+        stars        = EffectConfig(enabled = true,  intensity = 0.30f),
+        petals       = EffectConfig(enabled = true,  intensity = 0.40f),
+        grain        = EffectConfig(enabled = false, intensity = 0.0f),
+        glow         = EffectConfig(enabled = true,  intensity = 0.60f)
+    )
 }

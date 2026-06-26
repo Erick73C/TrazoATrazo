@@ -109,6 +109,20 @@ fun SettingsScreen(
                     Spacer(Modifier.height(24.dp))
                     ResetBackgroundButton(onClick = viewModel::resetBackgroundToThemeDefault)
                 }
+
+                // ── SECCIÓN 5: Proximamente.... :O ────────────────────────────────────────
+                item {
+                    MinimalSectionHeader(title = "Proximamente.....", emoji = "🏗️")
+                    Spacer(Modifier.height(36.dp))
+                    HorizontalDivider(
+                        color     = AppColors.Maldicion.copy(alpha = 0.2f),
+                        thickness = 1.dp,
+                        modifier  = Modifier.padding(horizontal = 20.dp)
+                    )
+                    Spacer(Modifier.height(28.dp))
+                    Spacer(Modifier.height(16.dp))
+                    ComingSoonCard()
+                }
             }
         }
     }
@@ -427,6 +441,7 @@ private val SpecialParticleType.emoji: String get() = when(this) {
     SpecialParticleType.HEART_S -> "❤️"
     SpecialParticleType.SQUARE_DOT -> "🟦"
     SpecialParticleType.SHINE_STARDUST -> "✨"
+    SpecialParticleType.WAVE -> "〰️"
 }
 
 private val SpecialParticleType.displayName: String get() = when(this) {
@@ -445,6 +460,7 @@ private val SpecialParticleType.displayName: String get() = when(this) {
     SpecialParticleType.HEART_S -> "Corazones"
     SpecialParticleType.SQUARE_DOT -> "Pixeles"
     SpecialParticleType.SHINE_STARDUST -> "Polvo de Oro"
+    SpecialParticleType.WAVE -> "Ondas"
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

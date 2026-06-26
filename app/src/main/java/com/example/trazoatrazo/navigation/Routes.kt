@@ -18,8 +18,10 @@ object Routes {
     const val PIXEL_EDITOR_NEW  = "pixel_editor_new"
 
     const val PIXEL_EDITOR_EDIT = "pixel_editor_edit/{artworkId}"
+    const val PIXEL_REPLAY = "pixel_replay/{artworkId}"
 
     fun pixelEditorEdit(artworkId: String) = "pixel_editor_edit/$artworkId"
+    fun pixelReplay(artworkId: String) = "pixel_replay/$artworkId"
 
     // ── Categorías ───────────────────────────────────────────────────────────
     object Category {
