@@ -36,15 +36,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.trazoatrazo.data.PixelArtwork
+import com.example.trazoatrazo.data.local.repository.PixelArtRepository
 import com.example.trazoatrazo.presentation.pixeleditor.PixelArtViewModel
 import com.example.trazoatrazo.ui.theme.AppColors
 import kotlinx.coroutines.launch
 import kotlin.math.*
 
+
 // ── Paleta visual del editor ───────────────────────────────────────────────────
-private val CheckerLight  = Color(0xFFE8E8E8)
-private val CheckerDark   = Color(0xFFCCCCCC)
-private val GridLineColor = Color.Black.copy(alpha = 0.12f)
+private val CheckerLight         = Color(0xFFE8E8E8)
+private val CheckerDark          = Color(0xFFCCCCCC)
+private val GridLineColor        = Color.Black.copy(alpha = 0.12f)
 private val SelectionBorderColor = Color(0xFF29B6F6)
 
 private val basePalette = listOf(
@@ -53,7 +55,7 @@ private val basePalette = listOf(
     Color(0xFFEC407A), Color(0xFF6D4C41), Color(0xFF9E9E9E)
 )
 
-private val gridSizes = listOf(8, 16, 32)
+private val gridSizes     = listOf(8, 16, 32)
 private const val MIN_ZOOM = 1f
 private const val MAX_ZOOM = 4f
 
@@ -71,8 +73,13 @@ private enum class PixelTool(val emoji: String, val label: String) {
 
 private enum class PostSaveAction { EXIT, REPLAY }
 
-// ── Snapshot para deshacer/rehacer (pixels + orden de trazo, siempre juntos) ───
-private data class EditorSnapshot(val pixels: List<Color?>, val paintOrder: List<Int>)
+// ── Snapshot para deshacer/rehacer — ahora usa StrokeStep para el paintOrder ──
+//    El undo sigue siendo solo en memoria: guarda el estado completo del lienzo
+//    y la lista de pasos acumulados hasta ese momento.
+private data class EditorSnapshot(
+    val pixels: List<Color?>,
+    val paintOrder: List<PixelArtRepository.StrokeStep>     // ← antes List<Int>, ahora List<StrokeStep>
+)
 
 // ── Rectángulo de selección, en coordenadas de fila/columna del grid ───────────
 private data class SelRect(val minRow: Int, val maxRow: Int, val minCol: Int, val maxCol: Int)
@@ -84,42 +91,58 @@ private data class MoveOverlay(val hiddenIndices: Set<Int>, val floatingPixels: 
 @Composable
 fun PixelEditorScreen(
     viewModel: PixelArtViewModel,
-    existingArtworkId: String? = null,
+    existingArtworkId: Long? = null,      // ← antes String?, ahora Long? (Room ID)
     onBack: () -> Unit,
-    onReplay: (artworkId: String) -> Unit
+    onReplay: (drawingId: Long) -> Unit   // ← antes String, ahora Long
 ) {
-    val existing = remember(existingArtworkId) { existingArtworkId?.let(viewModel::findById) }
-    val artworkId = remember { existing?.id ?: viewModel.newId() }
+    // ── Carga del estado del editor desde el ViewModel ──────────────────────────
+    val editorState by viewModel.editorState.collectAsState()
 
-    var gridSize by remember { mutableIntStateOf(existing?.gridSize ?: 16) }
+    // Carga el dibujo existente o inicializa uno nuevo al entrar a la pantalla
+    LaunchedEffect(existingArtworkId) {
+        if (existingArtworkId != null) {
+            viewModel.loadDrawing(existingArtworkId)
+        } else {
+            viewModel.initNewDrawing(canvasSize = 16, themeId = AppColors.currentThemeId)
+        }
+    }
+
+    // ── Estado local del editor (lógica de lienzo, no persiste en Room) ─────────
+    var gridSize by remember { mutableIntStateOf(existingArtworkId?.let { 16 } ?: 16) }
     var pendingGridSize by remember { mutableStateOf<Int?>(null) }
 
-    val pixels = remember(gridSize) {
-        mutableStateListOf<Color?>().apply {
-            if (existing != null && existing.gridSize == gridSize) addAll(existing.pixels)
-            else repeat(gridSize * gridSize) { add(null) }
+    // Lienzo y orden de trazos — se sincronizan desde editorState al cargar
+    val pixels     = remember { mutableStateListOf<Color?>() }
+    val paintOrder = remember { mutableStateListOf<PixelArtRepository.StrokeStep>() }
+
+    // Sincronizar con Room cuando el estado del editor cambia (carga inicial o cambio de dibujo)
+    LaunchedEffect(editorState.drawingId, editorState.canvasSize) {
+        if (editorState.pixels.isNotEmpty()) {
+            gridSize = editorState.canvasSize
+            pixels.clear()
+            pixels.addAll(editorState.pixels)
+            paintOrder.clear()
+            paintOrder.addAll(editorState.paintOrder)
+        } else if (pixels.isEmpty()) {
+            // Inicialización por defecto para dibujo nuevo
+            repeat(gridSize * gridSize) { pixels.add(null) }
         }
     }
-    // Orden en que se pintó cada índice por primera vez (para "trazo a trazo")
-    val paintOrder = remember(gridSize) {
-        mutableStateListOf<Int>().apply {
-            if (existing != null && existing.gridSize == gridSize) addAll(existing.paintOrder)
-        }
-    }
+
     val undoStack = remember(gridSize) { mutableStateListOf<EditorSnapshot>() }
     val redoStack = remember(gridSize) { mutableStateListOf<EditorSnapshot>() }
 
-    var selectedColor   by remember { mutableStateOf(Color.Black) }
-    var selectedTool    by remember { mutableStateOf(PixelTool.PENCIL) }
-    var showGridLines   by remember { mutableStateOf(true) }
-    var showColorPicker by remember { mutableStateOf(false) }
-    var showSaveDialog  by remember { mutableStateOf(false) }
-    var postSaveAction  by remember { mutableStateOf(PostSaveAction.EXIT) }
+    var selectedColor    by remember { mutableStateOf(Color.Black) }
+    var selectedTool     by remember { mutableStateOf(PixelTool.PENCIL) }
+    var showGridLines    by remember { mutableStateOf(true) }
+    var showColorPicker  by remember { mutableStateOf(false) }
+    var showSaveDialog   by remember { mutableStateOf(false) }
+    var postSaveAction   by remember { mutableStateOf(PostSaveAction.EXIT) }
 
     // Zoom y desplazamiento del lienzo
-    var zoomLevel by remember(gridSize) { mutableFloatStateOf(1f) }
-    val hScrollState = remember(gridSize) { ScrollState(0) }
-    val vScrollState = remember(gridSize) { ScrollState(0) }
+    var zoomLevel    by remember(gridSize) { mutableFloatStateOf(1f) }
+    val hScrollState  = remember(gridSize) { ScrollState(0) }
+    val vScrollState  = remember(gridSize) { ScrollState(0) }
 
     // Estado de las herramientas de figura (línea / cuadrado / círculo)
     var shapeStartIndex by remember(gridSize) { mutableStateOf<Int?>(null) }
@@ -127,23 +150,28 @@ fun PixelEditorScreen(
     var shapeFilled     by remember { mutableStateOf(false) }
 
     // Estado de selección + mover
-    var selectionRect       by remember(gridSize) { mutableStateOf<SelRect?>(null) }
-    var selDragStartIndex   by remember(gridSize) { mutableStateOf<Int?>(null) }
-    var selDragCurrentIndex by remember(gridSize) { mutableStateOf<Int?>(null) }
-    var moveAnchorIndex     by remember(gridSize) { mutableStateOf<Int?>(null) }
-    var moveDelta           by remember(gridSize) { mutableStateOf(0 to 0) }
+    var selectionRect        by remember(gridSize) { mutableStateOf<SelRect?>(null) }
+    var selDragStartIndex    by remember(gridSize) { mutableStateOf<Int?>(null) }
+    var selDragCurrentIndex  by remember(gridSize) { mutableStateOf<Int?>(null) }
+    var moveAnchorIndex      by remember(gridSize) { mutableStateOf<Int?>(null) }
+    var moveDelta            by remember(gridSize) { mutableStateOf(0 to 0) }
 
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
         screenAnim.animateTo(1f, tween(500, easing = EaseOutCubic))
     }
 
-    // ── Registro de orden de trazo ──────────────────────────────────────────────
-    fun recordPaint(index: Int) {
-        if (index !in paintOrder) paintOrder.add(index)
+    // ── Registro de trazos con color real (para Room y el reproductor) ──────────
+    //    Antes: recordPaint(index) solo guardaba el índice.
+    //    Ahora: guarda StrokeStep(index, color) con el color exacto del momento.
+    //    Esto permite que el reproductor reproduzca cada píxel con el color correcto
+    //    aunque el tema de la app cambie después.
+    fun recordPaint(index: Int, color: Color) {
+        paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = index, color = color))
     }
     fun recordErase(index: Int) {
-        paintOrder.remove(index)
+        // Un borrado es también un paso: color null = transparente en Room
+        paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = index, color = null))
     }
 
     // ── Deshacer / Rehacer ──────────────────────────────────────────────────────
@@ -155,13 +183,13 @@ fun PixelEditorScreen(
     fun undo() {
         val last = undoStack.removeLastOrNull() ?: return
         redoStack.add(EditorSnapshot(pixels.toList(), paintOrder.toList()))
-        pixels.clear(); pixels.addAll(last.pixels)
+        pixels.clear();     pixels.addAll(last.pixels)
         paintOrder.clear(); paintOrder.addAll(last.paintOrder)
     }
     fun redo() {
         val next = redoStack.removeLastOrNull() ?: return
         undoStack.add(EditorSnapshot(pixels.toList(), paintOrder.toList()))
-        pixels.clear(); pixels.addAll(next.pixels)
+        pixels.clear();     pixels.addAll(next.pixels)
         paintOrder.clear(); paintOrder.addAll(next.paintOrder)
     }
     fun clearCanvas() {
@@ -177,7 +205,6 @@ fun PixelEditorScreen(
         if (pixels.any { it != null }) pendingGridSize = newSize else gridSize = newSize
     }
 
-    // Cuando un segundo dedo entra a medio gesto, cancela el toque/arrastre accidental
     fun cancelAccidentalFirstTouch() {
         when (selectedTool) {
             PixelTool.PENCIL, PixelTool.ERASER, PixelTool.FILL -> undo()
@@ -188,7 +215,7 @@ fun PixelEditorScreen(
                 selDragStartIndex = null; selDragCurrentIndex = null
                 moveAnchorIndex = null; moveDelta = 0 to 0
             }
-            PixelTool.EYEDROPPER -> { /* nada que cancelar de forma segura */ }
+            PixelTool.EYEDROPPER -> { /* nada que cancelar */ }
         }
     }
 
@@ -198,7 +225,7 @@ fun PixelEditorScreen(
             PixelTool.PENCIL -> {
                 if (isFirstTouch) pushUndo()
                 pixels[index] = selectedColor
-                recordPaint(index)
+                recordPaint(index, selectedColor)   // ← color real, no índice
             }
             PixelTool.ERASER -> {
                 if (isFirstTouch) pushUndo()
@@ -212,7 +239,7 @@ fun PixelEditorScreen(
                     if (targetColor != selectedColor) {
                         floodFillIndices(pixels, gridSize, index).forEach { idx ->
                             pixels[idx] = selectedColor
-                            recordPaint(idx)
+                            recordPaint(idx, selectedColor)   // ← color real
                         }
                     }
                 }
@@ -247,7 +274,7 @@ fun PixelEditorScreen(
                 indices.forEach { idx ->
                     if (idx in pixels.indices) {
                         pixels[idx] = selectedColor
-                        recordPaint(idx)
+                        recordPaint(idx, selectedColor)   // ← color real
                     }
                 }
             }
@@ -256,24 +283,20 @@ fun PixelEditorScreen(
         shapeEndIndex   = null
     }
 
-    // ── Selección: empezar selección nueva o empezar a mover la existente ──────
+    // ── Selección ───────────────────────────────────────────────────────────────
     fun handleSelectDown(index: Int) {
         val rect = selectionRect
-        val row = index / gridSize
-        val col = index % gridSize
+        val row = index / gridSize; val col = index % gridSize
         if (rect != null && row in rect.minRow..rect.maxRow && col in rect.minCol..rect.maxCol) {
-            moveAnchorIndex = index
-            moveDelta = 0 to 0
+            moveAnchorIndex = index; moveDelta = 0 to 0
         } else {
             selectionRect = null
-            selDragStartIndex = index
-            selDragCurrentIndex = index
+            selDragStartIndex = index; selDragCurrentIndex = index
         }
     }
 
     fun handleSelectMove(index: Int) {
-        val anchor = moveAnchorIndex
-        val rect = selectionRect
+        val anchor = moveAnchorIndex; val rect = selectionRect
         if (anchor != null && rect != null) {
             val anchorRow = anchor / gridSize; val anchorCol = anchor % gridSize
             val curRow = index / gridSize;     val curCol = index % gridSize
@@ -285,31 +308,31 @@ fun PixelEditorScreen(
         }
     }
 
-    // Aplica el movimiento de verdad sobre los píxeles
     fun commitMove() {
         val rect = selectionRect ?: return
         val (dRow, dCol) = moveDelta
         if (dRow == 0 && dCol == 0) return
-
         pushUndo()
-
         val moved = buildList {
-            for (row in rect.minRow..rect.maxRow) {
-                for (col in rect.minCol..rect.maxCol) {
+            for (row in rect.minRow..rect.maxRow)
+                for (col in rect.minCol..rect.maxCol)
                     add(Triple(row, col, pixels.getOrNull(row * gridSize + col)))
-                }
-            }
         }
         moved.forEach { (row, col, _) ->
             val idx = row * gridSize + col
             pixels[idx] = null
-            paintOrder.remove(idx)
+            paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = idx, color = null))   // borra la posición original
         }
         moved.forEach { (row, col, color) ->
             val newIdx = (row + dRow) * gridSize + (col + dCol)
             if (newIdx in pixels.indices) {
                 pixels[newIdx] = color
-                if (color != null) recordPaint(newIdx) else paintOrder.remove(newIdx)
+                if (color != null) paintOrder.add(
+                    PixelArtRepository.StrokeStep(
+                        pixelIndex = newIdx,
+                        color = color
+                    )
+                )
             }
         }
         selectionRect = SelRect(
@@ -320,19 +343,16 @@ fun PixelEditorScreen(
 
     fun handleSelectUp() {
         if (moveAnchorIndex != null) {
-            commitMove()
-            moveAnchorIndex = null
-            moveDelta = 0 to 0
+            commitMove(); moveAnchorIndex = null; moveDelta = 0 to 0
         } else if (selDragStartIndex != null && selDragCurrentIndex != null) {
             val r0 = selDragStartIndex!! / gridSize; val c0 = selDragStartIndex!! % gridSize
             val r1 = selDragCurrentIndex!! / gridSize; val c1 = selDragCurrentIndex!! % gridSize
             selectionRect = SelRect(minOf(r0, r1), maxOf(r0, r1), minOf(c0, c1), maxOf(c0, c1))
-            selDragStartIndex = null
-            selDragCurrentIndex = null
+            selDragStartIndex = null; selDragCurrentIndex = null
         }
     }
 
-    // ── Vista previa de figura (línea/cuadrado/círculo) ─────────────────────────
+    // ── Vista previa de figura mientras se arrastra ─────────────────────────────
     val previewIndices =
         if (shapeStartIndex != null && shapeEndIndex != null) {
             when (selectedTool) {
@@ -358,11 +378,11 @@ fun PixelEditorScreen(
         else -> selectionRect
     }
 
-    // ── Mientras se mueve: qué se oculta del lienzo y qué flota encima ──────────
+    // ── Overlay de píxeles flotantes mientras se mueve la selección ─────────────
     val moveOverlay: MoveOverlay? = if (moveAnchorIndex != null && selectionRect != null) {
         val rect = selectionRect!!
         val (dRow, dCol) = moveDelta
-        val hidden = mutableSetOf<Int>()
+        val hidden   = mutableSetOf<Int>()
         val floating = mutableListOf<Pair<Int, Color>>()
         for (row in rect.minRow..rect.maxRow) {
             for (col in rect.minCol..rect.maxCol) {
@@ -377,6 +397,7 @@ fun PixelEditorScreen(
         MoveOverlay(hidden, floating)
     } else null
 
+    // ── Layout principal ────────────────────────────────────────────────────────
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -390,8 +411,9 @@ fun PixelEditorScreen(
             PixelEditorHeader(
                 onBack        = onBack,
                 gridSize      = gridSize,
+                isSaving      = editorState.isSaving,
                 canReplay     = paintOrder.isNotEmpty(),
-                onSaveClick   = { postSaveAction = PostSaveAction.EXIT; showSaveDialog = true },
+                onSaveClick   = { postSaveAction = PostSaveAction.EXIT;   showSaveDialog = true },
                 onReplayClick = { postSaveAction = PostSaveAction.REPLAY; showSaveDialog = true }
             )
 
@@ -413,7 +435,7 @@ fun PixelEditorScreen(
                         .background(Color.White)
                         .border(1.2.dp, AppColors.Maldicion.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                 ) {
-                    val scope = this
+                    val scope      = this
                     val canvasSize = scope.maxWidth * zoomLevel
 
                     Box(
@@ -439,13 +461,17 @@ fun PixelEditorScreen(
                             onPointerMove  = { idx ->
                                 when {
                                     selectedTool == PixelTool.SELECT -> handleSelectMove(idx)
-                                    selectedTool == PixelTool.PENCIL || selectedTool == PixelTool.ERASER ||
-                                            selectedTool == PixelTool.LINE   || selectedTool == PixelTool.SQUARE ||
+                                    selectedTool == PixelTool.PENCIL ||
+                                            selectedTool == PixelTool.ERASER ||
+                                            selectedTool == PixelTool.LINE   ||
+                                            selectedTool == PixelTool.SQUARE ||
                                             selectedTool == PixelTool.CIRCLE -> applyToolAt(idx, isFirstTouch = false)
+                                    else -> Unit
                                 }
                             },
                             onPointerUp   = {
-                                if (selectedTool == PixelTool.SELECT) handleSelectUp() else commitShapeIfNeeded()
+                                if (selectedTool == PixelTool.SELECT) handleSelectUp()
+                                else commitShapeIfNeeded()
                             },
                             onPanDetected = { cancelAccidentalFirstTouch() },
                             modifier      = Modifier.size(canvasSize)
@@ -498,10 +524,10 @@ fun PixelEditorScreen(
                             label      = tool.label,
                             isSelected = tool == selectedTool,
                             onClick    = {
-                                selectedTool = tool
+                                selectedTool    = tool
                                 shapeStartIndex = null; shapeEndIndex = null
                                 selDragStartIndex = null; selDragCurrentIndex = null
-                                moveAnchorIndex = null; moveDelta = 0 to 0
+                                moveAnchorIndex   = null; moveDelta = 0 to 0
                             }
                         )
                     }
@@ -514,8 +540,8 @@ fun PixelEditorScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Text("Modo:", fontSize = 12.sp, color = AppColors.Eco)
-                        ShapeModeChip(label = "Borde",   selected = !shapeFilled, onClick = { shapeFilled = false })
-                        ShapeModeChip(label = "Relleno", selected = shapeFilled,  onClick = { shapeFilled = true })
+                        ShapeModeChip("Borde",   selected = !shapeFilled, onClick = { shapeFilled = false })
+                        ShapeModeChip("Relleno", selected = shapeFilled,  onClick = { shapeFilled = true })
                     }
                 }
 
@@ -536,29 +562,15 @@ fun PixelEditorScreen(
 
                 // ── Acciones: deshacer · rehacer · cuadrícula · limpiar ───────
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    IconActionButton(
-                        emoji   = "↩️",
-                        enabled = undoStack.isNotEmpty(),
-                        onClick = { undo() }
-                    )
-                    IconActionButton(
-                        emoji   = "↪️",
-                        enabled = redoStack.isNotEmpty(),
-                        onClick = { redo() }
-                    )
-                    IconActionButton(
-                        emoji   = if (showGridLines) "▦" else "▢",
-                        onClick = { showGridLines = !showGridLines }
-                    )
-                    IconActionButton(
-                        emoji   = "🗑️",
-                        onClick = { clearCanvas() }
-                    )
+                    IconActionButton("↩️", enabled = undoStack.isNotEmpty(), onClick = { undo() })
+                    IconActionButton("↪️", enabled = redoStack.isNotEmpty(), onClick = { redo() })
+                    IconActionButton(if (showGridLines) "▦" else "▢", onClick = { showGridLines = !showGridLines })
+                    IconActionButton("🗑️", onClick = { clearCanvas() })
                 }
 
                 // ── Paleta de colores ─────────────────────────────────────────
                 Row(
-                    verticalAlignment    = Alignment.CenterVertically,
+                    verticalAlignment     = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
@@ -569,7 +581,6 @@ fun PixelEditorScreen(
                             .background(selectedColor)
                             .border(2.dp, AppColors.Reversa.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
                     )
-
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         items(basePalette) { color ->
                             ColorSwatchButton(
@@ -585,6 +596,7 @@ fun PixelEditorScreen(
         }
     }
 
+    // ── Diálogos superpuestos ───────────────────────────────────────────────────
     if (showColorPicker) {
         ColorPickerDialog(
             initialColor    = selectedColor,
@@ -596,29 +608,45 @@ fun PixelEditorScreen(
     pendingGridSize?.let { target ->
         ResizeConfirmDialog(
             targetSize = target,
-            onConfirm  = { gridSize = target; pendingGridSize = null },
+            onConfirm  = {
+                gridSize = target
+                // Resetear explícitamente las listas locales para el nuevo tamaño
+                pixels.clear()
+                repeat(target * target) { pixels.add(null) }
+                paintOrder.clear()
+                undoStack.clear()
+                redoStack.clear()
+                selectionRect = null
+
+                pendingGridSize = null
+            },
             onDismiss  = { pendingGridSize = null }
         )
     }
 
     if (showSaveDialog) {
         SaveArtworkDialog(
-            initialName = existing?.name ?: "",
+            // Usa el título que ya tiene el dibujo si se está editando uno existente
+            initialName = editorState.title.takeIf { it != "Mi pixel art" } ?: "",
             onConfirm   = { name ->
-                viewModel.save(
-                    PixelArtwork(
-                        id         = artworkId,
-                        name       = name,
-                        gridSize   = gridSize,
-                        pixels     = pixels.toList(),
-                        paintOrder = paintOrder.toList(),
-                        createdAt  = existing?.createdAt ?: System.currentTimeMillis()
-                    )
-                )
+                // 1. Actualizar el título en el ViewModel
+                viewModel.updateTitle(name)
+                // 2. Sincronizar el lienzo local al estado del ViewModel antes de guardar
+                //    El ViewModel ya tiene pixels/paintOrder desde los recordPaint/recordErase,
+                //    pero aquí forzamos que el estado local sea la fuente de verdad.
+                //    (paintOrder local ya tiene todos los StrokeStep acumulados)
                 showSaveDialog = false
+                viewModel.saveCurrentDrawing(
+                    canvasSize        = gridSize,
+                    pixelsSnapshot    = pixels.toList(),
+                    paintOrderSnapshot = paintOrder.toList()
+                )
                 when (postSaveAction) {
                     PostSaveAction.EXIT   -> onBack()
-                    PostSaveAction.REPLAY -> onReplay(artworkId)
+                    PostSaveAction.REPLAY -> {
+                        // Esperamos el ID guardado para navegar al reproductor
+                        editorState.drawingId?.let { onReplay(it) }
+                    }
                 }
             },
             onDismiss = { showSaveDialog = false }
@@ -644,7 +672,6 @@ private fun SaveArtworkDialog(
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Text("💾 Guardar creación", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
-
                 OutlinedTextField(
                     value         = name,
                     onValueChange = { name = it },
@@ -652,19 +679,13 @@ private fun SaveArtworkDialog(
                     singleLine    = true,
                     modifier      = Modifier.fillMaxWidth()
                 )
-
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = { onConfirm(name.ifBlank { "Mi creación" }) },
                         colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Maldicion)
-                    ) {
-                        Text("Guardar", color = Color.White)
-                    }
+                    ) { Text("Guardar", color = Color.White) }
                 }
             }
         }
@@ -673,11 +694,7 @@ private fun SaveArtworkDialog(
 
 // ── Diálogo de confirmación de cambio de tamaño ──────────────────────────────────
 @Composable
-private fun ResizeConfirmDialog(
-    targetSize: Int,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun ResizeConfirmDialog(targetSize: Int, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     Dialog(onDismissRequest = onDismiss) {
         Box(
             modifier = Modifier
@@ -686,30 +703,18 @@ private fun ResizeConfirmDialog(
                 .padding(22.dp)
         ) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text(
-                    text       = "⚠️ Cambiar tamaño de cuadrícula",
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = AppColors.Reversa
-                )
+                Text("⚠️ Cambiar tamaño de cuadrícula", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
                 Text(
                     text       = "Cambiar a ${targetSize}×${targetSize} borrará tu dibujo actual. ¿Quieres continuar?",
-                    fontSize   = 13.sp,
-                    color      = AppColors.Eco,
-                    lineHeight = 18.sp
+                    fontSize   = 13.sp, color = AppColors.Eco, lineHeight = 18.sp
                 )
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
                     TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
                     Spacer(Modifier.width(8.dp))
                     Button(
                         onClick = onConfirm,
                         colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Sukuna)
-                    ) {
-                        Text("Cambiar y borrar", color = Color.White)
-                    }
+                    ) { Text("Cambiar y borrar", color = Color.White) }
                 }
             }
         }
@@ -721,6 +726,7 @@ private fun ResizeConfirmDialog(
 private fun PixelEditorHeader(
     onBack: () -> Unit,
     gridSize: Int,
+    isSaving: Boolean,      // ← nuevo: bloquea el botón guardar mientras Room trabaja
     canReplay: Boolean,
     onSaveClick: () -> Unit,
     onReplayClick: () -> Unit
@@ -741,26 +747,11 @@ private fun PixelEditorHeader(
                     onClick           = onBack
                 )
                 .padding(horizontal = 12.dp, vertical = 8.dp)
-        ) {
-            Text("←", fontSize = 15.sp, color = AppColors.ReversaSuave)
-        }
+        ) { Text("←", fontSize = 15.sp, color = AppColors.ReversaSuave) }
 
-        Column(
-            modifier            = Modifier.weight(1f),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text       = "🎨 Editor de Píxeles",
-                fontSize   = 16.sp,
-                fontWeight = FontWeight.ExtraBold,
-                color      = AppColors.Reversa,
-                maxLines   = 1
-            )
-            Text(
-                text     = "${gridSize}×${gridSize} px",
-                fontSize = 10.sp,
-                color    = AppColors.Eco
-            )
+        Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+            Text("🎨 Editor de Píxeles", fontSize = 16.sp, fontWeight = FontWeight.ExtraBold, color = AppColors.Reversa, maxLines = 1)
+            Text("${gridSize}×${gridSize} px", fontSize = 10.sp, color = AppColors.Eco)
         }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -776,21 +767,32 @@ private fun PixelEditorHeader(
                         onClick           = onReplayClick
                     )
                     .padding(horizontal = 12.dp, vertical = 8.dp)
-            ) {
-                Text("▶️", fontSize = 15.sp)
-            }
+            ) { Text("▶️", fontSize = 15.sp) }
+
+            // Botón guardar — muestra spinner mientras isSaving = true
             Box(
                 modifier = Modifier
+                    .alpha(if (isSaving) 0.6f else 1f)
                     .clip(RoundedCornerShape(10.dp))
                     .background(AppColors.Maldicion)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication        = null,
+                        enabled           = !isSaving,
                         onClick           = onSaveClick
                     )
-                    .padding(horizontal = 12.dp, vertical = 8.dp)
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Text("💾", fontSize = 15.sp, color = Color.White)
+                if (isSaving) {
+                    CircularProgressIndicator(
+                        modifier  = Modifier.size(16.dp),
+                        color     = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("💾", fontSize = 15.sp, color = Color.White)
+                }
             }
         }
     }
@@ -830,7 +832,6 @@ private fun PixelCanvas(
                     while (true) {
                         val event   = awaitPointerEvent()
                         val pressed = event.changes.filter { it.pressed }
-
                         if (pressed.isEmpty()) break
 
                         if (pressed.size >= 2) {
@@ -859,44 +860,32 @@ private fun PixelCanvas(
                 }
             }
     ) {
-        val cell = size.width / gridSize
+        val cell          = size.width / gridSize
         val hiddenIndices = moveOverlay?.hiddenIndices ?: emptySet()
 
+        // Píxeles del lienzo
         for (row in 0 until gridSize) {
             for (col in 0 until gridSize) {
                 val idx     = row * gridSize + col
                 val checker = if ((row + col) % 2 == 0) CheckerLight else CheckerDark
                 val color   = if (idx in hiddenIndices) null else pixels.getOrNull(idx)
-                drawRect(
-                    color   = color ?: checker,
-                    topLeft = Offset(col * cell, row * cell),
-                    size    = Size(cell, cell)
-                )
+                drawRect(color ?: checker, Offset(col * cell, row * cell), Size(cell, cell))
             }
         }
 
         // Vista previa de figura (línea/cuadrado/círculo) mientras se arrastra
         previewIndices.forEach { idx ->
-            val row = idx / gridSize
-            val col = idx % gridSize
-            drawRect(
-                color   = previewColor.copy(alpha = 0.55f),
-                topLeft = Offset(col * cell, row * cell),
-                size    = Size(cell, cell)
-            )
+            val row = idx / gridSize; val col = idx % gridSize
+            drawRect(previewColor.copy(alpha = 0.55f), Offset(col * cell, row * cell), Size(cell, cell))
         }
 
-        // Bloque "flotante" de la selección mientras se mueve
+        // Bloque flotante de la selección mientras se mueve
         moveOverlay?.floatingPixels?.forEach { (idx, color) ->
-            val row = idx / gridSize
-            val col = idx % gridSize
-            drawRect(
-                color   = color.copy(alpha = 0.92f),
-                topLeft = Offset(col * cell, row * cell),
-                size    = Size(cell, cell)
-            )
+            val row = idx / gridSize; val col = idx % gridSize
+            drawRect(color.copy(alpha = 0.92f), Offset(col * cell, row * cell), Size(cell, cell))
         }
 
+        // Líneas de cuadrícula
         if (showGridLines) {
             for (i in 0..gridSize) {
                 val pos = i * cell
@@ -928,21 +917,18 @@ private fun offsetToIndex(offset: Offset, canvasPx: Float, gridSize: Int): Int? 
 
 private fun floodFillIndices(list: List<Color?>, gridSize: Int, startIndex: Int): List<Int> {
     if (startIndex !in list.indices) return emptyList()
-    val target = list[startIndex]
+    val target  = list[startIndex]
     val visited = BooleanArray(list.size)
-    val order = mutableListOf<Int>()
-    val queue = ArrayDeque<Int>()
-    queue.add(startIndex)
-    visited[startIndex] = true
+    val order   = mutableListOf<Int>()
+    val queue   = ArrayDeque<Int>()
+    queue.add(startIndex); visited[startIndex] = true
 
     while (queue.isNotEmpty()) {
         val idx = queue.removeFirst()
         order.add(idx)
-        val row = idx / gridSize
-        val col = idx % gridSize
-
-        if (col > 0)            tryEnqueueMatch(list, queue, visited, idx - 1, target)
-        if (col < gridSize - 1) tryEnqueueMatch(list, queue, visited, idx + 1, target)
+        val row = idx / gridSize; val col = idx % gridSize
+        if (col > 0)            tryEnqueueMatch(list, queue, visited, idx - 1,       target)
+        if (col < gridSize - 1) tryEnqueueMatch(list, queue, visited, idx + 1,       target)
         if (row > 0)            tryEnqueueMatch(list, queue, visited, idx - gridSize, target)
         if (row < gridSize - 1) tryEnqueueMatch(list, queue, visited, idx + gridSize, target)
     }
@@ -952,26 +938,16 @@ private fun floodFillIndices(list: List<Color?>, gridSize: Int, startIndex: Int)
 private fun tryEnqueueMatch(
     list: List<Color?>, queue: ArrayDeque<Int>, visited: BooleanArray, idx: Int, target: Color?
 ) {
-    if (!visited[idx] && list[idx] == target) {
-        visited[idx] = true
-        queue.add(idx)
-    }
+    if (!visited[idx] && list[idx] == target) { visited[idx] = true; queue.add(idx) }
 }
 
-// Línea recta entre dos índices del grid (algoritmo de Bresenham)
 private fun bresenhamLine(startIdx: Int, endIdx: Int, gridSize: Int): List<Int> {
-    var x0 = startIdx % gridSize
-    var y0 = startIdx / gridSize
-    val x1 = endIdx % gridSize
-    val y1 = endIdx / gridSize
-
+    var x0 = startIdx % gridSize; var y0 = startIdx / gridSize
+    val x1 = endIdx % gridSize;   val y1 = endIdx / gridSize
     val points = mutableListOf<Int>()
-    val dx = abs(x1 - x0)
-    val dy = abs(y1 - y0)
-    val sx = if (x1 >= x0) 1 else -1
-    val sy = if (y1 >= y0) 1 else -1
+    val dx = abs(x1 - x0); val dy = abs(y1 - y0)
+    val sx = if (x1 >= x0) 1 else -1; val sy = if (y1 >= y0) 1 else -1
     var err = dx - dy
-
     while (true) {
         points.add(y0 * gridSize + x0)
         if (x0 == x1 && y0 == y1) break
@@ -982,51 +958,40 @@ private fun bresenhamLine(startIdx: Int, endIdx: Int, gridSize: Int): List<Int> 
     return points
 }
 
-// Rectángulo (borde o relleno) entre dos índices del grid
 private fun rectangleIndices(startIdx: Int, endIdx: Int, gridSize: Int, filled: Boolean): List<Int> {
     val r0 = startIdx / gridSize; val c0 = startIdx % gridSize
     val r1 = endIdx / gridSize;   val c1 = endIdx % gridSize
     val minR = minOf(r0, r1); val maxR = maxOf(r0, r1)
     val minC = minOf(c0, c1); val maxC = maxOf(c0, c1)
-
     if (filled) {
         val result = mutableListOf<Int>()
         for (row in minR..maxR) for (col in minC..maxC) result.add(row * gridSize + col)
         return result
     }
-
     val ordered = LinkedHashSet<Int>()
-    for (c in minC..maxC) ordered.add(minR * gridSize + c)
-    for (r in minR..maxR) ordered.add(r * gridSize + maxC)
+    for (c in minC..maxC)     ordered.add(minR * gridSize + c)
+    for (r in minR..maxR)     ordered.add(r * gridSize + maxC)
     for (c in maxC downTo minC) ordered.add(maxR * gridSize + c)
     for (r in maxR downTo minR) ordered.add(r * gridSize + minC)
     return ordered.toList()
 }
 
-// Círculo/óvalo (borde o relleno), ajustado al rectángulo entre dos índices
 private fun ellipseIndices(startIdx: Int, endIdx: Int, gridSize: Int, filled: Boolean): List<Int> {
     val r0 = startIdx / gridSize; val c0 = startIdx % gridSize
     val r1 = endIdx / gridSize;   val c1 = endIdx % gridSize
     val minR = minOf(r0, r1); val maxR = maxOf(r0, r1)
     val minC = minOf(c0, c1); val maxC = maxOf(c0, c1)
-
-    val cx = (minC + maxC) / 2f
-    val cy = (minR + maxR) / 2f
+    val cx = (minC + maxC) / 2f; val cy = (minR + maxR) / 2f
     val rx = ((maxC - minC) / 2f).coerceAtLeast(0.5f)
     val ry = ((maxR - minR) / 2f).coerceAtLeast(0.5f)
-
     if (filled) {
         val result = mutableListOf<Int>()
-        for (row in minR..maxR) {
-            for (col in minC..maxC) {
-                val nx = (col - cx) / rx
-                val ny = (row - cy) / ry
-                if (nx * nx + ny * ny <= 1f) result.add(row * gridSize + col)
-            }
+        for (row in minR..maxR) for (col in minC..maxC) {
+            val nx = (col - cx) / rx; val ny = (row - cy) / ry
+            if (nx * nx + ny * ny <= 1f) result.add(row * gridSize + col)
         }
         return result
     }
-
     val ordered = LinkedHashSet<Int>()
     val steps = (8 * maxOf(rx, ry)).toInt().coerceAtLeast(24)
     for (i in 0 until steps) {
@@ -1038,28 +1003,18 @@ private fun ellipseIndices(startIdx: Int, endIdx: Int, gridSize: Int, filled: Bo
     return ordered.toList()
 }
 
-// ── Botón de herramienta ────────────────────────────────────────────────────────
+// ── Componentes de UI ─────────────────────────────────────────────────────────────
+
 @Composable
 private fun ToolButton(emoji: String, label: String, isSelected: Boolean, onClick: () -> Unit) {
-    val bgColor by animateColorAsState(
-        if (isSelected) AppColors.Maldicion.copy(alpha = 0.25f) else AppColors.Sombra,
-        label = "toolBg"
-    )
-    val borderColor by animateColorAsState(
-        if (isSelected) AppColors.Maldicion else Color.Transparent,
-        label = "toolBorder"
-    )
-
+    val bgColor     by animateColorAsState(if (isSelected) AppColors.Maldicion.copy(alpha = 0.25f) else AppColors.Sombra, label = "toolBg")
+    val borderColor by animateColorAsState(if (isSelected) AppColors.Maldicion else Color.Transparent, label = "toolBorder")
     Column(
         modifier = Modifier
             .clip(RoundedCornerShape(14.dp))
             .background(bgColor)
             .border(1.dp, borderColor, RoundedCornerShape(14.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick
-            )
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -1068,52 +1023,32 @@ private fun ToolButton(emoji: String, label: String, isSelected: Boolean, onClic
     }
 }
 
-// ── Chip de tamaño de cuadrícula ─────────────────────────────────────────────────
 @Composable
 private fun GridSizeChip(size: Int, isSelected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
             .background(if (isSelected) AppColors.Maldicion else AppColors.Sombra)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick
-            )
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 14.dp, vertical = 6.dp)
     ) {
-        Text(
-            text       = "${size}×${size}",
-            fontSize   = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color      = if (isSelected) Color.White else AppColors.Eco
-        )
+        Text("${size}×${size}", fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (isSelected) Color.White else AppColors.Eco)
     }
 }
 
-// ── Chip Borde / Relleno ──────────────────────────────────────────────────────
 @Composable
 private fun ShapeModeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(10.dp))
             .background(if (selected) AppColors.Maldicion else AppColors.Sombra)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick
-            )
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp)
     ) {
-        Text(
-            text     = label,
-            fontSize = 12.sp,
-            color    = if (selected) Color.White else AppColors.Eco
-        )
+        Text(label, fontSize = 12.sp, color = if (selected) Color.White else AppColors.Eco)
     }
 }
 
-// ── Botón de icono (deshacer / rehacer / cuadrícula / limpiar / zoom) ───────────
 @Composable
 private fun IconActionButton(emoji: String, enabled: Boolean = true, onClick: () -> Unit) {
     Box(
@@ -1122,19 +1057,11 @@ private fun IconActionButton(emoji: String, enabled: Boolean = true, onClick: ()
             .alpha(if (enabled) 1f else 0.35f)
             .clip(RoundedCornerShape(10.dp))
             .background(AppColors.Sombra)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                enabled           = enabled,
-                onClick           = onClick
-            ),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center
-    ) {
-        Text(emoji, fontSize = 16.sp)
-    }
+    ) { Text(emoji, fontSize = 16.sp) }
 }
 
-// ── Swatch de color de la paleta ─────────────────────────────────────────────────
 @Composable
 private fun ColorSwatchButton(color: Color, isSelected: Boolean, onClick: () -> Unit) {
     Box(
@@ -1147,48 +1074,25 @@ private fun ColorSwatchButton(color: Color, isSelected: Boolean, onClick: () -> 
                 color = if (isSelected) AppColors.Tecnica else AppColors.Eco.copy(alpha = 0.3f),
                 shape = RoundedCornerShape(10.dp)
             )
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick
-            )
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick)
     )
 }
 
-// ── Botón "color personalizado" (abre el picker) ─────────────────────────────────
 @Composable
 private fun CustomColorButton(onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .size(38.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(
-                Brush.sweepGradient(
-                    listOf(
-                        Color(0xFFE53935), Color(0xFFFFEB3B), Color(0xFF43A047),
-                        Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFE53935)
-                    )
-                )
-            )
+            .background(Brush.sweepGradient(listOf(Color(0xFFE53935), Color(0xFFFFEB3B), Color(0xFF43A047), Color(0xFF1E88E5), Color(0xFF8E24AA), Color(0xFFE53935))))
             .border(1.dp, AppColors.Eco.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication        = null,
-                onClick           = onClick
-            ),
+            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center
-    ) {
-        Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-    }
+    ) { Text("+", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
 }
 
-// ── Diálogo de color personalizado (HSV) ─────────────────────────────────────────
 @Composable
-private fun ColorPickerDialog(
-    initialColor: Color,
-    onColorSelected: (Color) -> Unit,
-    onDismiss: () -> Unit
-) {
+private fun ColorPickerDialog(initialColor: Color, onColorSelected: (Color) -> Unit, onDismiss: () -> Unit) {
     val initialHsv = remember {
         val out = FloatArray(3)
         AndroidColor.colorToHSV(initialColor.toArgb(), out)
@@ -1197,55 +1101,21 @@ private fun ColorPickerDialog(
     var hue        by remember { mutableFloatStateOf(initialHsv[0]) }
     var saturation by remember { mutableFloatStateOf(initialHsv[1]) }
     var brightness by remember { mutableFloatStateOf(initialHsv[2]) }
-
     val currentColor = remember(hue, saturation, brightness) {
         Color(AndroidColor.HSVToColor(floatArrayOf(hue, saturation, brightness)))
     }
-
     Dialog(onDismissRequest = onDismiss) {
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(AppColors.Sombra)
-                .padding(22.dp)
-        ) {
+        Box(modifier = Modifier.clip(RoundedCornerShape(20.dp)).background(AppColors.Sombra).padding(22.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-
-                Text(
-                    text       = "🎨 Color personalizado",
-                    fontSize   = 16.sp,
-                    fontWeight = FontWeight.Bold,
-                    color      = AppColors.Reversa
-                )
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(currentColor)
-                        .border(1.dp, AppColors.Reversa.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
-                )
-
-                ColorSliderRow(label = "Tono",        value = hue,        range = 0f..360f, onValue = { hue = it })
-                ColorSliderRow(label = "Saturación",  value = saturation, range = 0f..1f,   onValue = { saturation = it })
-                ColorSliderRow(label = "Brillo",      value = brightness, range = 0f..1f,   onValue = { brightness = it })
-
-                Row(
-                    modifier              = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    TextButton(onClick = onDismiss) {
-                        Text("Cancelar", color = AppColors.Eco)
-                    }
+                Text("🎨 Color personalizado", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                Box(modifier = Modifier.fillMaxWidth().height(50.dp).clip(RoundedCornerShape(12.dp)).background(currentColor).border(1.dp, AppColors.Reversa.copy(alpha = 0.2f), RoundedCornerShape(12.dp)))
+                ColorSliderRow("Tono",       hue,        0f..360f, { hue = it })
+                ColorSliderRow("Saturación", saturation, 0f..1f,   { saturation = it })
+                ColorSliderRow("Brillo",     brightness, 0f..1f,   { brightness = it })
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
                     Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = {
-                            onColorSelected(currentColor)
-                            onDismiss()
-                        },
-                        colors = ButtonDefaults.buttonColors(containerColor = AppColors.Maldicion)
-                    ) {
+                    Button(onClick = { onColorSelected(currentColor); onDismiss() }, colors = ButtonDefaults.buttonColors(containerColor = AppColors.Maldicion)) {
                         Text("Usar color", color = Color.White)
                     }
                 }
@@ -1255,23 +1125,12 @@ private fun ColorPickerDialog(
 }
 
 @Composable
-private fun ColorSliderRow(
-    label: String,
-    value: Float,
-    range: ClosedFloatingPointRange<Float>,
-    onValue: (Float) -> Unit
-) {
+private fun ColorSliderRow(label: String, value: Float, range: ClosedFloatingPointRange<Float>, onValue: (Float) -> Unit) {
     Column {
         Text(label, fontSize = 12.sp, color = AppColors.Eco)
         Slider(
-            value         = value,
-            onValueChange = onValue,
-            valueRange    = range,
-            colors = SliderDefaults.colors(
-                thumbColor         = AppColors.Tecnica,
-                activeTrackColor   = AppColors.Maldicion,
-                inactiveTrackColor = AppColors.Dominio
-            )
+            value = value, onValueChange = onValue, valueRange = range,
+            colors = SliderDefaults.colors(thumbColor = AppColors.Tecnica, activeTrackColor = AppColors.Maldicion, inactiveTrackColor = AppColors.Dominio)
         )
     }
 }

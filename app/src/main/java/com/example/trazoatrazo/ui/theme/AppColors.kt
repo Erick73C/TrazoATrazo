@@ -22,6 +22,9 @@ object AppColors {
         _scheme = themeColorSchemeFor(theme)
     }
 
+    // ── Propiedades de estado ─────────────────────────────────────────────────
+    val currentThemeId: String get() = _scheme.appTheme.name
+
     // ── Fondos ────────────────────────────────────────────────────────────────
     val Vacio:   Color get() = _scheme.vacio
     val Sombra:  Color get() = _scheme.sombra

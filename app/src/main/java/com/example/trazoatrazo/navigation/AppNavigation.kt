@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -20,6 +21,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.trazoatrazo.data.local.repository.PixelArtRepository
 import com.example.trazoatrazo.drawings.animals.CatBlackScreen
 import com.example.trazoatrazo.drawings.animals.TurtleScreen
 import com.example.trazoatrazo.drawings.flowers.FlowerScreen
@@ -119,7 +121,7 @@ fun AppNavigation(
                             Routes.Drawings.PIXEL_EDITOR -> PixelEditorScreen(
                                 viewModel = pixelArtViewModel,
                                 onBack    = { navController.popBackStack() },
-                                onReplay  = { id -> navController.navigate(Routes.pixelReplay(id)) }
+                                onReplay  = { id -> navController.navigate(Routes.pixelReplay(id.toString())) }
                             )
                         }
 
@@ -151,8 +153,8 @@ fun AppNavigation(
                         viewModel      = pixelArtViewModel,
                         onBack         = { navController.popBackStack() },
                         onNewCreation  = { navController.navigate(Routes.PIXEL_EDITOR_NEW) },
-                        onOpenCreation = { id -> navController.navigate(Routes.pixelEditorEdit(id)) },
-                        onReplay       = { id -> navController.navigate(Routes.pixelReplay(id)) }
+                        onOpenCreation = { id -> navController.navigate(Routes.pixelEditorEdit(id.toString())) },
+                        onReplay       = { id -> navController.navigate(Routes.pixelReplay(id.toString())) }
                     )
                 }
 
@@ -160,7 +162,7 @@ fun AppNavigation(
                     PixelEditorScreen(
                         viewModel = pixelArtViewModel,
                         onBack    = { navController.popBackStack() },
-                        onReplay  = { id -> navController.navigate(Routes.pixelReplay(id)) }
+                        onReplay  = { id -> navController.navigate(Routes.pixelReplay(id.toString())) }
                     )
                 }
 
@@ -170,9 +172,9 @@ fun AppNavigation(
                 ) { backStackEntry ->
                     PixelEditorScreen(
                         viewModel          = pixelArtViewModel,
-                        existingArtworkId  = backStackEntry.arguments?.getString("artworkId"),
+                        existingArtworkId  = backStackEntry.arguments?.getString("artworkId")?.toLongOrNull(),
                         onBack             = { navController.popBackStack() },
-                        onReplay           = { id -> navController.navigate(Routes.pixelReplay(id)) }
+                        onReplay           = { id -> navController.navigate(Routes.pixelReplay(id.toString())) }
                     )
                 }
 
@@ -180,12 +182,13 @@ fun AppNavigation(
                     route     = Routes.PIXEL_REPLAY,
                     arguments = listOf(navArgument("artworkId") { type = NavType.StringType })
                 ) { backStackEntry ->
-                    val id = backStackEntry.arguments?.getString("artworkId")
-                    val artwork = id?.let { pixelArtViewModel.findById(it) }
-                    if (artwork != null) {
+                    val id = backStackEntry.arguments?.getString("artworkId")?.toLongOrNull()
+
+                    if (id != null) {
                         PixelArtReplayScreen(
-                            artwork = artwork,
-                            onBack  = { navController.popBackStack() }
+                            drawingId = id,
+                            viewModel = pixelArtViewModel,
+                            onBack    = { navController.popBackStack() }
                         )
                     } else {
                         LaunchedEffect(Unit) { navController.popBackStack() }
