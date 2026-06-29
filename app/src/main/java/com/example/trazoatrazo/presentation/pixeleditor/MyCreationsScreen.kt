@@ -26,9 +26,15 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.FilterQuality
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Paint
+import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -231,9 +237,10 @@ private fun CreationCard(
     onReplay: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val cardAnim = remember { Animatable(0f) }
+    // Animación más corta para gama baja
+    val cardAnim = remember { Animatable(0.95f) }
     LaunchedEffect(artwork.id) {
-        cardAnim.animateTo(1f, tween(360, easing = EaseOutBack))
+        cardAnim.animateTo(1f, tween(300))
     }
 
     Box(
@@ -241,7 +248,7 @@ private fun CreationCard(
             .scale(cardAnim.value)
             .clip(RoundedCornerShape(18.dp))
             .background(AppColors.Sombra)
-            .border(1.dp, AppColors.Maldicion.copy(alpha = 0.18f), RoundedCornerShape(18.dp))
+            .border(1.dp, AppColors.Maldicion.copy(alpha = 0.15f), RoundedCornerShape(18.dp))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication        = null,
@@ -363,25 +370,52 @@ private fun ActionChip(
     }
 }
 
-// ── Thumbnail del pixel art ───────────────────────────────────────────────────
+// ── Thumbnail del pixel art optimizado ─────────────────────────────────────────
 @Composable
 fun PixelArtworkThumbnail(
     artwork:  PixelArtRepository.PixelArtworkDomain,
     modifier: Modifier = Modifier
 ) {
-    Canvas(modifier = modifier.background(Color.White)) {
-        val gridSize = artwork.canvasSize
-        if (gridSize <= 0) return@Canvas
-        val cell = size.width / gridSize
+    val gridSize = artwork.canvasSize
+    val pixels   = artwork.pixels
+
+    // Optimización vital para gama baja: 
+    // Renderizar el dibujo a un Bitmap de 1:1 píxeles una sola vez y cachearlo.
+    // Esto evita miles de llamadas drawRect por frame durante el scroll.
+    val thumbnailBitmap = remember(artwork.id, pixels) {
+        if (gridSize <= 0) return@remember null
+        
+        val bitmap = ImageBitmap(gridSize, gridSize)
+        val canvas = androidx.compose.ui.graphics.Canvas(bitmap)
+        val paint  = Paint()
+
         for (row in 0 until gridSize) {
             for (col in 0 until gridSize) {
                 val idx     = row * gridSize + col
                 val checker = if ((row + col) % 2 == 0) ThumbCheckerLight else ThumbCheckerDark
-                val color   = artwork.pixels.getOrNull(idx) ?: checker
-                drawRect(
-                    color   = color,
-                    topLeft = Offset(col * cell, row * cell),
-                    size    = Size(cell, cell)
+                val color   = pixels.getOrNull(idx) ?: checker
+                
+                paint.color = color
+                canvas.drawRect(
+                    left   = col.toFloat(),
+                    top    = row.toFloat(),
+                    right  = col + 1f,
+                    bottom = row + 1f,
+                    paint  = paint
+                )
+            }
+        }
+        bitmap
+    }
+
+    Box(modifier = modifier.background(Color.White)) {
+        if (thumbnailBitmap != null) {
+            Canvas(modifier = Modifier.fillMaxSize()) {
+                // FilterQuality.None es crucial: es más rápido y mantiene el estilo Pixel Art nítido
+                drawImage(
+                    image         = thumbnailBitmap,
+                    dstSize       = IntSize(size.width.toInt(), size.height.toInt()),
+                    filterQuality = FilterQuality.None
                 )
             }
         }
