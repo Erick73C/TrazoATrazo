@@ -190,7 +190,8 @@ class PixelArtViewModel(application: Application) : AndroidViewModel(application
     fun saveCurrentDrawing(
         canvasSize: Int,
         pixelsSnapshot: List<Color?>,
-        paintOrderSnapshot: List<PixelArtRepository.StrokeStep>
+        paintOrderSnapshot: List<PixelArtRepository.StrokeStep>,
+        onComplete: (Long) -> Unit = {}
     ) {
         val state = _editorState.value
         _editorState.update { it.copy(isSaving = true) }
@@ -217,6 +218,7 @@ class PixelArtViewModel(application: Application) : AndroidViewModel(application
                     isSaving   = false
                 )
             }
+            onComplete(savedId)
         }
     }
 

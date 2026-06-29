@@ -116,7 +116,7 @@ fun PixelEditorScreen(
     val paintOrder = remember { mutableStateListOf<PixelArtRepository.StrokeStep>() }
 
     // Sincronizar con Room cuando el estado del editor cambia (carga inicial o cambio de dibujo)
-    LaunchedEffect(editorState.drawingId, editorState.canvasSize) {
+    LaunchedEffect(editorState.drawingId, editorState.canvasSize, editorState.pixels) {
         if (editorState.pixels.isNotEmpty()) {
             gridSize = editorState.canvasSize
             pixels.clear()
@@ -202,7 +202,16 @@ fun PixelEditorScreen(
 
     fun requestGridSizeChange(newSize: Int) {
         if (newSize == gridSize) return
-        if (pixels.any { it != null }) pendingGridSize = newSize else gridSize = newSize
+        if (pixels.any { it != null }) {
+            pendingGridSize = newSize
+        } else {
+            gridSize = newSize
+            // IMPORTANTE: Redimensionar la lista inmediatamente para evitar enviar
+            // datos de 16x16 en un guardado de 8x8.
+            pixels.clear()
+            repeat(newSize * newSize) { pixels.add(null) }
+            paintOrder.clear()
+        }
     }
 
     fun cancelAccidentalFirstTouch() {
@@ -637,17 +646,16 @@ fun PixelEditorScreen(
                 //    (paintOrder local ya tiene todos los StrokeStep acumulados)
                 showSaveDialog = false
                 viewModel.saveCurrentDrawing(
-                    canvasSize        = gridSize,
-                    pixelsSnapshot    = pixels.toList(),
-                    paintOrderSnapshot = paintOrder.toList()
-                )
-                when (postSaveAction) {
-                    PostSaveAction.EXIT   -> onBack()
-                    PostSaveAction.REPLAY -> {
-                        // Esperamos el ID guardado para navegar al reproductor
-                        editorState.drawingId?.let { onReplay(it) }
+                    canvasSize         = gridSize,
+                    pixelsSnapshot     = pixels.toList(),
+                    paintOrderSnapshot = paintOrder.toList(),
+                    onComplete = { savedId ->
+                        when (postSaveAction) {
+                            PostSaveAction.EXIT   -> onBack()
+                            PostSaveAction.REPLAY -> onReplay(savedId)
+                        }
                     }
-                }
+                )
             },
             onDismiss = { showSaveDialog = false }
         )

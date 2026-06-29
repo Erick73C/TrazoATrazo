@@ -46,11 +46,31 @@ interface PixelDrawingDao {
     suspend fun insertStroke(stroke: StrokeEntity)
 
     /**
+     * Inserta una lista de trazos de una vez.
+     */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertStrokes(strokes: List<StrokeEntity>)
+
+    /**
      * Borra todos los trazos de un dibujo.
-     * Útil para "limpiar lienzo" o reimportar desde DataStore al migrar.
      */
     @Query("DELETE FROM drawing_strokes WHERE drawingParentId = :drawingId")
     suspend fun clearStrokes(drawingId: Long)
+
+    @Transaction
+    suspend fun saveFullDrawing(drawing: PixelDrawingEntity, strokes: List<StrokeEntity>): Long {
+        val id = if (drawing.drawingId == 0L) {
+            insertDrawing(drawing)
+        } else {
+            updateDrawing(drawing)
+            clearStrokes(drawing.drawingId)
+            drawing.drawingId
+        }
+
+        val strokesWithId = strokes.map { it.copy(drawingParentId = id) }
+        insertStrokes(strokesWithId)
+        return id
+    }
 
     // ── Relación completa (editor + reproductor) ─────────────────────────────
 
