@@ -108,24 +108,32 @@ fun PixelEditorScreen(
     }
 
     // ── Estado local del editor (lógica de lienzo, no persiste en Room) ─────────
-    var gridSize by remember { mutableIntStateOf(existingArtworkId?.let { 16 } ?: 16) }
+    var gridSize by remember(existingArtworkId) { mutableIntStateOf(16) }
     var pendingGridSize by remember { mutableStateOf<Int?>(null) }
 
     // Lienzo y orden de trazos — se sincronizan desde editorState al cargar
-    val pixels     = remember { mutableStateListOf<Color?>() }
-    val paintOrder = remember { mutableStateListOf<PixelArtRepository.StrokeStep>() }
+    val pixels     = remember(existingArtworkId) { mutableStateListOf<Color?>() }
+    val paintOrder = remember(existingArtworkId) { mutableStateListOf<PixelArtRepository.StrokeStep>() }
 
     // Sincronizar con Room cuando el estado del editor cambia (carga inicial o cambio de dibujo)
     LaunchedEffect(editorState.drawingId, editorState.canvasSize, editorState.pixels) {
         if (editorState.pixels.isNotEmpty()) {
+            // Carga de dibujo (existente o recién inicializado)
             gridSize = editorState.canvasSize
             pixels.clear()
             pixels.addAll(editorState.pixels)
             paintOrder.clear()
             paintOrder.addAll(editorState.paintOrder)
-        } else if (pixels.isEmpty()) {
-            // Inicialización por defecto para dibujo nuevo
-            repeat(gridSize * gridSize) { pixels.add(null) }
+        } else {
+            // El estado en el ViewModel está vacío (ej: se acaba de llamar a loadDrawing y está cargando)
+            // Limpiamos el lienzo local inmediatamente para evitar el "efecto fantasma"
+            pixels.clear()
+            paintOrder.clear()
+            
+            // Si es un dibujo totalmente nuevo (sin ID) y no está en proceso de carga/guardado
+            if (editorState.drawingId == null && !editorState.isSaving) {
+                repeat(gridSize * gridSize) { pixels.add(null) }
+            }
         }
     }
 

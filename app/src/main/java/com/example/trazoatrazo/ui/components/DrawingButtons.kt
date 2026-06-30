@@ -58,13 +58,15 @@ fun DrawingButtons(
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // Mensaje principal
-            Text(
-                text       = message,
-                color      = Color.White,
-                fontSize   = 18.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign  = TextAlign.Center
-            )
+            if (message.isNotEmpty()) {
+                Text(
+                    text       = message,
+                    color      = Color.White,
+                    fontSize   = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign  = TextAlign.Center
+                )
+            }
 
             // Submensaje opcional
             if (subMessage.isNotEmpty()) {

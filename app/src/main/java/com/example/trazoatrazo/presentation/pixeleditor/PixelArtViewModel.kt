@@ -105,6 +105,9 @@ class PixelArtViewModel(application: Application) : AndroidViewModel(application
      * Llama cuando el usuario abre uno de sus creaciones desde MyCreationsScreen.
      */
     fun loadDrawing(drawingId: Long) {
+        // Limpiar el estado anterior inmediatamente para evitar "efecto fantasma" en UI
+        _editorState.value = PixelEditorUiState(isSaving = true) 
+        
         viewModelScope.launch {
             val artwork = repository.getDrawingForPlayback(drawingId) ?: return@launch
             _editorState.value = PixelEditorUiState(
@@ -114,7 +117,8 @@ class PixelArtViewModel(application: Application) : AndroidViewModel(application
                 themeId    = artwork.themeId,
                 pixels     = artwork.pixels.toMutableList(),
                 paintOrder = artwork.paintOrder,
-                isDirty    = false
+                isDirty    = false,
+                isSaving   = false
             )
         }
     }
