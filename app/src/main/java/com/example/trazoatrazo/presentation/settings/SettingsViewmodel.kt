@@ -12,6 +12,7 @@ import com.example.trazoatrazo.ui.background.SpecialParticleType
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.AppFont
 import com.example.trazoatrazo.ui.theme.AppTheme
+import com.example.trazoatrazo.ui.theme.MessageStyle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
@@ -67,12 +68,19 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = AppFont.QUICKSAND
         )
 
+    val selectedMessageStyle: StateFlow<MessageStyle> = fontPrefs.getMessageStyleFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = MessageStyle.NORMAL
+        )
+
     // ── Sistema ───────────────────────────────────────────────────────────────
     val immersiveMode: StateFlow<Boolean> = systemPrefs.getImmersiveModeFlow()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.Eagerly,
-            initialValue = false
+            initialValue = true
         )
 
     // ── Helper para actualizar instantáneamente y persistir con retraso ───────
@@ -170,6 +178,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         if (selectedFont.value == font) return
         viewModelScope.launch {
             fontPrefs.saveFont(font)
+        }
+    }
+
+    fun selectMessageStyle(style: MessageStyle) {
+        if (selectedMessageStyle.value == style) return
+        viewModelScope.launch {
+            fontPrefs.saveMessageStyle(style)
         }
     }
 

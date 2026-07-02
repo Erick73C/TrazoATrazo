@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.update
 // List<Color> normal sería inestable para Compose dentro del ViewModel.
 // Al ser top-level val, el compilador la trata como referencia fija y estable.
 val messageColors = listOf(
+    // Claros y Pasteles (Originales)
     Color(0xFFEAEAEA), Color(0xFFC8A8F0), Color(0xFF9333EA),
     Color(0xFFFFD700), Color(0xFFFF6B8A), Color(0xFF4FC3F7),
     Color(0xFFFFB74D), Color(0xFFE0E0E0),
@@ -27,6 +28,28 @@ val messageColors = listOf(
     Color(0xFFA1887F), Color(0xFF9575CD), Color(0xFF4DB6AC),
     Color(0xFFD4E157), Color(0xFFFFD54F),
     Color(0xFF42A5F5), Color(0xFF80DEEA), Color(0xFFF48FB1),
+    // Tonos Oscuros (Basados en temas para mejor visibilidad en fondos claros)
+    Color(0xFF6B21A8), // JJK Dark Maldición
+    Color(0xFF2D1B69), // JJK Dark Expansión
+    Color(0xFF1D4ED8), // Midnight Blue Maldición
+    Color(0xFF1E3A6E), // Midnight Blue Expansión
+    Color(0xFF166534), // Forest Maldición
+    Color(0xFF14532D), // Forest Expansión
+    Color(0xFF92400E), // Amber Maldición
+    Color(0xFF451A03), // Amber Expansión
+    Color(0xFF991B1B), // Crimson Maldición
+    Color(0xFF450A0A), // Crimson Expansión
+    Color(0xFF881144), // Sakura Night Maldición
+    Color(0xFF4A0E2A), // Sakura Night Expansión
+    Color(0xFF7C2D12), // Autumn Leaves Maldición
+    Color(0xFF431407), // Autumn Leaves Expansión
+    Color(0xFF1E40AF), // Winter Snow Maldición
+    Color(0xFFD4A017), // Golden Night Maldición
+    Color(0xFF1A1A1A), // Golden Night Expansión (Casi negro)
+    Color(0xFFAD1457), // Valentine Eco
+    Color(0xFF00838F), // Ocean Tide Eco
+    Color(0xFF9F1239), // Sunset Party Eco
+    Color(0xFFB91C1C), // Ruby Red Maldición
 )
 
 // ── Estado de la UI ───────────────────────────────────────────────────────────

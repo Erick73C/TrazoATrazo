@@ -5,12 +5,14 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
@@ -27,8 +29,10 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -50,6 +54,8 @@ import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
 import com.example.trazoatrazo.ui.theme.LocalAppColors
 import com.example.trazoatrazo.ui.theme.LocalAppFont
+import com.example.trazoatrazo.ui.theme.LocalMessageStyle
+import com.example.trazoatrazo.ui.theme.MessageStyle
 import com.example.trazoatrazo.ui.theme.fontFamilyFor
 
 @Immutable
@@ -230,7 +236,7 @@ private fun HomeHeader(
                 )
                 Text(
                     text     = "¡HOLAAAAA! ✨, " +
-                                "V 3.0",
+                                "V 3.2",
                     fontSize = 11.sp,
                     color    = AppColors.Eco
                 )
@@ -360,11 +366,14 @@ private fun WelcomeSection(
 
                 Spacer(Modifier.height(7.dp))
 
+                val messageStyle = LocalMessageStyle.current
                 Text(
                     text       = message,
                     fontFamily = fontFamilyFor(LocalAppFont.current),
                     fontSize   = 13.5.sp,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = if (messageStyle == MessageStyle.BOLD) FontWeight.Bold else FontWeight.Medium,
+                    fontStyle  = if (messageStyle == MessageStyle.ITALIC) FontStyle.Italic else FontStyle.Normal,
+                    textDecoration = if (messageStyle == MessageStyle.UNDERLINE) TextDecoration.Underline else TextDecoration.None,
                     color      = messageColor,
                     lineHeight = 19.sp
                 )
@@ -509,13 +518,16 @@ private fun CategoryTabRow(
     animValueProvider: () -> Float,
     onTabClick:        (Int) -> Unit
 ) {
+    val scrollState = rememberScrollState()
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { alpha = animValueProvider() }
             .background(AppColors.Sombra)
-            .padding(horizontal = 6.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            .horizontalScroll(scrollState)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
         verticalAlignment     = Alignment.CenterVertically
     ) {
         tabs.forEachIndexed { index, tab ->

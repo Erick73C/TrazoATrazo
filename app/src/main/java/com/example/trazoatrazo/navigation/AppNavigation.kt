@@ -47,6 +47,7 @@ import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.LocalAppColors
 import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
 import com.example.trazoatrazo.ui.theme.LocalAppFont
+import com.example.trazoatrazo.ui.theme.LocalMessageStyle
 import com.example.trazoatrazo.ui.theme.themeColorSchemeFor
 import com.example.trazoatrazo.ui.theme.typographyFor
 
@@ -59,12 +60,14 @@ fun AppNavigation(
     val themeReady    by settingsViewModel.themeReady.collectAsStateWithLifecycle()
     val backgroundConfig by settingsViewModel.backgroundConfig.collectAsStateWithLifecycle()
     val selectedFont     by settingsViewModel.selectedFont.collectAsStateWithLifecycle()
+    val selectedMessageStyle by settingsViewModel.selectedMessageStyle.collectAsStateWithLifecycle()
     val pixelArtViewModel: PixelArtViewModel = viewModel()
 
     CompositionLocalProvider(
         LocalAppColors provides themeColorSchemeFor(selectedTheme),
         LocalBackgroundConfig provides backgroundConfig,
-        LocalAppFont          provides selectedFont
+        LocalAppFont          provides selectedFont,
+        LocalMessageStyle     provides selectedMessageStyle
     ) {
         MaterialTheme(
             typography = typographyFor(selectedFont)

@@ -545,6 +545,7 @@ fun PixelEditorScreen(
                                 shapeStartIndex = null; shapeEndIndex = null
                                 selDragStartIndex = null; selDragCurrentIndex = null
                                 moveAnchorIndex   = null; moveDelta = 0 to 0
+                                selectionRect     = null
                             }
                         )
                     }

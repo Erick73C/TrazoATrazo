@@ -30,7 +30,7 @@ class SystemPreferences(private val context: Context) {
                 else throw exception
             }
             .map { prefs ->
-                prefs[SystemPrefKeys.IMMERSIVE_MODE] ?: false
+                prefs[SystemPrefKeys.IMMERSIVE_MODE] ?: true
             }
 
     suspend fun saveImmersiveMode(enabled: Boolean) {

@@ -49,6 +49,7 @@ fun SettingsScreen(
     val selectedTheme    by viewModel.selectedTheme.collectAsStateWithLifecycle()
     val backgroundConfig by viewModel.backgroundConfig.collectAsStateWithLifecycle()
     val selectedFont     by viewModel.selectedFont.collectAsStateWithLifecycle()
+    val selectedMessageStyle by viewModel.selectedMessageStyle.collectAsStateWithLifecycle()
     val immersiveMode    by viewModel.immersiveMode.collectAsStateWithLifecycle()
 
     val screenAnim = remember { Animatable(0f) }
@@ -86,6 +87,19 @@ fun SettingsScreen(
                     MinimalSectionHeader(title = "Tipografía", emoji = "🔤")
                     Spacer(Modifier.height(16.dp))
                     FontGrid(selectedFont = selectedFont, onFontSelect = viewModel::selectFont)
+                    
+                    Spacer(Modifier.height(24.dp))
+                    Text(
+                        text = "Estilo de mensajes de Inicio",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = AppColors.Eco,
+                        modifier = Modifier.padding(start = 4.dp, bottom = 12.dp)
+                    )
+                    MessageStyleGrid(
+                        selectedStyle = selectedMessageStyle,
+                        onStyleSelect = viewModel::selectMessageStyle
+                    )
                 }
 
                 // ── SECCIÓN 3: PARTÍCULAS Y EFECTOS ───────────────────────────
@@ -945,7 +959,7 @@ private fun FontGrid(
     selectedFont: AppFont,
     onFontSelect: (AppFont) -> Unit
 ) {
-    val fonts = AppFont.values().toList()
+    val fonts = AppFont.entries
     val pairs = fonts.chunked(2)
 
     Column(
@@ -1058,6 +1072,109 @@ private fun FontCard(
             ) {
                 Text("✓", fontSize = 12.sp, color = Color.White, fontWeight = FontWeight.Bold)
             }
+        }
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ── MESSAGE STYLE GRID ───────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+@Composable
+private fun MessageStyleGrid(
+    selectedStyle: MessageStyle,
+    onStyleSelect: (MessageStyle) -> Unit
+) {
+    val styles = MessageStyle.entries
+    val pairs = styles.chunked(2)
+
+    Column(
+        modifier            = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        pairs.forEach { pair ->
+            Row(
+                modifier              = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                pair.forEach { style ->
+                    MessageStyleCard(
+                        modifier      = Modifier.weight(1f),
+                        style         = style,
+                        isSelected    = style == selectedStyle,
+                        onClick       = { onStyleSelect(style) }
+                    )
+                }
+                if (pair.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageStyleCard(
+    modifier:   Modifier,
+    style:      MessageStyle,
+    isSelected: Boolean,
+    onClick:    () -> Unit
+) {
+    val cardScale by animateFloatAsState(
+        targetValue   = if (isSelected) 1.03f else 1f,
+        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+        label         = "styleCardScale"
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = cardScale
+                scaleY = cardScale
+            }
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Sombra)
+            .then(
+                if (isSelected)
+                    Modifier.border(
+                        width = 2.dp,
+                        brush = Brush.linearGradient(
+                            colors = listOf(AppColors.Tecnica, AppColors.KiEspiritual)
+                        ),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                else
+                    Modifier.border(
+                        width = 1.dp,
+                        color = AppColors.Eco.copy(alpha = 0.25f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication        = null,
+                onClick           = onClick
+            )
+            .padding(14.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(AppColors.Dominio),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(style.emoji, fontSize = 16.sp)
+            }
+            Text(
+                text = style.displayName,
+                fontSize = 14.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = if (isSelected) AppColors.Reversa else AppColors.Eco
+            )
         }
     }
 }

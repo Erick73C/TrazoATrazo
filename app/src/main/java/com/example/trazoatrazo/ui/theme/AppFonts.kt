@@ -43,6 +43,36 @@ enum class AppFont(
         displayName = "Bitcount",
         emoji       = "🕹️",
         description = "Retro pixel · Juguetona"
+    ),
+    BANGERS(
+        displayName = "Bangers",
+        emoji       = "💥",
+        description = "Estilo cómic · Energía y acción"
+    ),
+    BEBAS_NEUE(
+        displayName = "Bebas Neue",
+        emoji       = "🏗️",
+        description = "Condensada · Moderna y minimalista"
+    ),
+    ROWDIES(
+        displayName = "Rowdies",
+        emoji       = "⚡",
+        description = "Urbana · Fuerte y audaz"
+    ),
+    SHADOWS_INTO_LIGHT(
+        displayName = "Shadows Into Light",
+        emoji       = "☁️",
+        description = "Manuscrita · Ligera y soñadora"
+    ),
+    UNCIAL_ANTIQUA(
+        displayName = "Uncial Antiqua",
+        emoji       = "📜",
+        description = "Celta · Clásica y legendaria"
+    ),
+    YUYU(
+        displayName = "YuYu",
+        emoji       = "✨",
+        description = "Adorable · Amigable y suave"
     )
 }
 
@@ -80,7 +110,41 @@ fun fontFamilyFor(font: AppFont): FontFamily = when (font) {
         Font(R.font.bitcount_grid_double, FontWeight.Normal),
         Font(R.font.bitcount_grid_double, FontWeight.Bold)
     )
+
+    AppFont.BANGERS -> FontFamily(
+        Font(R.font.bangers_regular, FontWeight.Normal)
+    )
+
+    AppFont.BEBAS_NEUE -> FontFamily(
+        Font(R.font.bebas_neue_regular, FontWeight.Normal)
+    )
+
+    AppFont.ROWDIES -> FontFamily(
+        Font(R.font.rowdies_regular, FontWeight.Normal)
+    )
+
+    AppFont.SHADOWS_INTO_LIGHT -> FontFamily(
+        Font(R.font.shadows_into_light_regular, FontWeight.Normal)
+    )
+
+    AppFont.UNCIAL_ANTIQUA -> FontFamily(
+        Font(R.font.uncial_antiqua_regular, FontWeight.Normal)
+    )
+
+    AppFont.YUYU -> FontFamily(
+        Font(R.font.yuyu_regular, FontWeight.Normal)
+    )
 }
 
 // ── CompositionLocal para proveer la fuente activa al árbol de Compose ────────
 val LocalAppFont = compositionLocalOf { AppFont.QUICKSAND }
+
+// ── Estilos de mensaje (Negrita, Cursiva, etc.) ──────────────────────────────
+enum class MessageStyle(val displayName: String, val emoji: String) {
+    NORMAL("Normal", "📄"),
+    BOLD("Negrita", "B"),
+    ITALIC("Cursiva", "I"),
+    UNDERLINE("Subrayado", "U")
+}
+
+val LocalMessageStyle = compositionLocalOf { MessageStyle.NORMAL }
