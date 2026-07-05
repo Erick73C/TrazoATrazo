@@ -8,13 +8,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.*
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
 import kotlinx.coroutines.delay
 import kotlin.math.*
 import kotlin.random.Random
@@ -144,77 +148,16 @@ fun SnowflakeScreen(onBack: () -> Unit) {
                     val cx = W / 2f
 
                     onDrawBehind {
-
-                        // ── Aurora boreal ──────────────────────────────────────
-                        drawRect(
-                            brush = Brush.verticalGradient(
-                                colors = listOf(
-                                    AuroraTeal.copy(alpha = 0.08f * glowPulse),
-                                    AuroraBlue.copy(alpha = 0.05f * glowPulse),
-                                    Color.Transparent
-                                ),
-                                startY = 0f,
-                                endY   = H * 0.55f
-                            ),
-                            topLeft = Offset.Zero,
-                            size    = size
+                        drawSnowflakeComposition(
+                            etapa = etapa,
+                            glowPulse = glowPulse,
+                            twinkleT = twinkleT,
+                            fallT = fallT,
+                            enterAnimP = enterAnim.value,
+                            cx = cx,
+                            W = W,
+                            H = H
                         )
-
-                        // ── Estrellas parpadeantes ─────────────────────────────
-                        starPoints.forEach { star ->
-                            val twinkle = (sin((twinkleT + star.phase) * 2f * PI.toFloat()) + 1f) / 2f
-                            drawCircle(
-                                color  = IceWhite.copy(alpha = 0.20f + 0.80f * twinkle),
-                                radius = star.size,
-                                center = Offset(star.xFrac * W, star.yFrac * H)
-                            )
-                        }
-
-                        // ── Resplandor suave en el centro-superior ─────────────
-                        drawCircle(
-                            brush = Brush.radialGradient(
-                                colors = listOf(
-                                    IceDeep.copy(alpha = 0.06f * glowPulse),
-                                    Color.Transparent
-                                ),
-                                center = Offset(cx, H * 0.25f),
-                                radius = W * 0.7f
-                            ),
-                            radius = W * 0.7f,
-                            center = Offset(cx, H * 0.25f)
-                        )
-
-                        // ── Copos cayendo en cascada ───────────────────────────
-                        val ep = enterAnim.value
-
-                        fallingFlakes.forEach { flake ->
-                            // Progreso individual de cada copo en su ciclo
-                            val p = (fallT * flake.speed + flake.delay) % 1f
-
-                            // Posición Y: de -radio a alto+radio
-                            val r  = flake.radiusFrac * min(W, H)
-                            val yRaw = p * (H + r * 2.5f) - r * 1.2f
-
-                            // Vaivén lateral suave
-                            val drift = flake.driftW * W
-                            val x = flake.xFrac * W +
-                                    sin(p * PI.toFloat() * 2f * flake.driftF) * drift
-
-                            // Alpha: aparece al entrar, desaparece al salir de pantalla
-                            val edgeFade = when {
-                                p < 0.08f -> p / 0.08f
-                                p > 0.88f -> (1f - p) / 0.12f
-                                else -> 1f
-                            }
-                            val alpha = (flake.baseAlpha * edgeFade * ep).coerceIn(0f, 1f)
-
-                            // Ángulo de rotación
-                            val angleDeg = p * 360f * flake.rotSpeed
-
-                            if (alpha > 0.01f) {
-                                drawSnowCrystal(x, yRaw, r, angleDeg, alpha)
-                            }
-                        }
                     }
                 }
         ) {}
@@ -224,20 +167,144 @@ fun SnowflakeScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "❄️ ¡Nevada en cascada! ❄️"
+            val subMessage = "Cada copo es único"
+            val accentColor = IceDeep
+
             DrawingButtons(
                 visible     = etapa >= 2,
-                message     = "❄️ ¡Nevada en cascada! ❄️",
-                subMessage  = "Cada copo es único",
+                message     = message,
+                subMessage  = subMessage,
                 repeatEmoji = "❄️",
-                accentColor = IceDeep,
+                accentColor = accentColor,
+                backgroundColor = BgMid,
                 onRepeat    = { repetir++ },
-                onBack      = onBack
+                onBack      = onBack,
+                onSave = { includeText ->
+                    saveSnowflakeAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        BgMid,
+                        includeText
+                    )
+                }
             )
         }
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             BackMenuButton(onBack = onBack, tintColor = IceBlue)
         }
+    }
+}
+
+private fun DrawScope.drawSnowflakeComposition(
+    etapa: Int,
+    glowPulse: Float,
+    twinkleT: Float,
+    fallT: Float,
+    enterAnimP: Float,
+    cx: Float,
+    W: Float,
+    H: Float
+) {
+    // ── Aurora boreal ──────────────────────────────────────
+    drawRect(
+        brush = Brush.verticalGradient(
+            colors = listOf(
+                AuroraTeal.copy(alpha = 0.08f * glowPulse),
+                AuroraBlue.copy(alpha = 0.05f * glowPulse),
+                Color.Transparent
+            ),
+            startY = 0f,
+            endY   = H * 0.55f
+        ),
+        topLeft = Offset.Zero,
+        size    = Size(W, H)
+    )
+
+    // ── Estrellas parpadeantes ─────────────────────────────
+    starPoints.forEach { star ->
+        val twinkle = (sin((twinkleT + star.phase) * 2f * PI.toFloat()) + 1f) / 2f
+        drawCircle(
+            color  = IceWhite.copy(alpha = 0.20f + 0.80f * twinkle),
+            radius = star.size,
+            center = Offset(star.xFrac * W, star.yFrac * H)
+        )
+    }
+
+    // ── Resplandor suave en el centro-superior ─────────────
+    drawCircle(
+        brush = Brush.radialGradient(
+            colors = listOf(
+                IceDeep.copy(alpha = 0.06f * glowPulse),
+                Color.Transparent
+            ),
+            center = Offset(cx, H * 0.25f),
+            radius = W * 0.7f
+        ),
+        radius = W * 0.7f,
+        center = Offset(cx, H * 0.25f)
+    )
+
+    // ── Copos cayendo en cascada ───────────────────────────
+    fallingFlakes.forEach { flake ->
+        val p = (fallT * flake.speed + flake.delay) % 1f
+        val r  = flake.radiusFrac * min(W, H)
+        val yRaw = p * (H + r * 2.5f) - r * 1.2f
+        val drift = flake.driftW * W
+        val x = flake.xFrac * W + sin(p * PI.toFloat() * 2f * flake.driftF) * drift
+        val edgeFade = when {
+            p < 0.08f -> p / 0.08f
+            p > 0.88f -> (1f - p) / 0.12f
+            else -> 1f
+        }
+        val alpha = (flake.baseAlpha * edgeFade * enterAnimP).coerceIn(0f, 1f)
+        val angleDeg = p * 360f * flake.rotSpeed
+        if (alpha > 0.01f) {
+            drawSnowCrystal(x, yRaw, r, angleDeg, alpha)
+        }
+    }
+}
+
+fun saveSnowflakeAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(
+                brush = Brush.verticalGradient(listOf(BgDark, BgMid, BgDark)),
+                size = size
+            )
+            drawSnowflakeComposition(etapa = 2, glowPulse = 1f, twinkleT = 0f, fallT = 0.2f, enterAnimP = 1f, cx = artSize/2f, W = artSize.toFloat(), H = artSize.toFloat())
+        }
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

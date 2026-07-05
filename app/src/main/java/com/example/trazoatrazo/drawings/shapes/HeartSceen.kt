@@ -8,10 +8,18 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
+import com.example.trazoatrazo.utils.textColorFor
+import com.example.trazoatrazo.utils.subtitleColorFor
+import android.graphics.Bitmap
+import android.graphics.Paint
+import androidx.compose.ui.platform.LocalContext
+import android.widget.Toast
 import kotlinx.coroutines.delay
 import kotlin.math.*
 
@@ -297,6 +305,7 @@ fun HeartScreen(onBack: () -> Unit) {
         }
 
         // ── Botones ───────────────────────────────────────────────────────
+        val context = LocalContext.current
         Box(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -309,13 +318,71 @@ fun HeartScreen(onBack: () -> Unit) {
                 repeatEmoji = "❤️",
                 accentColor = HeartRed,
                 onRepeat    = { repetir++ },
-                onBack      = onBack
+                onBack      = onBack,
+                onSave      = { includeText ->
+                    saveHeartAsImage(
+                        context,
+                        "❤️ Corazon 14 de febrero❤️",
+                        "Eres una gran amistad",
+                        bgColor,
+                        includeText
+                    )
+                }
             )
         }
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             BackMenuButton(onBack = onBack, tintColor = Color.White)
         }
+    }
+}
+
+fun saveHeartAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        // Usar CanvasDrawScope para reutilizar las funciones de DrawScope de Compose
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            // 1. Fondo del área del dibujo
+            drawRect(color = bgColor, size = size)
+            
+            // 2. Dibujar el corazón (estado final)
+            val cx    = artSize / 2f
+            val cy    = artSize * 0.42f
+            val scale = artSize / 45f
+            
+            drawHeartbeat(cx, cy, scale, 1f, HeartRed, HeartPink)
+        }
+
+        // 3. Dibujar fondo del footer si es necesario
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

@@ -12,11 +12,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
+import com.example.trazoatrazo.utils.adaptiveColorFor
+import com.example.trazoatrazo.utils.subtitleColorFor
+import com.example.trazoatrazo.utils.textColorFor
 import kotlinx.coroutines.delay
 import kotlin.math.PI
 import kotlin.math.cos
@@ -231,22 +237,85 @@ fun TurtleScreen(onBack: () -> Unit) {
             if (etapa >= 1) drawTurtleShell(cx, currentCy, scale, shellAnim.value)
         }
 
-        Box(modifier = Modifier
-            .align(Alignment.BottomCenter)
-            .fillMaxWidth()) {
-            DrawingButtons(
-                visible = etapa >= 4,
-                message = "🐢 ¡Una linda tortuga! 🐢",
-                subMessage = "Hace referencia a la tortuga que te di XD",
-                repeatEmoji = "🔄",
-                accentColor = SkinDark,
-                onRepeat = { repetir++ },
-                onBack = onBack
-            )
-        }
+        val context = LocalContext.current
+        val message = "🐢 ¡Una linda tortuga! 🐢"
+        val subMessage = "Hace referencia a la tortuga que te di XD"
+
+        DrawingButtons(
+            visible = etapa >= 4,
+            message = message,
+            subMessage = subMessage,
+            repeatEmoji = "🔄",
+            accentColor = SkinDark.adaptiveColorFor(BgWater),
+            backgroundColor = BgWater,
+            onRepeat = { repetir++ },
+            onBack = onBack,
+            onSave = { includeText ->
+                saveTurtleAsImage(
+                    context,
+                    message,
+                    subMessage,
+                    BgWater,
+                    includeText
+                )
+            }
+        )
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
-            BackMenuButton(onBack = onBack, tintColor = SkinDark)
+            BackMenuButton(onBack = onBack, tintColor = SkinDark.adaptiveColorFor(BgWater))
         }
     }
+}
+
+fun saveTurtleAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            
+            val cx = artSize / 2f
+            val cy = artSize * 0.45f
+            val scale = artSize / 420f
+            
+            drawTurtleLimbs(cx, cy, scale, 1f)
+            drawTurtleHead(cx, cy, scale, 1f)
+            drawTurtleShell(cx, cy, scale, 1f)
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true)
+@Composable
+fun TurtleScreenPreview() {
+    TurtleScreen(onBack = {})
 }

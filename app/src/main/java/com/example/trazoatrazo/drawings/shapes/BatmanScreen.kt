@@ -24,10 +24,18 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.PaintingStyle.Companion.Stroke
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
+import com.example.trazoatrazo.utils.ImageUtils
+import com.example.trazoatrazo.utils.textColorFor
+import com.example.trazoatrazo.utils.subtitleColorFor
 
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -72,12 +80,26 @@ fun BatmanScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "🦇El señor de la noche :O🦇"
+            val subMessage = "Referencia al peluche que te di por tu cumpleaños del año pasado"
+            val bgColor = Color(0xFF2B2B2B)
+            
             DrawingButtons(
                 visible = true,
-                message = "🦇El señor de la noche :O🦇",
-                subMessage = "Referencia al peluche que te di por tu cumpleaños del año pasado",
+                message = message,
+                subMessage = subMessage,
                 onRepeat = { repetir++ },
-                onBack = onBack
+                onBack = onBack,
+                onSave = { includeText ->
+                    saveBatmanAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        bgColor,
+                        includeText
+                    )
+                }
             )
         }
 
@@ -328,6 +350,51 @@ fun DrawScope.drawBatmanAnimated(
             end = Offset(centerX + 15f * scale, centerY + 55f * scale),
             strokeWidth = 5f * scale
         )
+    }
+}
+
+fun saveBatmanAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            drawBatmanAnimated(
+                centerX = artSize / 2f,
+                centerY = artSize / 2.5f,
+                scale = 2.8f, // Ajustado para el bitmap
+                progress = 1f
+            )
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

@@ -27,6 +27,12 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -79,12 +85,28 @@ fun TrofeoScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "🏆 ¡Ganadora Regional! 🏆"
+            val subMessage = "Felicitaciones a Sandra Rebeca por ganar la etapa regional de Inovatec :D"
+            val bgColor = Color.Gray
+
             DrawingButtons(
                 visible = true,
-                message = "🏆 ¡Ganadora Regional! 🏆",
-                subMessage = "Felicitaciones a Sandra Rebeca por ganar la etapa regional de Inovatec :D",
+                message = message,
+                subMessage = subMessage,
+                backgroundColor = bgColor,
                 onRepeat = { repetir++ },
-                onBack = onBack
+                onBack = onBack,
+                onSave = { includeText ->
+                    saveTrofeoAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        bgColor,
+                        includeText,
+                        textMeasurer
+                    )
+                }
             )
         }
 
@@ -264,6 +286,53 @@ fun DrawScope.drawInovatecTrophy(
                 )
             }
         }
+    }
+}
+
+fun saveTrofeoAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean,
+    textMeasurer: TextMeasurer
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            drawInovatecTrophy(
+                centerX = artSize / 2f,
+                centerY = artSize / 2.0f,
+                scale = 2.8f,
+                progress = 0.9f, // Evitar confeti en el guardado para una imagen más limpia (opcional)
+                textMeasurer = textMeasurer
+            )
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            com.example.trazoatrazo.utils.ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        com.example.trazoatrazo.utils.ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

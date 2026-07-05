@@ -8,10 +8,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
 import kotlinx.coroutines.delay
 import kotlin.math.*
 
@@ -362,19 +368,107 @@ fun FlowerScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "💐 Ten un bonito día 💐"
+            val subMessage = "¡Que todo te salga bien!"
+
             DrawingButtons(
                 visible     = etapa >= 5,
-                message     = "💐 Ten un bonito día 💐",
-                subMessage  = "¡Que todo te salga bien!",
+                message     = message,
+                subMessage  = subMessage,
                 repeatEmoji = "🌸",
                 accentColor = PinkDark,
                 onRepeat    = { repetir++ },
-                onBack      = onBack
+                onBack      = onBack,
+                onSave = { includeText ->
+                    saveFlowersAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        BgBlue,
+                        includeText
+                    )
+                }
             )
         }
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             BackMenuButton(onBack = onBack, tintColor = Color.White)
         }
+    }
+}
+
+fun saveFlowersAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            
+            val w = size.width
+            val h = size.height
+            val s = w / 390f
+            val conoCx  = w * 0.52f
+            val conoTop = h * 0.44f
+            val conoH   = 145f * s
+            val conoBot = conoTop + conoH
+
+            drawCono(conoCx, conoTop, s, 1f)
+
+            val tX = conoCx - 30f * s
+            val tY = conoBot - 20f * s
+
+            drawHoja(tX, tY, 145f, 105f, 42f, s, GreenLime, 1f)
+            drawHoja(tX - 8f*s, tY + 10f*s, 120f, 90f, 36f, s, GreenLime, 1f)
+            drawHoja(tX + 5f*s, tY - 5f*s,  135f, 95f, 38f, s, GreenLawn, 1f)
+            drawHoja(tX - 5f*s, tY + 20f*s, 105f, 78f, 30f, s, GreenLawn, 1f)
+            drawHoja(tX + 12f*s, tY + 8f*s, 155f, 70f, 28f, s, GreenMid, 1f)
+
+            val fCx = conoCx + 8f * s
+            val fCy = conoTop - 8f * s
+
+            val florPos = listOf(
+                Offset(fCx - 72f * s, fCy + 10f * s),
+                Offset(fCx + 72f * s, fCy + 10f * s),
+                Offset(fCx,           fCy + 0f  * s),
+                Offset(fCx - 38f * s, fCy - 45f * s),
+                Offset(fCx + 38f * s, fCy - 45f * s),
+                Offset(fCx,           fCy - 82f * s),
+            )
+            florPos.forEach { pos ->
+                drawFlor(pos.x, pos.y, s, 1f)
+            }
+
+            drawMonyo(conoCx, conoBot - 28f * s, s, 1f)
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }

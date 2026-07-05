@@ -26,9 +26,16 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import androidx.compose.ui.unit.dp
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
 import com.example.trazoatrazo.ui.theme.AppColors
 import kotlinx.coroutines.delay
 import kotlin.io.path.Path
@@ -125,7 +132,7 @@ fun HarleyScreen(onBack: () -> Unit) {
             drawHarleyQuinnAnimated(
                 centerX = size.width / 2,
                 centerY = size.height / 2.3f,
-                scale = 2.0f,
+                scale = 1.8f,
                 headAnim = headAnim.value,
                 earsAnim = earsAnim.value,
                 faceAnim = faceAnim.value,
@@ -140,12 +147,81 @@ fun HarleyScreen(onBack: () -> Unit) {
 
         BackMenuButton(onBack = onBack)
 
+        val context = LocalContext.current
+        val message = "Harley Quinn"
+        val subMessage = ""
+        val bgColor = Color.Gray
+
         DrawingButtons(
             visible = true,
             onRepeat = { repetir++ },
             onBack = onBack,
-            message = "Harley Quinn"
+            message = message,
+            subMessage = subMessage,
+            backgroundColor = bgColor,
+            onSave = { includeText ->
+                saveHarleyAsImage(
+                    context,
+                    message,
+                    subMessage,
+                    bgColor,
+                    includeText
+                )
+            }
         )
+    }
+}
+
+fun saveHarleyAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            drawHarleyQuinnAnimated(
+                centerX = artSize / 2f,
+                centerY = artSize / 2.3f,
+                scale = 2.5f,
+                headAnim = 1f,
+                earsAnim = 1f,
+                faceAnim = 1f,
+                eyesAnim = 1f,
+                collarAnim = 1f,
+                bodyAnim = 1f,
+                armsAnim = 1f,
+                hammerAnim = 1f,
+                feetAnim = 1f
+            )
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

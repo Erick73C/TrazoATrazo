@@ -11,11 +11,14 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
 import kotlinx.coroutines.delay
 import kotlin.math.*
 import kotlin.random.Random
@@ -156,78 +159,19 @@ fun ButterflyScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .drawWithCache {
-                    val cx     = size.width / 2f
-                    val baseCy = size.height * 0.42f
-                    val s      = size.width / 400f
-
                     onDrawBehind {
-
-                        // ── Nubes ─────────────────────────────────────────────
-                        bfCloud(cx - 110f * s, 55f  * s, 65f * s, 0.80f)
-                        bfCloud(cx +  90f * s, 90f  * s, 50f * s, 0.60f)
-                        bfCloud(cx -  20f * s, 128f * s, 38f * s, 0.40f)
-
-                        // ── Flores decorativas ────────────────────────────────
-                        bfFlower(40f * s,              size.height * 0.87f, 0.9f * s,  FlowerRed,    FlowerYellow)
-                        bfFlower(size.width - 45f * s, size.height * 0.85f, s,          FlowerPurple, FlowerYellow)
-                        bfFlower(size.width * 0.22f,   size.height * 0.93f, 0.65f * s, FlowerRed,    FlowerYellow)
-                        bfFlower(size.width * 0.78f,   size.height * 0.91f, 0.70f * s, FlowerPurple, FlowerYellow)
-
-                        // ── Posición con vuelo figura de 8 ───────────────────
-                        val flyOffX = if (etapa >= 4) sin(flyT)        * 28f * s else 0f
-                        val flyOffY = if (etapa >= 4) sin(2f * flyT)   * 14f * s else 0f
-                        val cx2 = cx + flyOffX
-                        val cy2 = baseCy + flyOffY
-
-                        // ── Perspectiva de aleteo ─────────────────────────────
-                        val flapRad   = flapAngle * PI.toFloat() / 180f
-                        val flapValue = if (etapa >= 4)
-                            (0.2f + 0.8f * abs(cos(flapRad))).coerceIn(0.2f, 1f)
-                        else 1f
-
-                        // ── Polvo mágico ──────────────────────────────────────
-                        if (etapa >= 4) {
-                            dustParticles.forEach { p ->
-                                val t     = (dustT + p.delay) % 1f
-                                val alpha = (sin(t * PI.toFloat()) * 0.85f).coerceIn(0f, 0.85f)
-                                val radius = p.size * s * (1f - t * 0.4f)
-                                drawCircle(
-                                    color  = Color(p.colorR, p.colorG, p.colorB, alpha),
-                                    radius = radius,
-                                    center = Offset(
-                                        cx2 + p.xDrift * s * t,
-                                        cy2 + p.yDrift * s * t
-                                    )
-                                )
-                            }
-                        }
-
-                        // ── Alas (debajo del cuerpo) ──────────────────────────
-                        if (etapa >= 2) {
-                            bfWings(
-                                cx      = cx2,
-                                cy      = cy2,
-                                s       = s,
-                                flap    = flapValue,
-                                wp      = wingsAnim.value,
-                                dp      = if (etapa >= 3) detailsAnim.value else 0f,
-                                shimmer = shimmer,
-                                path    = path
-                            )
-                        }
-
-                        // ── Cuerpo (encima de alas) ───────────────────────────
-                        if (etapa >= 1) {
-                            bfBody(
-                                cx    = cx2,
-                                cy    = cy2,
-                                s     = s,
-                                bp    = bodyAnim.value,
-                                dp    = if (etapa >= 3) detailsAnim.value else 0f,
-                                etapa = etapa,
-                                path  = path
-                            )
-                        }
+                        drawButterflyComposition(
+                            scope = this,
+                            etapa = etapa,
+                            bodyAnimP = bodyAnim.value,
+                            wingsAnimP = wingsAnim.value,
+                            detailsAnimP = if (etapa >= 3) detailsAnim.value else 0f,
+                            flapAngle = flapAngle,
+                            flyT = flyT,
+                            dustT = dustT,
+                            shimmer = shimmer,
+                            path = path
+                        )
                     }
                 }
         ) {}
@@ -237,20 +181,177 @@ fun ButterflyScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "🦋 ¡Mariposa Monarca! 🦋"
+            val subMessage = "Libre como el viento 🌸"
+
             DrawingButtons(
                 visible     = etapa >= 4,
-                message     = "🦋 ¡Mariposa Monarca! 🦋",
-                subMessage  = "Libre como el viento 🌸",
+                message     = message,
+                subMessage  = subMessage,
                 repeatEmoji = "🦋",
                 accentColor = WingOrange,
+                backgroundColor = BgMid, // Para contraste de texto
                 onRepeat    = { repetir++ },
-                onBack      = onBack
+                onBack      = onBack,
+                onSave = { includeText ->
+                    saveButterflyAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        BgMid, // Color representativo del fondo
+                        includeText
+                    )
+                }
             )
         }
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             BackMenuButton(onBack = onBack, tintColor = WingOrangeLight)
         }
+    }
+}
+
+// ── Composición completa ──────────────────────────────────────────────────────
+private fun drawButterflyComposition(
+    scope: DrawScope,
+    etapa: Int,
+    bodyAnimP: Float,
+    wingsAnimP: Float,
+    detailsAnimP: Float,
+    flapAngle: Float,
+    flyT: Float,
+    dustT: Float,
+    shimmer: Float,
+    path: Path
+) {
+    with(scope) {
+        val cx     = size.width / 2f
+        val baseCy = size.height * 0.42f
+        val s      = size.width / 400f
+
+        // ── Nubes ─────────────────────────────────────────────
+        bfCloud(cx - 110f * s, 55f  * s, 65f * s, 0.80f)
+        bfCloud(cx +  90f * s, 90f  * s, 50f * s, 0.60f)
+        bfCloud(cx -  20f * s, 128f * s, 38f * s, 0.40f)
+
+        // ── Flores decorativas ────────────────────────────────
+        bfFlower(40f * s,              size.height * 0.87f, 0.9f * s,  FlowerRed,    FlowerYellow)
+        bfFlower(size.width - 45f * s, size.height * 0.85f, s,          FlowerPurple, FlowerYellow)
+        bfFlower(size.width * 0.22f,   size.height * 0.93f, 0.65f * s, FlowerRed,    FlowerYellow)
+        bfFlower(size.width * 0.78f,   size.height * 0.91f, 0.70f * s, FlowerPurple, FlowerYellow)
+
+        // ── Posición con vuelo figura de 8 ───────────────────
+        val flyOffX = if (etapa >= 4) sin(flyT)        * 28f * s else 0f
+        val flyOffY = if (etapa >= 4) sin(2f * flyT)   * 14f * s else 0f
+        val cx2 = cx + flyOffX
+        val cy2 = baseCy + flyOffY
+
+        // ── Perspectiva de aleteo ─────────────────────────────
+        val flapRad   = flapAngle * PI.toFloat() / 180f
+        val flapValue = if (etapa >= 4)
+            (0.2f + 0.8f * abs(cos(flapRad))).coerceIn(0.2f, 1f)
+        else 1f
+
+        // ── Polvo mágico ──────────────────────────────────────
+        if (etapa >= 4) {
+            dustParticles.forEach { p ->
+                val t     = (dustT + p.delay) % 1f
+                val alpha = (sin(t * PI.toFloat()) * 0.85f).coerceIn(0f, 0.85f)
+                val radius = p.size * s * (1f - t * 0.4f)
+                drawCircle(
+                    color  = Color(p.colorR, p.colorG, p.colorB, alpha),
+                    radius = radius,
+                    center = Offset(
+                        cx2 + p.xDrift * s * t,
+                        cy2 + p.yDrift * s * t
+                    )
+                )
+            }
+        }
+
+        // ── Alas (debajo del cuerpo) ──────────────────────────
+        if (etapa >= 2) {
+            bfWings(
+                cx      = cx2,
+                cy      = cy2,
+                s       = s,
+                flap    = flapValue,
+                wp      = wingsAnimP,
+                dp      = detailsAnimP,
+                shimmer = shimmer,
+                path    = path
+            )
+        }
+
+        // ── Cuerpo (encima de alas) ───────────────────────────
+        if (etapa >= 1) {
+            bfBody(
+                cx    = cx2,
+                cy    = cy2,
+                s     = s,
+                bp    = bodyAnimP,
+                dp    = detailsAnimP,
+                etapa = etapa,
+                path  = path
+            )
+        }
+    }
+}
+
+fun saveButterflyAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            // Fondo degradado
+            drawRect(
+                brush = Brush.verticalGradient(listOf(BgTop, BgMid, BgBottom)),
+                size = size
+            )
+            
+            drawButterflyComposition(
+                scope = this,
+                etapa = 4,
+                bodyAnimP = 1f,
+                wingsAnimP = 1f,
+                detailsAnimP = 1f,
+                flapAngle = 0f,
+                flyT = 0f,
+                dustT = 0f,
+                shimmer = 1f,
+                path = Path()
+            )
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
 

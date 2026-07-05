@@ -8,10 +8,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
 import kotlinx.coroutines.delay
 import kotlin.math.*
 
@@ -90,112 +96,16 @@ fun ImprovedSunflowerScreen(onBack: () -> Unit) {
             }
         }
 
-        // ── Canvas principal ──────────────────────────────────────────────
+        // Canvas principal ──────────────────────────────────────────────
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cx     = size.width  / 2f
-            val cy     = size.height * 0.30f   // ← girasol más arriba
+            val cy     = size.height * 0.30f   // girasol más arriba
             val escala = minOf(size.width, size.height) / 160f
 
-            // ── Tallo y hojas animados ────────────────────────────────────
-            drawTalloYHojas(cx, cy, escala, talloAnim.value, hoja1Anim.value, hoja2Anim.value)
-
-            // ── Espiral de semillas y pétalos ─────────────────────────────
-            for (i in 0 until count) {
-                val r     = 4.0 * sqrt(i.toDouble()) * escala
-                val theta = i * phi
-                val x     = cx + (r * cos(theta)).toFloat()
-                val y     = cy - (r * sin(theta)).toFloat()
-
-                if (i < semillas) {
-                    // Zona del centro: 3 anillos de color como girasol real
-                    val isOuter  = i > semillas - 30   // anillo verde-amarillo
-                    val isMid    = i > semillas - 65 && !isOuter
-                    val radio    = (3.5f + i * 0.014f) * (escala / 3.5f)
-
-                    // Colores por zona
-                    val colorBase = when {
-                        isOuter -> Color(0xFF6B7C1A)   // verde-oliva (borde exterior)
-                        isMid   -> Color(0xFF5A3018)   // café medio
-                        else    -> Color(0xFF2E1205)   // café muy oscuro (centro)
-                    }
-                    val colorBrillo = when {
-                        isOuter -> Color(0xFF9CB82A)   // brillo verde-amarillo
-                        isMid   -> Color(0xFF7A4A28)   // brillo café
-                        else    -> Color(0xFF4A2010)   // brillo café oscuro
-                    }
-                    val colorPunto = when {  // puntitos de textura extra
-                        isOuter -> Color(0xFFBDD430).copy(alpha = 0.5f)
-                        isMid   -> Color(0xFF3D1A08).copy(alpha = 0.6f)
-                        else    -> Color(0xFF1A0804).copy(alpha = 0.7f)
-                    }
-
-                    // Sombra
-                    drawCircle(
-                        color  = Color.Black.copy(alpha = 0.45f),
-                        radius = radio + 1.8f,
-                        center = Offset(x + 0.6f, y + 0.6f)
-                    )
-                    // Base
-                    drawCircle(colorBase, radio, Offset(x, y))
-                    // Brillo
-                    drawCircle(
-                        colorBrillo.copy(alpha = 0.55f),
-                        radio * 0.42f,
-                        Offset(x - radio * 0.22f, y - radio * 0.22f)
-                    )
-                    // Puntito de textura extra
-                    drawCircle(colorPunto, radio * 0.22f, Offset(x + radio * 0.15f, y + radio * 0.15f))
-
-                    // Para el anillo exterior: pequeño puntito amarillo adicional
-                    if (isOuter) {
-                        drawCircle(
-                            Color(0xFFE8D000).copy(alpha = 0.45f),
-                            radio * 0.18f,
-                            Offset(x - radio * 0.1f, y + radio * 0.2f)
-                        )
-                    }
-
-                } else {
-                    // ── Pétalo ────────────────────────────────────────────
-                    val angle = Math.toRadians(i * 137.508)
-                    val cosA  = cos(angle).toFloat()
-                    val sinA  = sin(angle).toFloat()
-                    val largo = (50f + (i - semillas) * 0.18f) * (escala / 3.5f)
-                    val ancho = largo * 0.38f
-                    val perpX = -sinA
-                    val perpY = -cosA
-
-                    val path = Path().apply {
-                        moveTo(x, y)
-                        cubicTo(
-                            x + perpX * ancho * 1.1f,
-                            y + perpY * ancho * 1.1f,
-                            x + cosA * largo * 0.7f + perpX * ancho,
-                            y - sinA * largo * 0.7f + perpY * ancho,
-                            x + cosA * largo,
-                            y - sinA * largo
-                        )
-                        cubicTo(
-                            x + cosA * largo * 0.7f - perpX * ancho,
-                            y - sinA * largo * 0.7f - perpY * ancho,
-                            x - perpX * ancho * 1.1f,
-                            y - perpY * ancho * 1.1f,
-                            x, y
-                        )
-                        close()
-                    }
-                    drawPath(path, Color(0xFFB8860B).copy(alpha = 0.6f),
-                        style = Stroke(1.5f * (escala / 3.5f)))
-                    drawPath(path, Color(0xFFFFD700))
-                    drawPath(path, Color(0xFFFFF176).copy(alpha = 0.55f))
-                    drawLine(
-                        Color(0xFFFFB300).copy(alpha = 0.7f),
-                        Offset(x, y),
-                        Offset(x + cosA * largo * 0.85f, y - sinA * largo * 0.85f),
-                        0.8f * (escala / 3.5f)
-                    )
-                }
-            }
+            drawImprovedSunflower(
+                cx, cy, escala, count,
+                talloAnim.value, hoja1Anim.value, hoja2Anim.value
+            )
         }
 
         // ── Botones ───────────────────────────────────────────────────────
@@ -204,19 +114,147 @@ fun ImprovedSunflowerScreen(onBack: () -> Unit) {
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
         ) {
+            val context = LocalContext.current
+            val message = "🌻 Una floresita para ti 🌻"
+            val subMessage = "Que el dia de hoy te valla muy bien :) "
+            val bgColor = Color(0xFF0D0D0D)
+
             DrawingButtons(
-                visible     = count >= totalPuntos,
-                message     = "🌻 Una floresita para ti 🌻",
-                subMessage  = "Que el dia de hoy te valla muy bien :) ",
+                visible     = count >= 250, // totalPuntos
+                message     = message,
+                subMessage  = subMessage,
                 repeatEmoji = "🌻",
                 accentColor = Color(0xFFB8860B),
                 onRepeat    = { repetir++ },
-                onBack      = onBack
+                onBack      = onBack,
+                onSave = { includeText ->
+                    saveImprovedSunflowerAsImage(
+                        context,
+                        message,
+                        subMessage,
+                        bgColor,
+                        includeText
+                    )
+                }
             )
         }
 
         Box(modifier = Modifier.align(Alignment.TopStart)) {
             BackMenuButton(onBack = onBack)
+        }
+    }
+}
+
+fun saveImprovedSunflowerAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            
+            val cx     = artSize / 2f
+            val cy     = artSize * 0.30f
+            val escala = artSize / 160f 
+            
+            drawImprovedSunflower(cx, cy, escala, 250, 1f, 1f, 1f)
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
+    }
+}
+
+private fun DrawScope.drawImprovedSunflower(
+    cx: Float, cy: Float, escala: Float, count: Int,
+    talloP: Float, hoja1P: Float, hoja2P: Float
+) {
+    val phi      = 137.508 * (Math.PI / 180.0)
+    val semillas = 120
+
+    // ── Tallo y hojas ────────────────────────────────────
+    drawTalloYHojas(cx, cy, escala, talloP, hoja1P, hoja2P)
+
+    // ── Espiral de semillas y pétalos ─────────────────────────────
+    for (i in 0 until count) {
+        val r     = 4.0 * sqrt(i.toDouble()) * escala
+        val theta = i * phi
+        val x     = cx + (r * cos(theta)).toFloat()
+        val y     = cy - (r * sin(theta)).toFloat()
+
+        if (i < semillas) {
+            val isOuter  = i > semillas - 30
+            val isMid    = i > semillas - 65 && !isOuter
+            val radio    = (3.5f + i * 0.014f) * (escala / 3.5f)
+
+            val colorBase = when {
+                isOuter -> Color(0xFF6B7C1A)
+                isMid   -> Color(0xFF5A3018)
+                else    -> Color(0xFF2E1205)
+            }
+            val colorBrillo = when {
+                isOuter -> Color(0xFF9CB82A)
+                isMid   -> Color(0xFF7A4A28)
+                else    -> Color(0xFF4A2010)
+            }
+            val colorPunto = when {
+                isOuter -> Color(0xFFBDD430).copy(alpha = 0.5f)
+                isMid   -> Color(0xFF3D1A08).copy(alpha = 0.6f)
+                else    -> Color(0xFF1A0804).copy(alpha = 0.7f)
+            }
+
+            drawCircle(Color.Black.copy(alpha = 0.45f), radio + 1.8f, Offset(x + 0.6f, y + 0.6f))
+            drawCircle(colorBase, radio, Offset(x, y))
+            drawCircle(colorBrillo.copy(alpha = 0.55f), radio * 0.42f, Offset(x - radio * 0.22f, y - radio * 0.22f))
+            drawCircle(colorPunto, radio * 0.22f, Offset(x + radio * 0.15f, y + radio * 0.15f))
+
+            if (isOuter) {
+                drawCircle(Color(0xFFE8D000).copy(alpha = 0.45f), radio * 0.18f, Offset(x - radio * 0.1f, y + radio * 0.2f))
+            }
+        } else {
+            val angle = Math.toRadians(i * 137.508)
+            val cosA  = cos(angle).toFloat()
+            val sinA  = sin(angle).toFloat()
+            val largo = (50f + (i - semillas) * 0.18f) * (escala / 3.5f)
+            val ancho = largo * 0.38f
+            val perpX = -sinA
+            val perpY = -cosA
+
+            val path = Path().apply {
+                moveTo(x, y)
+                cubicTo(x + perpX * ancho * 1.1f, y + perpY * ancho * 1.1f, x + cosA * largo * 0.7f + perpX * ancho, y - sinA * largo * 0.7f + perpY * ancho, x + cosA * largo, y - sinA * largo)
+                cubicTo(x + cosA * largo * 0.7f - perpX * ancho, y - sinA * largo * 0.7f - perpY * ancho, x - perpX * ancho * 1.1f, y - perpY * ancho * 1.1f, x, y)
+                close()
+            }
+            drawPath(path, Color(0xFFB8860B).copy(alpha = 0.6f), style = Stroke(1.5f * (escala / 3.5f)))
+            drawPath(path, Color(0xFFFFD700))
+            drawPath(path, Color(0xFFFFF176).copy(alpha = 0.55f))
+            drawLine(Color(0xFFFFB300).copy(alpha = 0.7f), Offset(x, y), Offset(x + cosA * largo * 0.85f, y - sinA * largo * 0.85f), 0.8f * (escala / 3.5f))
         }
     }
 }

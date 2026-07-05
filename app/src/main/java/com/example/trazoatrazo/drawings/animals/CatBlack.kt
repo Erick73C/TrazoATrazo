@@ -11,8 +11,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.*
+import androidx.compose.ui.platform.LocalContext
+import android.graphics.Bitmap
+import android.graphics.Paint
+import android.widget.Toast
 import com.example.trazoatrazo.ui.components.BackMenuButton
 import com.example.trazoatrazo.ui.components.DrawingButtons
+import com.example.trazoatrazo.utils.ImageUtils
+import com.example.trazoatrazo.utils.adaptiveColorFor
+import com.example.trazoatrazo.utils.subtitleColorFor
+import com.example.trazoatrazo.utils.textColorFor
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -241,19 +249,79 @@ fun CatBlackScreen(onBack: () -> Unit) {
             )
         }
 
-        Box(modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth()) {
-            DrawingButtons(
-                visible = etapa >= 4,
-                message = "🐈 Un Gatito muy tierno",
-                subMessage = " :O ",
-                repeatEmoji = "🐾",
-                accentColor = CatSecondary,
-                onRepeat = { repetir++ },
-                onBack = onBack
-            )
-        }
+        val context = LocalContext.current
+        val message = "🐈 Un Gatito muy tierno"
+        val subMessage = " :O "
+
+        DrawingButtons(
+            visible = etapa >= 4,
+            message = message,
+            subMessage = subMessage,
+            repeatEmoji = "🐾",
+            accentColor = CatSecondary.adaptiveColorFor(BgColor),
+            backgroundColor = BgColor,
+            onRepeat = { repetir++ },
+            onBack = onBack,
+            onSave = { includeText ->
+                saveCatAsImage(
+                    context,
+                    message,
+                    subMessage,
+                    BgColor,
+                    includeText
+                )
+            }
+        )
+
         Box(modifier = Modifier.align(Alignment.TopStart)) {
-            BackMenuButton(onBack = onBack, tintColor = CatSecondary)
+            BackMenuButton(onBack = onBack, tintColor = CatSecondary.adaptiveColorFor(BgColor))
         }
+    }
+}
+
+fun saveCatAsImage(
+    context: android.content.Context,
+    message: String,
+    subMessage: String,
+    bgColor: Color,
+    includeText: Boolean
+) {
+    try {
+        val artSize = 1024
+        val footerHeight = if (includeText) 180 else 0
+        val bitmap = Bitmap.createBitmap(artSize, artSize + footerHeight, Bitmap.Config.ARGB_8888)
+        val canvas = android.graphics.Canvas(bitmap)
+        
+        val drawScope = CanvasDrawScope()
+        val size = Size(artSize.toFloat(), artSize.toFloat())
+        
+        drawScope.draw(
+            density = androidx.compose.ui.unit.Density(context),
+            layoutDirection = androidx.compose.ui.unit.LayoutDirection.Ltr,
+            canvas = androidx.compose.ui.graphics.Canvas(canvas),
+            size = size
+        ) {
+            drawRect(color = bgColor, size = size)
+            
+            val cx = artSize / 2f
+            val cy = artSize * 0.48f
+            val scale = artSize / 400f
+            
+            drawCatTail(cx, cy, scale, 1f, 0f)
+            drawCatBody(cx, cy, scale, 1f)
+            drawCatHead(cx, cy, scale, 1f, 0f)
+        }
+
+        if (includeText) {
+            val paint = Paint()
+            paint.color = bgColor.toArgb()
+            canvas.drawRect(0f, artSize.toFloat(), artSize.toFloat(), (artSize + footerHeight).toFloat(), paint)
+            ImageUtils.drawFooterText(canvas, artSize, artSize.toFloat(), bgColor, message, subMessage)
+        }
+
+        ImageUtils.saveBitmapToGallery(context, bitmap)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        Toast.makeText(context, "Error al guardar: ${e.message}", Toast.LENGTH_LONG).show()
     }
 }
