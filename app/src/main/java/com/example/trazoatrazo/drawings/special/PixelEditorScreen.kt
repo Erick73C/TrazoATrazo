@@ -1,5 +1,6 @@
 package com.example.trazoatrazo.drawings.special
 
+import androidx.activity.compose.BackHandler
 import android.graphics.Color as AndroidColor
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -35,6 +37,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.example.trazoatrazo.data.PixelArtwork
 import com.example.trazoatrazo.data.local.repository.PixelArtRepository
 import com.example.trazoatrazo.presentation.pixeleditor.PixelArtViewModel
@@ -43,7 +46,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.*
 
 
-// ── Paleta visual del editor ───────────────────────────────────────────────────
 private val CheckerLight         = Color(0xFFE8E8E8)
 private val CheckerDark          = Color(0xFFCCCCCC)
 private val GridLineColor        = Color.Black.copy(alpha = 0.12f)
@@ -62,43 +64,42 @@ private const val MAX_ZOOM = 4f
 // ── Herramientas disponibles ───────────────────────────────────────────────────
 private enum class PixelTool(val emoji: String, val label: String) {
     PENCIL("✏️", "Lápiz"),
+    MIRROR("🪞", "Espejo"),    // Herramienta de Simetría Horizontal
     LINE("📏", "Línea"),
     SQUARE("⬛", "Cuadrado"),
     CIRCLE("⚪", "Círculo"),
     SELECT("⬚", "Selección"),
     FILL("🪣", "Relleno"),
+    SHADING("🌓", "Sombras"),  //  Herramienta para oscurecer
     ERASER("🧽", "Borrador"),
     EYEDROPPER("💧", "Gotero")
 }
 
 private enum class PostSaveAction { EXIT, REPLAY }
 
-// ── Snapshot para deshacer/rehacer — ahora usa StrokeStep para el paintOrder ──
-//    El undo sigue siendo solo en memoria: guarda el estado completo del lienzo
-//    y la lista de pasos acumulados hasta ese momento.
+// ── Snapshot para deshacer/rehacer ─────────────────────────────────────────────
 private data class EditorSnapshot(
     val pixels: List<Color?>,
-    val paintOrder: List<PixelArtRepository.StrokeStep>     // ← antes List<Int>, ahora List<StrokeStep>
+    val paintOrder: List<PixelArtRepository.StrokeStep>
 )
 
-// ── Rectángulo de selección, en coordenadas de fila/columna del grid ───────────
+// ── Rectángulo de selección ────────────────────────────────────────────────────
 private data class SelRect(val minRow: Int, val maxRow: Int, val minCol: Int, val maxCol: Int)
 
-// ── Lo que se está "moviendo" en este instante: qué se oculta y qué flota ──────
+// ── Lo que se está "moviendo" en este instante ─────────────────────────────────
 private data class MoveOverlay(val hiddenIndices: Set<Int>, val floatingPixels: List<Pair<Int, Color>>)
 
 // ── Pantalla principal ─────────────────────────────────────────────────────────
 @Composable
 fun PixelEditorScreen(
     viewModel: PixelArtViewModel,
-    existingArtworkId: Long? = null,      // ← antes String?, ahora Long? (Room ID)
+    existingArtworkId: Long? = null,
     onBack: () -> Unit,
-    onReplay: (drawingId: Long) -> Unit   // ← antes String, ahora Long
+    onReplay: (drawingId: Long) -> Unit
 ) {
-    // ── Carga del estado del editor desde el ViewModel ──────────────────────────
     val editorState by viewModel.editorState.collectAsState()
+    val uiScope = rememberCoroutineScope() // 🆕 NUEVO: Scope general para resetear scrolls
 
-    // Carga el dibujo existente o inicializa uno nuevo al entrar a la pantalla
     LaunchedEffect(existingArtworkId) {
         if (existingArtworkId != null) {
             viewModel.loadDrawing(existingArtworkId)
@@ -107,30 +108,22 @@ fun PixelEditorScreen(
         }
     }
 
-    // ── Estado local del editor (lógica de lienzo, no persiste en Room) ─────────
     var gridSize by remember(existingArtworkId) { mutableIntStateOf(16) }
     var pendingGridSize by remember { mutableStateOf<Int?>(null) }
 
-    // Lienzo y orden de trazos — se sincronizan desde editorState al cargar
     val pixels     = remember(existingArtworkId) { mutableStateListOf<Color?>() }
     val paintOrder = remember(existingArtworkId) { mutableStateListOf<PixelArtRepository.StrokeStep>() }
 
-    // Sincronizar con Room cuando el estado del editor cambia (carga inicial o cambio de dibujo)
     LaunchedEffect(editorState.drawingId, editorState.canvasSize, editorState.pixels) {
         if (editorState.pixels.isNotEmpty()) {
-            // Carga de dibujo (existente o recién inicializado)
             gridSize = editorState.canvasSize
             pixels.clear()
             pixels.addAll(editorState.pixels)
             paintOrder.clear()
             paintOrder.addAll(editorState.paintOrder)
         } else {
-            // El estado en el ViewModel está vacío (ej: se acaba de llamar a loadDrawing y está cargando)
-            // Limpiamos el lienzo local inmediatamente para evitar el "efecto fantasma"
             pixels.clear()
             paintOrder.clear()
-            
-            // Si es un dibujo totalmente nuevo (sin ID) y no está en proceso de carga/guardado
             if (editorState.drawingId == null && !editorState.isSaving) {
                 repeat(gridSize * gridSize) { pixels.add(null) }
             }
@@ -145,44 +138,42 @@ fun PixelEditorScreen(
     var showGridLines    by remember { mutableStateOf(true) }
     var showColorPicker  by remember { mutableStateOf(false) }
     var showSaveDialog   by remember { mutableStateOf(false) }
+    var showExitDialog   by remember { mutableStateOf(false) }
     var postSaveAction   by remember { mutableStateOf(PostSaveAction.EXIT) }
 
-    // Zoom y desplazamiento del lienzo
     var zoomLevel    by remember(gridSize) { mutableFloatStateOf(1f) }
     val hScrollState  = remember(gridSize) { ScrollState(0) }
     val vScrollState  = remember(gridSize) { ScrollState(0) }
 
-    // Estado de las herramientas de figura (línea / cuadrado / círculo)
     var shapeStartIndex by remember(gridSize) { mutableStateOf<Int?>(null) }
     var shapeEndIndex   by remember(gridSize) { mutableStateOf<Int?>(null) }
     var shapeFilled     by remember { mutableStateOf(false) }
 
-    // Estado de selección + mover
     var selectionRect        by remember(gridSize) { mutableStateOf<SelRect?>(null) }
     var selDragStartIndex    by remember(gridSize) { mutableStateOf<Int?>(null) }
     var selDragCurrentIndex  by remember(gridSize) { mutableStateOf<Int?>(null) }
     var moveAnchorIndex      by remember(gridSize) { mutableStateOf<Int?>(null) }
     var moveDelta            by remember(gridSize) { mutableStateOf(0 to 0) }
 
+    // 🆕 NUEVO: Previene que herramientas de arrastre rápido (Sombreador/Espejo) spameen el mismo pixel
+    var lastActedIndex by remember { mutableStateOf<Int?>(null) }
+
     val screenAnim = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        screenAnim.animateTo(1f, tween(500, easing = EaseOutCubic))
+    LaunchedEffect(Unit) { screenAnim.animateTo(1f, tween(500, easing = EaseOutCubic)) }
+
+    fun handleBack() {
+        if (pixels.any { it != null }) showExitDialog = true else onBack()
     }
 
-    // ── Registro de trazos con color real (para Room y el reproductor) ──────────
-    //    Antes: recordPaint(index) solo guardaba el índice.
-    //    Ahora: guarda StrokeStep(index, color) con el color exacto del momento.
-    //    Esto permite que el reproductor reproduzca cada píxel con el color correcto
-    //    aunque el tema de la app cambie después.
+    BackHandler(enabled = true) { handleBack() }
+
     fun recordPaint(index: Int, color: Color) {
         paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = index, color = color))
     }
     fun recordErase(index: Int) {
-        // Un borrado es también un paso: color null = transparente en Room
         paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = index, color = null))
     }
 
-    // ── Deshacer / Rehacer ──────────────────────────────────────────────────────
     fun pushUndo() {
         if (undoStack.size >= 25) undoStack.removeAt(0)
         undoStack.add(EditorSnapshot(pixels.toList(), paintOrder.toList()))
@@ -210,12 +201,9 @@ fun PixelEditorScreen(
 
     fun requestGridSizeChange(newSize: Int) {
         if (newSize == gridSize) return
-        if (pixels.any { it != null }) {
-            pendingGridSize = newSize
-        } else {
+        if (pixels.any { it != null }) pendingGridSize = newSize
+        else {
             gridSize = newSize
-            // IMPORTANTE: Redimensionar la lista inmediatamente para evitar enviar
-            // datos de 16x16 en un guardado de 8x8.
             pixels.clear()
             repeat(newSize * newSize) { pixels.add(null) }
             paintOrder.clear()
@@ -224,7 +212,8 @@ fun PixelEditorScreen(
 
     fun cancelAccidentalFirstTouch() {
         when (selectedTool) {
-            PixelTool.PENCIL, PixelTool.ERASER, PixelTool.FILL -> undo()
+            PixelTool.PENCIL, PixelTool.ERASER, PixelTool.FILL,
+            PixelTool.MIRROR, PixelTool.SHADING -> undo() // 🆕 NUEVO: Agregadas a cancelación
             PixelTool.LINE, PixelTool.SQUARE, PixelTool.CIRCLE -> {
                 shapeStartIndex = null; shapeEndIndex = null
             }
@@ -232,17 +221,52 @@ fun PixelEditorScreen(
                 selDragStartIndex = null; selDragCurrentIndex = null
                 moveAnchorIndex = null; moveDelta = 0 to 0
             }
-            PixelTool.EYEDROPPER -> { /* nada que cancelar */ }
+            PixelTool.EYEDROPPER -> { }
         }
     }
 
     fun applyToolAt(index: Int, isFirstTouch: Boolean) {
         if (index !in pixels.indices) return
+
+        // 🆕 NUEVO: Evita aplicar la herramienta mil veces por segundo en el mismo pixel al arrastrar
+        if (isFirstTouch) lastActedIndex = null
+        if (index == lastActedIndex && !isFirstTouch) return
+        lastActedIndex = index
+
         when (selectedTool) {
             PixelTool.PENCIL -> {
                 if (isFirstTouch) pushUndo()
                 pixels[index] = selectedColor
-                recordPaint(index, selectedColor)   // ← color real, no índice
+                recordPaint(index, selectedColor)
+            }
+            // 🆕 NUEVO: Lógica de la herramienta ESPEJO
+            PixelTool.MIRROR -> {
+                if (isFirstTouch) pushUndo()
+
+                // Pintar pixel normal
+                pixels[index] = selectedColor
+                recordPaint(index, selectedColor)
+
+                // Calcular y pintar pixel reflejado (Espejo Horizontal)
+                val row = index / gridSize
+                val col = index % gridSize
+                val mirrorCol = (gridSize - 1) - col
+                val mirrorIndex = row * gridSize + mirrorCol
+
+                if (mirrorIndex in pixels.indices && mirrorIndex != index) {
+                    pixels[mirrorIndex] = selectedColor
+                    recordPaint(mirrorIndex, selectedColor)
+                }
+            }
+            // 🆕 NUEVO: Lógica de la herramienta SOMBREADOR
+            PixelTool.SHADING -> {
+                if (isFirstTouch) pushUndo()
+                val currentColor = pixels.getOrNull(index)
+                if (currentColor != null) {
+                    val darkened = currentColor.darken(0.85f)
+                    pixels[index] = darkened
+                    recordPaint(index, darkened)
+                }
             }
             PixelTool.ERASER -> {
                 if (isFirstTouch) pushUndo()
@@ -256,7 +280,7 @@ fun PixelEditorScreen(
                     if (targetColor != selectedColor) {
                         floodFillIndices(pixels, gridSize, index).forEach { idx ->
                             pixels[idx] = selectedColor
-                            recordPaint(idx, selectedColor)   // ← color real
+                            recordPaint(idx, selectedColor)
                         }
                     }
                 }
@@ -271,11 +295,10 @@ fun PixelEditorScreen(
                 if (isFirstTouch) shapeStartIndex = index
                 shapeEndIndex = index
             }
-            PixelTool.SELECT -> { /* manejado por handleSelectDown/Move */ }
+            PixelTool.SELECT -> { }
         }
     }
 
-    // Sella la figura (línea/cuadrado/círculo) al soltar el dedo
     fun commitShapeIfNeeded() {
         val start = shapeStartIndex
         val end   = shapeEndIndex
@@ -291,16 +314,15 @@ fun PixelEditorScreen(
                 indices.forEach { idx ->
                     if (idx in pixels.indices) {
                         pixels[idx] = selectedColor
-                        recordPaint(idx, selectedColor)   // ← color real
+                        recordPaint(idx, selectedColor)
                     }
                 }
             }
         }
-        shapeStartIndex = null
-        shapeEndIndex   = null
+        shapeStartIndex = null; shapeEndIndex   = null
     }
 
-    // ── Selección ───────────────────────────────────────────────────────────────
+    // ── Selección (No modificado, se mantiene igual) ───────────────────────────
     fun handleSelectDown(index: Int) {
         val rect = selectionRect
         val row = index / gridSize; val col = index % gridSize
@@ -338,18 +360,13 @@ fun PixelEditorScreen(
         moved.forEach { (row, col, _) ->
             val idx = row * gridSize + col
             pixels[idx] = null
-            paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = idx, color = null))   // borra la posición original
+            paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = idx, color = null))
         }
         moved.forEach { (row, col, color) ->
             val newIdx = (row + dRow) * gridSize + (col + dCol)
             if (newIdx in pixels.indices) {
                 pixels[newIdx] = color
-                if (color != null) paintOrder.add(
-                    PixelArtRepository.StrokeStep(
-                        pixelIndex = newIdx,
-                        color = color
-                    )
-                )
+                if (color != null) paintOrder.add(PixelArtRepository.StrokeStep(pixelIndex = newIdx, color = color))
             }
         }
         selectionRect = SelRect(
@@ -369,18 +386,15 @@ fun PixelEditorScreen(
         }
     }
 
-    // ── Vista previa de figura mientras se arrastra ─────────────────────────────
-    val previewIndices =
-        if (shapeStartIndex != null && shapeEndIndex != null) {
-            when (selectedTool) {
-                PixelTool.LINE   -> bresenhamLine(shapeStartIndex!!, shapeEndIndex!!, gridSize)
-                PixelTool.SQUARE -> rectangleIndices(shapeStartIndex!!, shapeEndIndex!!, gridSize, shapeFilled)
-                PixelTool.CIRCLE -> ellipseIndices(shapeStartIndex!!, shapeEndIndex!!, gridSize, shapeFilled)
-                else -> emptyList()
-            }
-        } else emptyList()
+    val previewIndices = if (shapeStartIndex != null && shapeEndIndex != null) {
+        when (selectedTool) {
+            PixelTool.LINE   -> bresenhamLine(shapeStartIndex!!, shapeEndIndex!!, gridSize)
+            PixelTool.SQUARE -> rectangleIndices(shapeStartIndex!!, shapeEndIndex!!, gridSize, shapeFilled)
+            PixelTool.CIRCLE -> ellipseIndices(shapeStartIndex!!, shapeEndIndex!!, gridSize, shapeFilled)
+            else -> emptyList()
+        }
+    } else emptyList()
 
-    // ── Rectángulo de selección a dibujar (guardado, en vivo, o desplazándose) ──
     val displaySelectionRect: SelRect? = when {
         selDragStartIndex != null && selDragCurrentIndex != null -> {
             val r0 = selDragStartIndex!! / gridSize; val c0 = selDragStartIndex!! % gridSize
@@ -395,7 +409,6 @@ fun PixelEditorScreen(
         else -> selectionRect
     }
 
-    // ── Overlay de píxeles flotantes mientras se mueve la selección ─────────────
     val moveOverlay: MoveOverlay? = if (moveAnchorIndex != null && selectionRect != null) {
         val rect = selectionRect!!
         val (dRow, dCol) = moveDelta
@@ -415,18 +428,10 @@ fun PixelEditorScreen(
     } else null
 
     // ── Layout principal ────────────────────────────────────────────────────────
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(AppColors.Vacio)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .alpha(screenAnim.value)
-        ) {
+    Box(modifier = Modifier.fillMaxSize().background(AppColors.Vacio)) {
+        Column(modifier = Modifier.fillMaxSize().alpha(screenAnim.value)) {
             PixelEditorHeader(
-                onBack        = onBack,
+                onBack        = { handleBack() },
                 gridSize      = gridSize,
                 isSaving      = editorState.isSaving,
                 canReplay     = paintOrder.isNotEmpty(),
@@ -435,29 +440,19 @@ fun PixelEditorScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 18.dp),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 18.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
-
-                // ── Lienzo con zoom + scroll ────────────────────────────────────
                 BoxWithConstraints(
-                    modifier = Modifier
-                        .weight(1f)
-                        .fillMaxWidth(0.95f)
-                        .aspectRatio(1f)
-                        .clip(RoundedCornerShape(10.dp))
-                        .background(Color.White)
+                    modifier = Modifier.weight(1f).fillMaxWidth(0.95f).aspectRatio(1f)
+                        .clip(RoundedCornerShape(10.dp)).background(Color.White)
                         .border(1.2.dp, AppColors.Maldicion.copy(alpha = 0.4f), RoundedCornerShape(10.dp))
                 ) {
-                    val scope      = this
-                    val canvasSize = scope.maxWidth * zoomLevel
+                    val canvasSize = this.maxWidth * zoomLevel
 
                     Box(
-                        modifier = Modifier
-                            .fillMaxSize()
+                        modifier = Modifier.fillMaxSize()
                             .horizontalScroll(hScrollState)
                             .verticalScroll(vScrollState)
                     ) {
@@ -478,7 +473,10 @@ fun PixelEditorScreen(
                             onPointerMove  = { idx ->
                                 when {
                                     selectedTool == PixelTool.SELECT -> handleSelectMove(idx)
+                                    // 🆕 NUEVO: Agregadas las nuevas herramientas al detector de arrastre
                                     selectedTool == PixelTool.PENCIL ||
+                                            selectedTool == PixelTool.MIRROR ||
+                                            selectedTool == PixelTool.SHADING ||
                                             selectedTool == PixelTool.ERASER ||
                                             selectedTool == PixelTool.LINE   ||
                                             selectedTool == PixelTool.SQUARE ||
@@ -496,41 +494,21 @@ fun PixelEditorScreen(
                     }
                 }
 
-                // ── Zoom ──────────────────────────────────────────────────────
                 Row(
                     verticalAlignment     = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    IconActionButton(
-                        emoji   = "➖",
-                        enabled = zoomLevel > MIN_ZOOM,
-                        onClick = { zoomLevel = (zoomLevel - 0.5f).coerceAtLeast(MIN_ZOOM) }
-                    )
-                    Text(
-                        text       = "${(zoomLevel * 100).toInt()}%",
-                        fontSize   = 13.sp,
-                        fontWeight = FontWeight.Medium,
-                        color      = AppColors.Eco
-                    )
-                    IconActionButton(
-                        emoji   = "➕",
-                        enabled = zoomLevel < MAX_ZOOM,
-                        onClick = { zoomLevel = (zoomLevel + 0.5f).coerceAtMost(MAX_ZOOM) }
-                    )
+                    IconActionButton("➖", enabled = zoomLevel > MIN_ZOOM) { zoomLevel = (zoomLevel - 0.5f).coerceAtLeast(MIN_ZOOM) }
+                    Text("${(zoomLevel * 100).toInt()}%", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = AppColors.Eco)
+                    IconActionButton("➕", enabled = zoomLevel < MAX_ZOOM) { zoomLevel = (zoomLevel + 0.5f).coerceAtMost(MAX_ZOOM) }
                 }
 
-                // ── Tamaño de cuadrícula ──────────────────────────────────────
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     gridSizes.forEach { size ->
-                        GridSizeChip(
-                            size       = size,
-                            isSelected = size == gridSize,
-                            onClick    = { requestGridSizeChange(size) }
-                        )
+                        GridSizeChip(size = size, isSelected = size == gridSize, onClick = { requestGridSizeChange(size) })
                     }
                 }
 
-                // ── Herramientas (scrollable) ─────────────────────────────────
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     contentPadding = PaddingValues(horizontal = 4.dp)
@@ -551,34 +529,21 @@ fun PixelEditorScreen(
                     }
                 }
 
-                // ── Borde / Relleno (solo para Cuadrado y Círculo) ────────────
                 if (selectedTool == PixelTool.SQUARE || selectedTool == PixelTool.CIRCLE) {
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text("Modo:", fontSize = 12.sp, color = AppColors.Eco)
                         ShapeModeChip("Borde",   selected = !shapeFilled, onClick = { shapeFilled = false })
                         ShapeModeChip("Relleno", selected = shapeFilled,  onClick = { shapeFilled = true })
                     }
                 }
 
-                // ── Aviso + quitar selección (solo para Selección) ────────────
                 if (selectedTool == PixelTool.SELECT && selectionRect != null) {
-                    Row(
-                        verticalAlignment     = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text     = "Arrastra dentro del recuadro para moverlo",
-                            fontSize = 11.sp,
-                            color    = AppColors.Eco
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("Arrastra dentro del recuadro para moverlo", fontSize = 11.sp, color = AppColors.Eco)
                         IconActionButton(emoji = "✕", onClick = { selectionRect = null })
                     }
                 }
 
-                // ── Acciones: deshacer · rehacer · cuadrícula · limpiar ───────
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                     IconActionButton("↩️", enabled = undoStack.isNotEmpty(), onClick = { undo() })
                     IconActionButton("↪️", enabled = redoStack.isNotEmpty(), onClick = { redo() })
@@ -586,27 +551,14 @@ fun PixelEditorScreen(
                     IconActionButton("🗑️", onClick = { clearCanvas() })
                 }
 
-                // ── Paleta de colores ─────────────────────────────────────────
                 Row(
                     verticalAlignment     = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.padding(bottom = 16.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(RoundedCornerShape(10.dp))
-                            .background(selectedColor)
-                            .border(2.dp, AppColors.Reversa.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-                    )
+                    Box(modifier = Modifier.size(38.dp).clip(RoundedCornerShape(10.dp)).background(selectedColor).border(2.dp, AppColors.Reversa.copy(alpha = 0.3f), RoundedCornerShape(10.dp)))
                     LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        items(basePalette) { color ->
-                            ColorSwatchButton(
-                                color      = color,
-                                isSelected = color == selectedColor,
-                                onClick    = { selectedColor = color }
-                            )
-                        }
+                        items(basePalette) { color -> ColorSwatchButton(color = color, isSelected = color == selectedColor, onClick = { selectedColor = color }) }
                         item { CustomColorButton(onClick = { showColorPicker = true }) }
                     }
                 }
@@ -614,13 +566,8 @@ fun PixelEditorScreen(
         }
     }
 
-    // ── Diálogos superpuestos ───────────────────────────────────────────────────
     if (showColorPicker) {
-        ColorPickerDialog(
-            initialColor    = selectedColor,
-            onColorSelected = { selectedColor = it },
-            onDismiss       = { showColorPicker = false }
-        )
+        ColorPickerDialog(initialColor = selectedColor, onColorSelected = { selectedColor = it }, onDismiss = { showColorPicker = false })
     }
 
     pendingGridSize?.let { target ->
@@ -628,14 +575,20 @@ fun PixelEditorScreen(
             targetSize = target,
             onConfirm  = {
                 gridSize = target
-                // Resetear explícitamente las listas locales para el nuevo tamaño
+
+                // 🆕 NUEVO: Fix de UX, el zoom y scroll se reinician para evitar el efecto fantasma y perderse en el lienzo
+                zoomLevel = 1f
+                uiScope.launch {
+                    hScrollState.scrollTo(0)
+                    vScrollState.scrollTo(0)
+                }
+
                 pixels.clear()
                 repeat(target * target) { pixels.add(null) }
                 paintOrder.clear()
                 undoStack.clear()
                 redoStack.clear()
                 selectionRect = null
-
                 pendingGridSize = null
             },
             onDismiss  = { pendingGridSize = null }
@@ -644,15 +597,9 @@ fun PixelEditorScreen(
 
     if (showSaveDialog) {
         SaveArtworkDialog(
-            // Usa el título que ya tiene el dibujo si se está editando uno existente
             initialName = editorState.title.takeIf { it != "Mi pixel art" } ?: "",
             onConfirm   = { name ->
-                // 1. Actualizar el título en el ViewModel
                 viewModel.updateTitle(name)
-                // 2. Sincronizar el lienzo local al estado del ViewModel antes de guardar
-                //    El ViewModel ya tiene pixels/paintOrder desde los recordPaint/recordErase,
-                //    pero aquí forzamos que el estado local sea la fuente de verdad.
-                //    (paintOrder local ya tiene todos los StrokeStep acumulados)
                 showSaveDialog = false
                 viewModel.saveCurrentDrawing(
                     canvasSize         = gridSize,
@@ -669,6 +616,22 @@ fun PixelEditorScreen(
             onDismiss = { showSaveDialog = false }
         )
     }
+
+    if (showExitDialog) {
+        ExitConfirmDialog(onConfirm = onBack, onDismiss = { showExitDialog = false })
+    }
+}
+
+// ── Helpers Nativos y Extensiones ───────────────────────────────────────────────
+
+// Función de extensión para oscurecer el color en el Sombreador
+private fun Color.darken(factor: Float): Color {
+    return Color(
+        red = (this.red * factor).coerceIn(0f, 1f),
+        green = (this.green * factor).coerceIn(0f, 1f),
+        blue = (this.blue * factor).coerceIn(0f, 1f),
+        alpha = this.alpha
+    )
 }
 
 // ── Diálogo para nombrar y guardar ───────────────────────────────────────────────
@@ -680,29 +643,44 @@ private fun SaveArtworkDialog(
 ) {
     var name by remember { mutableStateOf(initialName) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
         Box(
             modifier = Modifier
-                .clip(RoundedCornerShape(20.dp))
-                .background(AppColors.Sombra)
-                .padding(22.dp)
+                .fillMaxSize()
+                .imePadding()
+                .padding(horizontal = 24.dp),
+            contentAlignment = Alignment.Center
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                Text("💾 Guardar creación", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
-                OutlinedTextField(
-                    value         = name,
-                    onValueChange = { name = it },
-                    placeholder   = { Text("Mi creación") },
-                    singleLine    = true,
-                    modifier      = Modifier.fillMaxWidth()
-                )
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-                    TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
-                    Spacer(Modifier.width(8.dp))
-                    Button(
-                        onClick = { onConfirm(name.ifBlank { "Mi creación" }) },
-                        colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Maldicion)
-                    ) { Text("Guardar", color = Color.White) }
+            Box(
+                modifier = Modifier
+                    .widthIn(max = 420.dp)
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(AppColors.Sombra)
+                    .padding(22.dp)
+            ) {
+                Column(
+                    modifier = Modifier.verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    Text("💾 Guardar creación", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                    OutlinedTextField(
+                        value         = name,
+                        onValueChange = { name = it },
+                        placeholder   = { Text("Mi creación") },
+                        singleLine    = true,
+                        modifier      = Modifier.fillMaxWidth()
+                    )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                        TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
+                        Spacer(Modifier.width(8.dp))
+                        Button(
+                            onClick = { onConfirm(name.ifBlank { "Mi creación" }) },
+                            colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Maldicion)
+                        ) { Text("Guardar", color = Color.White) }
+                    }
                 }
             }
         }
@@ -732,6 +710,35 @@ private fun ResizeConfirmDialog(targetSize: Int, onConfirm: () -> Unit, onDismis
                         onClick = onConfirm,
                         colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Sukuna)
                     ) { Text("Cambiar y borrar", color = Color.White) }
+                }
+            }
+        }
+    }
+}
+
+// ── Diálogo de confirmación de salida ───────────────────────────────────────
+@Composable
+private fun ExitConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Box(
+            modifier = Modifier
+                .clip(RoundedCornerShape(20.dp))
+                .background(AppColors.Sombra)
+                .padding(22.dp)
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Text("⚠️ ¿Salir sin guardar?", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                Text(
+                    text       = "Si sales ahora, perderás los cambios que no hayas guardado. ¿Quieres continuar?",
+                    fontSize   = 13.sp, color = AppColors.Eco, lineHeight = 18.sp
+                )
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onDismiss) { Text("Cancelar", color = AppColors.Eco) }
+                    Spacer(Modifier.width(8.dp))
+                    Button(
+                        onClick = onConfirm,
+                        colors  = ButtonDefaults.buttonColors(containerColor = AppColors.Sukuna)
+                    ) { Text("Salir y borrar", color = Color.White) }
                 }
             }
         }
