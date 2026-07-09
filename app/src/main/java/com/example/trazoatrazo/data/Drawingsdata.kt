@@ -38,6 +38,22 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             accentColor = Color(0xFFE75480)
         ),
         DrawingItem(
+            id          = Routes.Drawings.ROSA,
+            emoji       = "🌹",
+            title       = "Rosa",
+            description = "Un clásico romántico",
+            bgColor     = Color(0xFFFFEBEE),
+            accentColor = Color(0xFFD32F2F)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.TULIPAN,
+            emoji       = "🌷",
+            title       = "Tulipán",
+            description = "Colorido y elegante",
+            bgColor     = Color(0xFFF3E5F5),
+            accentColor = Color(0xFF9C27B0)
+        ),
+        DrawingItem(
             id          = Routes.Drawings.IMPROVED_SUNFLOWER,
             emoji       = "🌞",
             title       = "Girasol Mejorado",
@@ -89,6 +105,30 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             accentColor = Color(0xFF2E7D32)
         ),
         DrawingItem(
+            id          = Routes.Drawings.PERRITO,
+            emoji       = "🐶",
+            title       = "Perrito",
+            description = "Tu mejor amigo",
+            bgColor     = Color(0xFFEFEBE9),
+            accentColor = Color(0xFF795548)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.CAMALEON,
+            emoji       = "🦎",
+            title       = "Camaleón",
+            description = "Cambia de colores",
+            bgColor     = Color(0xFFF1F8E9),
+            accentColor = Color(0xFF689F38)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.AXOLOTE,
+            emoji       = "🌸",
+            title       = "Axolote",
+            description = "El monstruo del agua",
+            bgColor     = Color(0xFFFCE4EC),
+            accentColor = Color(0xFFF06292)
+        ),
+        DrawingItem(
             id          = Routes.Drawings.CAT_BLACK,
             emoji       = "🐈‍⬛",
             title       = "Gatito negro",
@@ -105,6 +145,14 @@ val drawingCatalog: Map<String, List<DrawingItem>> = mapOf(
             title       = "Cerezo",
             description = "Flor de primavera",
             accentColor = Color(0xFFFF91A4)
+        ),
+        DrawingItem(
+            id          = Routes.Drawings.MARIQUITA,
+            emoji       = "🐞",
+            title       = "Mariquita",
+            description = "Pequeña y roja",
+            bgColor     = Color(0xFFFFF3E0),
+            accentColor = Color(0xFFE53935)
         ),
         DrawingItem(
             id          = Routes.Drawings.BUTTERFLY,

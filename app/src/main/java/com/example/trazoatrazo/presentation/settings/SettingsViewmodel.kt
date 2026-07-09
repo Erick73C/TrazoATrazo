@@ -41,18 +41,14 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         )
 
     // ── Fondo dinámico (Optimizado con Cache Local) ───────────────────────────
-    // Usamos un StateFlow interno para actualizaciones instantáneas en la UI
     private val _backgroundConfig = MutableStateFlow(BackgroundConfig())
     val backgroundConfig: StateFlow<BackgroundConfig> = _backgroundConfig.asStateFlow()
 
     init {
-        // Sincronizar el estado local con la persistencia (DataStore)
         viewModelScope.launch {
             selectedTheme.flatMapLatest { theme ->
                 backgroundPrefs.getConfigFlow(theme)
             }.collect { config ->
-                // Solo actualizamos si el usuario no está interactuando activamente
-                // o si el cambio viene de un cambio de tema
                 if (persistJob == null || !persistJob!!.isActive) {
                     _backgroundConfig.value = config
                 }
@@ -83,7 +79,6 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = true
         )
 
-    // ── Helper para actualizar instantáneamente y persistir con retraso ───────
     private var persistJob: Job? = null
     
     private fun updateConfig(update: (BackgroundConfig) -> BackgroundConfig) {
@@ -92,13 +87,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         
         if (current == updated) return
 
-        // 1. Actualización inmediata en el estado de la UI
         _backgroundConfig.value = updated
 
-        // 2. Persistencia con "Debounce" (retraso) para no saturar el disco
         persistJob?.cancel()
         persistJob = viewModelScope.launch {
-            delay(300) // Esperar 300ms de inactividad antes de guardar en DataStore
+            delay(300) 
             backgroundPrefs.saveConfig(updated)
         }
     }
@@ -129,46 +122,34 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         current.copy(activeTypes = newList)
     }
 
-    // ── Estrellas ─────────────────────────────────────────────────────────────
-    fun setStarsEnabled(enabled: Boolean) = updateConfig { 
-        it.copy(stars = it.stars.copy(enabled = enabled)) 
-    }
+    // ── Efectos Individuales ───────────────────────────────────────────────────
+    fun setStarsEnabled(enabled: Boolean) = updateConfig { it.copy(stars = it.stars.copy(enabled = enabled)) }
+    fun setStarsIntensity(intensity: Float) = updateConfig { it.copy(stars = it.stars.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    fun setStarsIntensity(intensity: Float) = updateConfig { 
-        it.copy(stars = it.stars.copy(intensity = intensity.coerceIn(0f, 1f))) 
-    }
+    fun setGrainEnabled(enabled: Boolean) = updateConfig { it.copy(grain = it.grain.copy(enabled = enabled)) }
+    fun setGrainIntensity(intensity: Float) = updateConfig { it.copy(grain = it.grain.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    // ── Pétalos ───────────────────────────────────────────────────────────────
-    fun setPetalsEnabled(enabled: Boolean) = updateConfig { 
-        it.copy(petals = it.petals.copy(enabled = enabled)) 
-    }
+    fun setGlowEnabled(enabled: Boolean) = updateConfig { it.copy(glow = it.glow.copy(enabled = enabled)) }
+    fun setGlowIntensity(intensity: Float) = updateConfig { it.copy(glow = it.glow.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    fun setPetalsIntensity(intensity: Float) = updateConfig { 
-        it.copy(petals = it.petals.copy(intensity = intensity.coerceIn(0f, 1f))) 
-    }
+    fun setVignetteEnabled(enabled: Boolean) = updateConfig { it.copy(vignette = it.vignette.copy(enabled = enabled)) }
+    fun setVignetteIntensity(intensity: Float) = updateConfig { it.copy(vignette = it.vignette.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    // ── Grain ─────────────────────────────────────────────────────────────────
-    fun setGrainEnabled(enabled: Boolean) = updateConfig { 
-        it.copy(grain = it.grain.copy(enabled = enabled)) 
-    }
+    fun setChromaticEnabled(enabled: Boolean) = updateConfig { it.copy(chromatic = it.chromatic.copy(enabled = enabled)) }
+    fun setChromaticIntensity(intensity: Float) = updateConfig { it.copy(chromatic = it.chromatic.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    fun setGrainIntensity(intensity: Float) = updateConfig { 
-        it.copy(grain = it.grain.copy(intensity = intensity.coerceIn(0f, 1f))) 
-    }
+    fun setScanlinesEnabled(enabled: Boolean) = updateConfig { it.copy(scanlines = it.scanlines.copy(enabled = enabled)) }
+    fun setScanlinesIntensity(intensity: Float) = updateConfig { it.copy(scanlines = it.scanlines.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    // ── Brillo ────────────────────────────────────────────────────────────────
-    fun setGlowEnabled(enabled: Boolean) = updateConfig { 
-        it.copy(glow = it.glow.copy(enabled = enabled)) 
-    }
+    fun setKaleidoscopeEnabled(enabled: Boolean) = updateConfig { it.copy(kaleidoscope = it.kaleidoscope.copy(enabled = enabled)) }
+    fun setKaleidoscopeIntensity(intensity: Float) = updateConfig { it.copy(kaleidoscope = it.kaleidoscope.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
-    fun setGlowIntensity(intensity: Float) = updateConfig { 
-        it.copy(glow = it.glow.copy(intensity = intensity.coerceIn(0f, 1f))) 
-    }
+    fun setWavesEnabled(enabled: Boolean) = updateConfig { it.copy(waves = it.waves.copy(enabled = enabled)) }
+    fun setWavesIntensity(intensity: Float) = updateConfig { it.copy(waves = it.waves.copy(intensity = intensity.coerceIn(0f, 1f))) }
 
     // ── Global ────────────────────────────────────────────────────────────────
-    fun setBackgroundSpeed(speed: Float) = updateConfig { 
-        it.copy(speed = speed.coerceIn(0.25f, 2.0f)) 
-    }
+    fun setBackgroundSpeed(speed: Float) = updateConfig { it.copy(speed = speed.coerceIn(0.25f, 2.0f)) }
+    fun setParticleSize(size: Float) = updateConfig { it.copy(particleSize = size.coerceIn(0.5f, 2.5f)) }
 
     fun resetBackgroundToThemeDefault() {
         viewModelScope.launch { backgroundPrefs.resetToThemeDefault() }
@@ -176,21 +157,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun selectFont(font: AppFont) {
         if (selectedFont.value == font) return
-        viewModelScope.launch {
-            fontPrefs.saveFont(font)
-        }
+        viewModelScope.launch { fontPrefs.saveFont(font) }
     }
 
     fun selectMessageStyle(style: MessageStyle) {
         if (selectedMessageStyle.value == style) return
-        viewModelScope.launch {
-            fontPrefs.saveMessageStyle(style)
-        }
+        viewModelScope.launch { fontPrefs.saveMessageStyle(style) }
     }
 
     fun setImmersiveMode(enabled: Boolean) {
-        viewModelScope.launch {
-            systemPrefs.saveImmersiveMode(enabled)
-        }
+        viewModelScope.launch { systemPrefs.saveImmersiveMode(enabled) }
     }
 }

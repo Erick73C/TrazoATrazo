@@ -46,18 +46,25 @@ object Routes {
     object Drawings {
         const val GIRASOL = "girasol"
         const val FLORES  = "flores"
+        const val ROSA    = "rosa"
+        const val TULIPAN = "tulipan"
+
         const val HEART   = "heart"
         const val BATMAN  = "batman"
         const val TROFEO  = "trofeo"
         const val HARLEY  = "harley"
 
-        const val TURTLE = "turtle"
+        const val TURTLE   = "turtle"
+        const val PERRITO  = "perrito"
+        const val CAMALEON = "camaleon"
+        const val AXOLOTE  = "axolote"
 
         const val IMPROVED_SUNFLOWER = "improved_sunflower"
 
         const val CAT_BLACK = "cat_black"
 
         const val CHERRY_TREE = "cherry_tree"
+        const val MARIQUITA   = "mariquita"
 
         const val SNOWMAN = "snowman"
 

@@ -23,20 +23,9 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import com.example.trazoatrazo.ui.theme.AppTheme
 import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.math.cos
 
-// ══════════════════════════════════════════════════════════════════════════════
-// DynamicBackground — Composable principal
-// Envuelve cualquier pantalla con la capa de efectos de fondo
-//
-// Uso:
-//   DynamicBackground(
-//       theme  = currentTheme,
-//       config = LocalBackgroundConfig.current,
-//       bgColor = AppColors.Vacio
-//   ) {
-//       // contenido de la pantalla
-//   }
-// ══════════════════════════════════════════════════════════════════════════════
 @Composable
 fun DynamicBackground(
     theme:    AppTheme,
@@ -45,27 +34,20 @@ fun DynamicBackground(
     modifier: Modifier = Modifier,
     content:  @Composable () -> Unit
 ) {
-    // ── Datos generados una sola vez ──────────────────────────────────────────
     val particles = remember(theme, config.activeTypes) { 
         generateParticles(theme = theme, activeTypes = config.activeTypes)
     }
     val stars     = remember { generateStars() }
-    val petals    = remember {
-        generatePetals(petalColor = petalBaseColor(theme))
-    }
     val grainPoints = remember { generateGrain() }
     val glows       = remember { defaultGlowsFor(theme) }
 
-    // ── Colores derivados del tema — recalculados solo si cambia el tema ───────
     val pColor = remember(theme, config.particles.intensity, bgColor) {
         particleColor(theme, config.particles.intensity, bgColor)
     }
     val sColor = remember(theme, bgColor) { starColor(theme, bgColor) }
 
-    // ── Temporizadores de animación ───────────────────────────────────────────
     val inf = rememberInfiniteTransition(label = "bg")
 
-    // Tiempo maestro de partículas y pétalos (ciclo de 12 segundos)
     val floatT by inf.animateFloat(
         initialValue  = 0f,
         targetValue   = 1f,
@@ -79,7 +61,6 @@ fun DynamicBackground(
         label = "floatT"
     )
 
-    // Tiempo de parpadeo de estrellas (ciclo de 4 segundos)
     val twinkleT by inf.animateFloat(
         initialValue  = 0f,
         targetValue   = 1f,
@@ -93,7 +74,6 @@ fun DynamicBackground(
         label = "twinkleT"
     )
 
-    // Tiempo de pulso del glow (ciclo de 6 segundos)
     val glowT by inf.animateFloat(
         initialValue  = 0f,
         targetValue   = 1f,
@@ -107,7 +87,6 @@ fun DynamicBackground(
         label = "glowT"
     )
 
-    // Tiempo del grain (ciclo muy corto para shimmer cinematográfico)
     val grainT by inf.animateFloat(
         initialValue  = 0f,
         targetValue   = 1f,
@@ -121,7 +100,6 @@ fun DynamicBackground(
         label = "grainT"
     )
 
-    // ── Layout ────────────────────────────────────────────────────────────────
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -130,29 +108,17 @@ fun DynamicBackground(
                 val H = size.height
 
                 onDrawBehind {
-
-                    // ── 1. Fondo sólido base ──────────────────────────────────
                     drawRect(color = bgColor)
 
-                    // ── 2. Glow (halos radiales) ──────────────────────────────
+                    // ── 2. Glow ──────────────────────────────
                     if (config.glow.enabled) {
                         glows.forEach { g ->
                             val cx     = g.xFrac * W
                             val cy     = g.yFrac * H
                             val radius = g.radiusFrac * W
-                            val color  = glowColor(
-                                theme         = theme,
-                                time          = glowT,
-                                glowData      = g,
-                                baseIntensity = config.glow.intensity,
-                                bgColor       = bgColor
-                            )
+                            val color  = glowColor(theme, glowT, g, config.glow.intensity, bgColor)
                             drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(color, Color.Transparent),
-                                    center = Offset(cx, cy),
-                                    radius = radius
-                                ),
+                                brush = Brush.radialGradient(listOf(color, Color.Transparent), Offset(cx, cy), radius),
                                 radius = radius,
                                 center = Offset(cx, cy)
                             )
@@ -162,443 +128,78 @@ fun DynamicBackground(
                     // ── 3. Estrellas ──────────────────────────────────────────
                     if (config.stars.enabled) {
                         stars.forEach { s ->
-                            val alpha = starAlpha(
-                                s             = s,
-                                time          = twinkleT,
-                                baseIntensity = config.stars.intensity
-                            )
+                            val alpha = starAlpha(s, twinkleT, config.stars.intensity)
                             if (alpha > 0.01f) {
-                                drawCircle(
-                                    color  = sColor.copy(alpha = alpha),
-                                    radius = s.radius,
-                                    center = Offset(s.xFrac * W, s.yFrac * H)
-                                )
+                                drawCircle(sColor.copy(alpha = alpha), s.radius, Offset(s.xFrac * W, s.yFrac * H))
                             }
                         }
                     }
 
-                    // ── 4. Partículas flotantes ───────────────────────────────────────────
+                    // ── 4. Partículas (con Efectos Especiales) ──────────────────
                     if (config.particles.enabled) {
+                        val kSymmetry = if (config.kaleidoscope.enabled) (2 + (config.kaleidoscope.intensity * 6).toInt()) else 1
+                        
                         particles.forEach { p ->
-                            val (x, y) = particlePosition(
-                                p = p, time = floatT, width = W, height = H
-                            )
+                            var (x, y) = particlePosition(p, floatT, W, H)
+                            
+                            // ── Efecto Waves (Desplazamiento Ondulado) ──
+                            if (config.waves.enabled) {
+                                val waveAmp = 40f * config.waves.intensity
+                                x += sin(y * 0.01f + floatT * 10f) * waveAmp
+                                y += cos(x * 0.01f + floatT * 8f) * waveAmp
+                            }
+
                             val alpha = p.baseAlpha * config.particles.intensity
                             if (alpha > 0.01f) {
-                                val center = Offset(x, y)
+                                val radius = p.radius * config.particleSize
                                 val color  = pColor.copy(alpha = alpha)
-                                when (p.type) {
 
-                                    SpecialParticleType.SNOWFLAKE -> {
-                                        // 6 brazos cruzados
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            for (arm in 0 until 3) {
-                                                withTransform({ rotate(arm * 60f, center) }) {
-                                                    drawLine(
-                                                        color       = color,
-                                                        start       = Offset(x, y - p.radius * 1.6f),
-                                                        end         = Offset(x, y + p.radius * 1.6f),
-                                                        strokeWidth = p.radius * 0.35f
-                                                    )
-                                                    // Ramas del copo
-                                                    val branchY = y - p.radius * 0.8f
-                                                    drawLine(
-                                                        color       = color,
-                                                        start       = Offset(x - p.radius * 0.5f, branchY),
-                                                        end         = Offset(x + p.radius * 0.5f, branchY),
-                                                        strokeWidth = p.radius * 0.25f
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    SpecialParticleType.SPARKLE -> {
-                                        // Destello de 4 puntas
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            drawLine(color,
-                                                Offset(x, y - p.radius * 1.8f),
-                                                Offset(x, y + p.radius * 1.8f),
-                                                p.radius * 0.3f
-                                            )
-                                            drawLine(color,
-                                                Offset(x - p.radius * 1.8f, y),
-                                                Offset(x + p.radius * 1.8f, y),
-                                                p.radius * 0.3f
-                                            )
-                                            // Diagonales más cortas
-                                            drawLine(color,
-                                                Offset(x - p.radius * 0.9f, y - p.radius * 0.9f),
-                                                Offset(x + p.radius * 0.9f, y + p.radius * 0.9f),
-                                                p.radius * 0.2f
-                                            )
-                                            drawLine(color,
-                                                Offset(x + p.radius * 0.9f, y - p.radius * 0.9f),
-                                                Offset(x - p.radius * 0.9f, y + p.radius * 0.9f),
-                                                p.radius * 0.2f
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.LEAF -> {
-                                        // Hoja oval rotada
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            drawOval(
-                                                color   = color,
-                                                topLeft = Offset(x - p.radius * 0.5f, y - p.radius * 1.2f),
-                                                size    = androidx.compose.ui.geometry.Size(
-                                                    p.radius, p.radius * 2.4f
-                                                )
-                                            )
-                                            // Nervio central
-                                            drawLine(
-                                                color       = color.copy(alpha = alpha * 0.6f),
-                                                start       = Offset(x, y - p.radius * 1.1f),
-                                                end         = Offset(x, y + p.radius * 1.1f),
-                                                strokeWidth = p.radius * 0.2f
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.SUN_RAY -> {
-                                        // Mini sol con rayos cortos
-                                        val rot = particleRotation(p, floatT)
-                                        drawCircle(color, p.radius * 0.7f, center)
-                                        withTransform({ rotate(rot, center) }) {
-                                            for (ray in 0 until 8) {
-                                                val angle = ray * 45f
-                                                withTransform({ rotate(angle, center) }) {
-                                                    drawLine(
-                                                        color       = color.copy(alpha = alpha * 0.7f),
-                                                        start       = Offset(x, y - p.radius * 1.0f),
-                                                        end         = Offset(x, y - p.radius * 1.8f),
-                                                        strokeWidth = p.radius * 0.25f
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    SpecialParticleType.BUBBLE -> {
-                                        // Círculo con solo borde
-                                        drawCircle(
-                                            color       = color.copy(alpha = alpha * 0.3f),
-                                            radius      = p.radius * 1.2f,
-                                            center      = center
-                                        )
-                                        drawCircle(
-                                            color       = color,
-                                            radius      = p.radius * 1.2f,
-                                            center      = center,
-                                            style       = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                width = p.radius * 0.25f
-                                            )
-                                        )
-                                    }
-
-                                    SpecialParticleType.PETAL -> {
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            drawOval(
-                                                color   = color,
-                                                topLeft = Offset(x - p.radius * 0.55f, y - p.radius * 1.1f),
-                                                size    = androidx.compose.ui.geometry.Size(
-                                                    p.radius * 1.1f, p.radius * 2.2f
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.STAR_OUTLINE -> {
-                                        // Estrella de 5 puntas — solo borde, elegante
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            val path = androidx.compose.ui.graphics.Path()
-                                            val outerR = p.radius * 1.6f
-                                            val innerR = p.radius * 0.65f
-                                            val points = 5
-                                            for (i in 0 until points * 2) {
-                                                val angle = (i * PI.toFloat() / points) - PI.toFloat() / 2f
-                                                val r     = if (i % 2 == 0) outerR else innerR
-                                                val px    = x + r * kotlin.math.cos(angle)
-                                                val py    = y + r * kotlin.math.sin(angle)
-                                                if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
-                                            }
-                                            path.close()
-                                            drawPath(
-                                                path  = path,
-                                                color = color,
-                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                    width = p.radius * 0.22f
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.RAINDROP -> {
-                                        // Gota de lluvia — óvalo alargado con punta arriba
-                                        val rot = particleRotation(p, floatT) * 0.3f  // rotación muy suave
-                                        withTransform({ rotate(rot, center) }) {
-                                            val path = androidx.compose.ui.graphics.Path()
-                                            // Cuerpo oval
-                                            path.addOval(
-                                                androidx.compose.ui.geometry.Rect(
-                                                    left   = x - p.radius * 0.5f,
-                                                    top    = y - p.radius * 0.5f,
-                                                    right  = x + p.radius * 0.5f,
-                                                    bottom = y + p.radius * 1.2f
-                                                )
-                                            )
-                                            drawPath(path, color.copy(alpha = alpha * 0.55f))
-                                            // Punta superior
-                                            val tipPath = androidx.compose.ui.graphics.Path().apply {
-                                                moveTo(x, y - p.radius * 1.3f)
-                                                lineTo(x - p.radius * 0.45f, y - p.radius * 0.4f)
-                                                lineTo(x + p.radius * 0.45f, y - p.radius * 0.4f)
-                                                close()
-                                            }
-                                            drawPath(tipPath, color.copy(alpha = alpha * 0.55f))
-                                            // Reflejo interno
-                                            drawCircle(
-                                                color  = color.copy(alpha = alpha * 0.35f),
-                                                radius = p.radius * 0.2f,
-                                                center = Offset(x - p.radius * 0.15f, y - p.radius * 0.1f)
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.FIREFLY -> {
-                                        // Círculo con halo luminoso — efecto de luciérnaga
-                                        // Halo exterior difuso
-                                        drawCircle(
-                                            color  = color.copy(alpha = alpha * 0.15f),
-                                            radius = p.radius * 3.0f,
-                                            center = center
-                                        )
-                                        // Halo medio
-                                        drawCircle(
-                                            color  = color.copy(alpha = alpha * 0.30f),
-                                            radius = p.radius * 1.8f,
-                                            center = center
-                                        )
-                                        // Núcleo brillante
-                                        drawCircle(
-                                            color  = color.copy(alpha = alpha * 0.90f),
-                                            radius = p.radius * 0.7f,
-                                            center = center
-                                        )
-                                        // Punto central blanco
-                                        drawCircle(
-                                            color  = androidx.compose.ui.graphics.Color.White.copy(alpha = alpha * 0.70f),
-                                            radius = p.radius * 0.3f,
-                                            center = Offset(x - p.radius * 0.15f, y - p.radius * 0.15f)
-                                        )
-                                    }
-
-                                    SpecialParticleType.EMBER -> {
-                                        // Chispa irregular — 3 líneas cortas en ángulos distintos
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            // Línea principal
-                                            drawLine(
-                                                color       = color,
-                                                start       = Offset(x, y - p.radius * 1.4f),
-                                                end         = Offset(x + p.radius * 0.4f, y + p.radius * 1.0f),
-                                                strokeWidth = p.radius * 0.4f,
-                                                cap         = androidx.compose.ui.graphics.drawscope.DrawScope
-                                                    .let { androidx.compose.ui.graphics.StrokeCap.Round }
-                                            )
-                                            // Línea secundaria — más corta y en otro ángulo
-                                            drawLine(
-                                                color       = color.copy(alpha = alpha * 0.6f),
-                                                start       = Offset(x - p.radius * 0.6f, y - p.radius * 0.8f),
-                                                end         = Offset(x + p.radius * 0.8f, y + p.radius * 0.3f),
-                                                strokeWidth = p.radius * 0.28f,
-                                                cap         = androidx.compose.ui.graphics.StrokeCap.Round
-                                            )
-                                            // Punto brillante en la punta
-                                            drawCircle(
-                                                color  = color.copy(alpha = alpha * 0.85f),
-                                                radius = p.radius * 0.35f,
-                                                center = Offset(x, y - p.radius * 1.3f)
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.CRYSTAL -> {
-                                        // Rombo / diamante con borde y reflejo
-                                        val rot = particleRotation(p, floatT) * 0.5f
-                                        withTransform({ rotate(rot, center) }) {
-                                            val path = androidx.compose.ui.graphics.Path().apply {
-                                                moveTo(x,                    y - p.radius * 1.5f)  // arriba
-                                                lineTo(x + p.radius * 0.9f, y)                     // derecha
-                                                lineTo(x,                    y + p.radius * 1.5f)  // abajo
-                                                lineTo(x - p.radius * 0.9f, y)                     // izquierda
-                                                close()
-                                            }
-                                            // Relleno semitransparente
-                                            drawPath(path, color.copy(alpha = alpha * 0.25f))
-                                            // Borde
-                                            drawPath(
-                                                path  = path,
-                                                color = color,
-                                                style = androidx.compose.ui.graphics.drawscope.Stroke(
-                                                    width = p.radius * 0.25f
-                                                )
-                                            )
-                                            // Reflejo interior — triángulo superior
-                                            val reflectPath = androidx.compose.ui.graphics.Path().apply {
-                                                moveTo(x,                    y - p.radius * 1.5f)
-                                                lineTo(x + p.radius * 0.9f, y)
-                                                lineTo(x - p.radius * 0.9f, y)
-                                                close()
-                                            }
-                                            drawPath(
-                                                reflectPath,
-                                                color.copy(alpha = alpha * 0.20f)
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.HEART_S -> {
-                                        val rot = particleRotation(p, floatT) * 0.4f
-                                        withTransform({ rotate(rot, center) }) {
-                                            val h = p.radius * 1.5f
-                                            val path = Path().apply {
-                                                moveTo(x, y + h * 0.4f)
-                                                cubicTo(x - h, y - h * 0.6f, x - h * 0.5f, y - h * 1.2f, x, y - h * 0.4f)
-                                                cubicTo(x + h * 0.5f, y - h * 1.2f, x + h, y - h * 0.6f, x, y + h * 0.4f)
-                                            }
-                                            drawPath(path, color)
-                                        }
-                                    }
-
-                                    SpecialParticleType.SQUARE_DOT -> {
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            drawRect(
-                                                color = color,
-                                                topLeft = Offset(x - p.radius * 0.8f, y - p.radius * 0.8f),
-                                                size = androidx.compose.ui.geometry.Size(p.radius * 1.6f, p.radius * 1.6f)
-                                            )
-                                            // Borde neón
-                                            drawRect(
-                                                color = color.copy(alpha = alpha * 0.4f),
-                                                topLeft = Offset(x - p.radius * 1.1f, y - p.radius * 1.1f),
-                                                size = androidx.compose.ui.geometry.Size(p.radius * 2.2f, p.radius * 2.2f),
-                                                style = Stroke(width = 1f)
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.SHINE_STARDUST -> {
-                                        val rot = particleRotation(p, floatT)
-                                        // Círculo central
-                                        drawCircle(color, p.radius * 0.5f, center)
-                                        // Destellos cruzados
-                                        withTransform({ rotate(rot, center) }) {
-                                            for (i in 0 until 2) {
-                                                withTransform({ rotate(i * 90f, center) }) {
-                                                    drawLine(
-                                                        color       = color.copy(alpha = alpha * 0.8f),
-                                                        start       = Offset(x, y - p.radius * 1.5f),
-                                                        end         = Offset(x, y + p.radius * 1.5f),
-                                                        strokeWidth = p.radius * 0.25f
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    SpecialParticleType.WAVE -> {
-                                        val rot = particleRotation(p, floatT)
-                                        withTransform({ rotate(rot, center) }) {
-                                            val path = Path().apply {
-                                                moveTo(x - p.radius * 1.5f, y)
-                                                cubicTo(
-                                                    x - p.radius * 0.5f, y - p.radius * 1.5f,
-                                                    x + p.radius * 0.5f, y + p.radius * 1.5f,
-                                                    x + p.radius * 1.5f, y
-                                                )
-                                            }
-                                            drawPath(
-                                                path  = path,
-                                                color = color,
-                                                style = Stroke(
-                                                    width = p.radius * 0.35f,
-                                                    cap   = androidx.compose.ui.graphics.StrokeCap.Round
-                                                )
-                                            )
-                                        }
-                                    }
-
-                                    SpecialParticleType.NONE -> {
-                                        drawCircle(color = color, radius = p.radius, center = center)
+                                // ── Renderizado con Simetría (Kaleidoscope) ──
+                                for (i in 0 until kSymmetry) {
+                                    val angle = (360f / kSymmetry) * i
+                                    withTransform({
+                                        if (kSymmetry > 1) rotate(angle, Offset(W / 2, H / 2))
+                                    }) {
+                                        val center = Offset(x, y)
+                                        renderParticleForm(p, center, radius, color, alpha, floatT, config)
                                     }
                                 }
                             }
                         }
                     }
 
-                    // ── 5. Pétalos flotantes ──────────────────────────────────
-                    if (config.petals.enabled) {
-                        petals.forEach { p ->
-                            val (x, y, rotation) = petalTransform(
-                                p      = p,
-                                time   = floatT,
-                                width  = W,
-                                height = H
-                            )
-                            val alpha = petalAlpha(
-                                p             = p,
-                                time          = floatT,
-                                baseIntensity = config.petals.intensity
-                            )
-                            if (alpha > 0.01f) {
-                                withTransform({
-                                    rotate(rotation, Offset(x, y))
-                                }) {
-                                    // Pétalo como óvalo rotado — minimalista
-                                    drawOval(
-                                        color   = Color(
-                                            p.colorR, p.colorG, p.colorB, alpha
-                                        ),
-                                        topLeft = Offset(
-                                            x - p.radius * 0.6f,
-                                            y - p.radius
-                                        ),
-                                        size    = androidx.compose.ui.geometry.Size(
-                                            p.radius * 1.2f,
-                                            p.radius * 2.0f
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    // ── 6. Grain cinematográfico ──────────────────────────────
+                    // ── 5. Grain ──────────────────────────────────────────────
                     if (config.grain.enabled) {
                         grainPoints.forEach { g ->
-                            val alpha = grainAlpha(
-                                g             = g,
-                                time          = grainT,
-                                baseIntensity = config.grain.intensity
-                            )
+                            val alpha = grainAlpha(g, grainT, config.grain.intensity)
                             if (alpha > 0.005f) {
-                                drawCircle(
-                                    color  = Color.White.copy(alpha = alpha),
-                                    radius = g.radius,
-                                    center = Offset(g.xFrac * W, g.yFrac * H)
-                                )
+                                drawCircle(Color.White.copy(alpha = alpha), g.radius, Offset(g.xFrac * W, g.yFrac * H))
                             }
                         }
                     }
 
+                    // ── 6. Scanlines ───────────────────────────
+                    if (config.scanlines.enabled) {
+                        val gap = 8f
+                        val intensity = config.scanlines.intensity * 0.3f
+                        for (yPos in 0..(H.toInt()) step gap.toInt()) {
+                            drawLine(Color.Black.copy(alpha = intensity), Offset(0f, yPos.toFloat()), Offset(W, yPos.toFloat()), 1f)
+                        }
+                    }
 
+                    // ── 7. Viñeta ──────────────────────────
+                    if (config.vignette.enabled) {
+                        val vIntensity = config.vignette.intensity * 0.6f
+                        drawRect(
+                            brush = Brush.radialGradient(
+                                0.0f to Color.Transparent,
+                                0.7f to Color.Transparent,
+                                1.0f to Color.Black.copy(alpha = vIntensity),
+                                center = Offset(W / 2, H / 2),
+                                radius = W.coerceAtLeast(H) * 0.8f
+                            )
+                        )
+                    }
                 }
             }
     ) {
@@ -606,10 +207,124 @@ fun DynamicBackground(
     }
 }
 
-// ══════════════════════════════════════════════════════════════════════════════
-// Versión simplificada para pantallas de dibujo
-// Lee automáticamente el config y el tema del CompositionLocal
-// ══════════════════════════════════════════════════════════════════════════════
+private fun androidx.compose.ui.graphics.drawscope.DrawScope.renderParticleForm(
+    p: ParticleData,
+    center: Offset,
+    radius: Float,
+    color: Color,
+    alpha: Float,
+    time: Float,
+    config: BackgroundConfig
+) {
+    val x = center.x
+    val y = center.y
+
+    when (p.type) {
+        SpecialParticleType.SNOWFLAKE -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                for (arm in 0 until 3) {
+                    withTransform({ rotate(arm * 60f, center) }) {
+                        drawLine(color, Offset(x, y - radius * 1.6f), Offset(x, y + radius * 1.6f), radius * 0.35f)
+                        drawLine(color, Offset(x - radius * 0.5f, y - radius * 0.8f), Offset(x + radius * 0.5f, y - radius * 0.8f), radius * 0.25f)
+                    }
+                }
+            }
+        }
+        SpecialParticleType.SPARKLE -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                drawLine(color, Offset(x, y - radius * 1.8f), Offset(x, y + radius * 1.8f), radius * 0.3f)
+                drawLine(color, Offset(x - radius * 1.8f, y), Offset(x + radius * 1.8f, y), radius * 0.3f)
+            }
+        }
+        SpecialParticleType.LEAF -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                drawOval(color, Offset(x - radius * 0.5f, y - radius * 1.2f), androidx.compose.ui.geometry.Size(radius, radius * 2.4f))
+            }
+        }
+        SpecialParticleType.SUN_RAY -> {
+            val rot = particleRotation(p, time)
+            drawCircle(color, radius * 0.7f, center)
+            withTransform({ rotate(rot, center) }) {
+                for (ray in 0 until 8) {
+                    withTransform({ rotate(ray * 45f, center) }) {
+                        drawLine(color.copy(alpha = alpha * 0.7f), Offset(x, y - radius * 1.0f), Offset(x, y - radius * 1.8f), radius * 0.25f)
+                    }
+                }
+            }
+        }
+        SpecialParticleType.BUBBLE -> {
+            drawCircle(color.copy(alpha = alpha * 0.3f), radius * 1.2f, center)
+            drawCircle(color, radius * 1.2f, center, style = Stroke(width = radius * 0.25f))
+        }
+        SpecialParticleType.PETAL -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                drawOval(color, Offset(x - radius * 0.55f, y - radius * 1.1f), androidx.compose.ui.geometry.Size(radius * 1.1f, radius * 2.2f))
+            }
+        }
+        SpecialParticleType.STAR_OUTLINE -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                val path = Path()
+                val outerR = radius * 1.6f
+                val innerR = radius * 0.65f
+                for (i in 0 until 10) {
+                    val angle = (i * PI.toFloat() / 5f) - PI.toFloat() / 2f
+                    val r = if (i % 2 == 0) outerR else innerR
+                    val px = x + r * kotlin.math.cos(angle)
+                    val py = y + r * kotlin.math.sin(angle)
+                    if (i == 0) path.moveTo(px, py) else path.lineTo(px, py)
+                }
+                path.close()
+                drawPath(path, color, style = Stroke(width = radius * 0.22f))
+            }
+        }
+        SpecialParticleType.FIREFLY -> {
+            drawCircle(color.copy(alpha = alpha * 0.15f), radius * 3.0f, center)
+            drawCircle(color.copy(alpha = alpha * 0.30f), radius * 1.8f, center)
+            drawCircle(color.copy(alpha = alpha * 0.90f), radius * 0.7f, center)
+        }
+        SpecialParticleType.HEART_S -> {
+            val rot = particleRotation(p, time) * 0.4f
+            withTransform({ rotate(rot, center) }) {
+                val h = radius * 1.5f
+                val path = Path().apply {
+                    moveTo(x, y + h * 0.4f)
+                    cubicTo(x - h, y - h * 0.6f, x - h * 0.5f, y - h * 1.2f, x, y - h * 0.4f)
+                    cubicTo(x + h * 0.5f, y - h * 1.2f, x + h, y - h * 0.6f, x, y + h * 0.4f)
+                }
+                drawPath(path, color)
+            }
+        }
+        SpecialParticleType.SQUARE_DOT -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                drawRect(color, Offset(x - radius * 0.8f, y - radius * 0.8f), androidx.compose.ui.geometry.Size(radius * 1.6f, radius * 1.6f))
+            }
+        }
+        SpecialParticleType.WAVE -> {
+            val rot = particleRotation(p, time)
+            withTransform({ rotate(rot, center) }) {
+                val path = Path().apply {
+                    moveTo(x - radius * 1.5f, y)
+                    cubicTo(x - radius * 0.5f, y - radius * 1.5f, x + radius * 0.5f, y + radius * 1.5f, x + radius * 1.5f, y)
+                }
+                drawPath(path, color, style = Stroke(width = radius * 0.35f, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+            }
+        }
+        else -> drawCircle(color = color, radius = radius, center = center)
+    }
+
+    if (config.chromatic.enabled) {
+        val offset = 2f * config.chromatic.intensity
+        drawCircle(Color.Red.copy(alpha = alpha * 0.3f), radius, Offset(x - offset, y))
+        drawCircle(Color.Blue.copy(alpha = alpha * 0.3f), radius, Offset(x + offset, y))
+    }
+}
+
 @Composable
 fun DrawingBackground(
     theme:    AppTheme,
@@ -618,12 +333,5 @@ fun DrawingBackground(
     content:  @Composable () -> Unit
 ) {
     val config = LocalBackgroundConfig.current
-
-    DynamicBackground(
-        theme    = theme,
-        config   = config,
-        bgColor  = bgColor,
-        modifier = modifier,
-        content  = content
-    )
+    DynamicBackground(theme, config, bgColor, modifier, content)
 }

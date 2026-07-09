@@ -1,5 +1,11 @@
 package com.example.trazoatrazo.navigation
 
+import com.example.trazoatrazo.drawings.flowers.RosaScreen
+import com.example.trazoatrazo.drawings.flowers.TulipanScreen
+import com.example.trazoatrazo.drawings.animals.PerritoScreen
+import com.example.trazoatrazo.drawings.animals.CamaleonScreen
+import com.example.trazoatrazo.drawings.animals.AxoloteScreen
+import com.example.trazoatrazo.drawings.spring.MariquitaScreen
 import com.example.trazoatrazo.drawings.spring.ButterflyScreen
 import com.example.trazoatrazo.drawings.spring.CherryTreeScreen
 import androidx.compose.foundation.background
@@ -101,6 +107,8 @@ fun AppNavigation(
                         Routes.Category.FLOWERS -> when (drawingId) {
                             Routes.Drawings.GIRASOL -> GirasolScreen(onBack = { navController.popBackStack() })
                             Routes.Drawings.FLORES -> FlowerScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.ROSA -> RosaScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.TULIPAN -> TulipanScreen(onBack = { navController.popBackStack() })
                             Routes.Drawings.IMPROVED_SUNFLOWER -> ImprovedSunflowerScreen(onBack = { navController.popBackStack() })
                         }
 
@@ -113,6 +121,9 @@ fun AppNavigation(
 
                         Routes.Category.ANIMALS -> when (drawingId) {
                             Routes.Drawings.TURTLE -> TurtleScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.PERRITO -> PerritoScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.CAMALEON -> CamaleonScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.AXOLOTE -> AxoloteScreen(onBack = { navController.popBackStack() })
                             Routes.Drawings.CAT_BLACK -> CatBlackScreen(onBack = { navController.popBackStack() })
                         }
 
@@ -130,6 +141,7 @@ fun AppNavigation(
 
                         Routes.Category.SPRING -> when (drawingId) {
                             Routes.Drawings.CHERRY_TREE -> CherryTreeScreen(onBack = { navController.popBackStack() })
+                            Routes.Drawings.MARIQUITA -> MariquitaScreen(onBack = { navController.popBackStack() })
                             Routes.Drawings.BUTTERFLY -> ButterflyScreen(onBack = { navController.popBackStack() })
                         }
 

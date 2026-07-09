@@ -32,13 +32,22 @@ private object BgKeys {
     val ACTIVE_TYPES        = stringPreferencesKey("bg_active_particle_types")
     val STARS_ENABLED       = booleanPreferencesKey("bg_stars_enabled")
     val STARS_INTENSITY     = floatPreferencesKey("bg_stars_intensity")
-    val PETALS_ENABLED      = booleanPreferencesKey("bg_petals_enabled")
-    val PETALS_INTENSITY    = floatPreferencesKey("bg_petals_intensity")
     val GRAIN_ENABLED       = booleanPreferencesKey("bg_grain_enabled")
     val GRAIN_INTENSITY     = floatPreferencesKey("bg_grain_intensity")
     val GLOW_ENABLED        = booleanPreferencesKey("bg_glow_enabled")
     val GLOW_INTENSITY      = floatPreferencesKey("bg_glow_intensity")
+    val VIGNETTE_ENABLED    = booleanPreferencesKey("bg_vignette_enabled")
+    val VIGNETTE_INTENSITY  = floatPreferencesKey("bg_vignette_intensity")
+    val CHROMATIC_ENABLED   = booleanPreferencesKey("bg_chromatic_enabled")
+    val CHROMATIC_INTENSITY = floatPreferencesKey("bg_chromatic_intensity")
+    val SCANLINES_ENABLED   = booleanPreferencesKey("bg_scanlines_enabled")
+    val SCANLINES_INTENSITY = floatPreferencesKey("bg_scanlines_intensity")
+    val KALEIDOSCOPE_ENABLED   = booleanPreferencesKey("bg_kaleidoscope_enabled")
+    val KALEIDOSCOPE_INTENSITY = floatPreferencesKey("bg_kaleidoscope_intensity")
+    val WAVES_ENABLED          = booleanPreferencesKey("bg_waves_enabled")
+    val WAVES_INTENSITY        = floatPreferencesKey("bg_waves_intensity")
     val SPEED               = floatPreferencesKey("bg_speed")
+    val PARTICLE_SIZE       = floatPreferencesKey("bg_particle_size")
 }
 
 class BackgroundPreferences(private val context: Context) {
@@ -67,10 +76,6 @@ class BackgroundPreferences(private val context: Context) {
                         enabled   = prefs[BgKeys.STARS_ENABLED]       ?: themeDefault.stars.enabled,
                         intensity = prefs[BgKeys.STARS_INTENSITY]     ?: themeDefault.stars.intensity
                     ),
-                    petals = EffectConfig(
-                        enabled   = prefs[BgKeys.PETALS_ENABLED]      ?: themeDefault.petals.enabled,
-                        intensity = prefs[BgKeys.PETALS_INTENSITY]    ?: themeDefault.petals.intensity
-                    ),
                     grain = EffectConfig(
                         enabled   = prefs[BgKeys.GRAIN_ENABLED]       ?: themeDefault.grain.enabled,
                         intensity = prefs[BgKeys.GRAIN_INTENSITY]     ?: themeDefault.grain.intensity
@@ -79,7 +84,28 @@ class BackgroundPreferences(private val context: Context) {
                         enabled   = prefs[BgKeys.GLOW_ENABLED]        ?: themeDefault.glow.enabled,
                         intensity = prefs[BgKeys.GLOW_INTENSITY]      ?: themeDefault.glow.intensity
                     ),
-                    speed = prefs[BgKeys.SPEED] ?: themeDefault.speed
+                    vignette = EffectConfig(
+                        enabled   = prefs[BgKeys.VIGNETTE_ENABLED]    ?: themeDefault.vignette.enabled,
+                        intensity = prefs[BgKeys.VIGNETTE_INTENSITY]  ?: themeDefault.vignette.intensity
+                    ),
+                    chromatic = EffectConfig(
+                        enabled   = prefs[BgKeys.CHROMATIC_ENABLED]   ?: themeDefault.chromatic.enabled,
+                        intensity = prefs[BgKeys.CHROMATIC_INTENSITY] ?: themeDefault.chromatic.intensity
+                    ),
+                    scanlines = EffectConfig(
+                        enabled   = prefs[BgKeys.SCANLINES_ENABLED]   ?: themeDefault.scanlines.enabled,
+                        intensity = prefs[BgKeys.SCANLINES_INTENSITY] ?: themeDefault.scanlines.intensity
+                    ),
+                    kaleidoscope = EffectConfig(
+                        enabled   = prefs[BgKeys.KALEIDOSCOPE_ENABLED]   ?: themeDefault.kaleidoscope.enabled,
+                        intensity = prefs[BgKeys.KALEIDOSCOPE_INTENSITY] ?: themeDefault.kaleidoscope.intensity
+                    ),
+                    waves = EffectConfig(
+                        enabled   = prefs[BgKeys.WAVES_ENABLED]   ?: themeDefault.waves.enabled,
+                        intensity = prefs[BgKeys.WAVES_INTENSITY] ?: themeDefault.waves.intensity
+                    ),
+                    speed = prefs[BgKeys.SPEED] ?: themeDefault.speed,
+                    particleSize = prefs[BgKeys.PARTICLE_SIZE] ?: themeDefault.particleSize
                 )
             }
 
@@ -91,13 +117,22 @@ class BackgroundPreferences(private val context: Context) {
             prefs[BgKeys.ACTIVE_TYPES]        = config.activeTypes.joinToString(",") { it.name }
             prefs[BgKeys.STARS_ENABLED]       = config.stars.enabled
             prefs[BgKeys.STARS_INTENSITY]     = config.stars.intensity
-            prefs[BgKeys.PETALS_ENABLED]      = config.petals.enabled
-            prefs[BgKeys.PETALS_INTENSITY]    = config.petals.intensity
             prefs[BgKeys.GRAIN_ENABLED]       = config.grain.enabled
             prefs[BgKeys.GRAIN_INTENSITY]     = config.grain.intensity
             prefs[BgKeys.GLOW_ENABLED]        = config.glow.enabled
             prefs[BgKeys.GLOW_INTENSITY]      = config.glow.intensity
+            prefs[BgKeys.VIGNETTE_ENABLED]    = config.vignette.enabled
+            prefs[BgKeys.VIGNETTE_INTENSITY]  = config.vignette.intensity
+            prefs[BgKeys.CHROMATIC_ENABLED]   = config.chromatic.enabled
+            prefs[BgKeys.CHROMATIC_INTENSITY] = config.chromatic.intensity
+            prefs[BgKeys.SCANLINES_ENABLED]   = config.scanlines.enabled
+            prefs[BgKeys.SCANLINES_INTENSITY] = config.scanlines.intensity
+            prefs[BgKeys.KALEIDOSCOPE_ENABLED]   = config.kaleidoscope.enabled
+            prefs[BgKeys.KALEIDOSCOPE_INTENSITY] = config.kaleidoscope.intensity
+            prefs[BgKeys.WAVES_ENABLED]          = config.waves.enabled
+            prefs[BgKeys.WAVES_INTENSITY]        = config.waves.intensity
             prefs[BgKeys.SPEED]               = config.speed
+            prefs[BgKeys.PARTICLE_SIZE]       = config.particleSize
         }
     }
 

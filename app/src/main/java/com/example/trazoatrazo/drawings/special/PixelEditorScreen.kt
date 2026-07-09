@@ -98,7 +98,7 @@ fun PixelEditorScreen(
     onReplay: (drawingId: Long) -> Unit
 ) {
     val editorState by viewModel.editorState.collectAsState()
-    val uiScope = rememberCoroutineScope() // 🆕 NUEVO: Scope general para resetear scrolls
+    val uiScope = rememberCoroutineScope() //Scope general para resetear scrolls
 
     LaunchedEffect(existingArtworkId) {
         if (existingArtworkId != null) {
@@ -155,7 +155,7 @@ fun PixelEditorScreen(
     var moveAnchorIndex      by remember(gridSize) { mutableStateOf<Int?>(null) }
     var moveDelta            by remember(gridSize) { mutableStateOf(0 to 0) }
 
-    // 🆕 NUEVO: Previene que herramientas de arrastre rápido (Sombreador/Espejo) spameen el mismo pixel
+    // Previene que herramientas de arrastre rápido (Sombreador/Espejo) spameen el mismo pixel
     var lastActedIndex by remember { mutableStateOf<Int?>(null) }
 
     val screenAnim = remember { Animatable(0f) }
@@ -213,7 +213,7 @@ fun PixelEditorScreen(
     fun cancelAccidentalFirstTouch() {
         when (selectedTool) {
             PixelTool.PENCIL, PixelTool.ERASER, PixelTool.FILL,
-            PixelTool.MIRROR, PixelTool.SHADING -> undo() // 🆕 NUEVO: Agregadas a cancelación
+            PixelTool.MIRROR, PixelTool.SHADING -> undo()
             PixelTool.LINE, PixelTool.SQUARE, PixelTool.CIRCLE -> {
                 shapeStartIndex = null; shapeEndIndex = null
             }
@@ -228,7 +228,7 @@ fun PixelEditorScreen(
     fun applyToolAt(index: Int, isFirstTouch: Boolean) {
         if (index !in pixels.indices) return
 
-        // 🆕 NUEVO: Evita aplicar la herramienta mil veces por segundo en el mismo pixel al arrastrar
+        // Evita aplicar la herramienta mil veces por segundo en el mismo pixel al arrastrar
         if (isFirstTouch) lastActedIndex = null
         if (index == lastActedIndex && !isFirstTouch) return
         lastActedIndex = index
@@ -239,7 +239,7 @@ fun PixelEditorScreen(
                 pixels[index] = selectedColor
                 recordPaint(index, selectedColor)
             }
-            // 🆕 NUEVO: Lógica de la herramienta ESPEJO
+            // Lógica de la herramienta ESPEJO
             PixelTool.MIRROR -> {
                 if (isFirstTouch) pushUndo()
 
@@ -258,7 +258,7 @@ fun PixelEditorScreen(
                     recordPaint(mirrorIndex, selectedColor)
                 }
             }
-            // 🆕 NUEVO: Lógica de la herramienta SOMBREADOR
+            // Lógica de la herramienta SOMBREADOR
             PixelTool.SHADING -> {
                 if (isFirstTouch) pushUndo()
                 val currentColor = pixels.getOrNull(index)
@@ -473,7 +473,7 @@ fun PixelEditorScreen(
                             onPointerMove  = { idx ->
                                 when {
                                     selectedTool == PixelTool.SELECT -> handleSelectMove(idx)
-                                    // 🆕 NUEVO: Agregadas las nuevas herramientas al detector de arrastre
+                                    // Agregadas las nuevas herramientas al detector de arrastre
                                     selectedTool == PixelTool.PENCIL ||
                                             selectedTool == PixelTool.MIRROR ||
                                             selectedTool == PixelTool.SHADING ||
@@ -576,7 +576,7 @@ fun PixelEditorScreen(
             onConfirm  = {
                 gridSize = target
 
-                // 🆕 NUEVO: Fix de UX, el zoom y scroll se reinician para evitar el efecto fantasma y perderse en el lienzo
+                // Fix de UX, el zoom y scroll se reinician para evitar el efecto fantasma y perderse en el lienzo
                 zoomLevel = 1f
                 uiScope.launch {
                     hScrollState.scrollTo(0)

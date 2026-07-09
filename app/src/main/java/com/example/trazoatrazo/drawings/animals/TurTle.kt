@@ -239,7 +239,8 @@ fun TurtleScreen(onBack: () -> Unit) {
 
         val context = LocalContext.current
         val message = "🐢 ¡Una linda tortuga! 🐢"
-        val subMessage = "Hace referencia a la tortuga que te di XD"
+        val subMessage = "Hace referencia a la tortuga que te di XD y al Recuerdo figura de tortuga" +
+                " de la galeria de recuerdos "
 
         DrawingButtons(
             visible = etapa >= 4,

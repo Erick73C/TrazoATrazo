@@ -80,20 +80,6 @@ data class StarData(
     val twinkleFreq:   Float
 )
 
-@Immutable
-data class PetalData(
-    val xFrac:     Float,
-    val fallSpeed: Float,
-    val swayAmp:   Float,
-    val swayFreq:  Float,
-    val rotSpeed:  Float,
-    val phase:     Float,
-    val radius:    Float,
-    val colorR:    Float,
-    val colorG:    Float,
-    val colorB:    Float
-)
-
 // ══════════════════════════════════════════════════════════════════════════════
 // GENERADORES
 // ══════════════════════════════════════════════════════════════════════════════
@@ -140,42 +126,6 @@ fun generateStars(
     }
 }
 
-fun generatePetals(
-    count:      Int   = 22,
-    seed:       Long  = 42L,
-    petalColor: Color = Color(0xFFFFB7C5)
-): List<PetalData> {
-    val rng = Random(seed)
-    val colors = listOf(
-        petalColor,
-        Color(
-            (petalColor.red   * 0.85f).coerceIn(0f, 1f),
-            (petalColor.green * 0.85f).coerceIn(0f, 1f),
-            (petalColor.blue  * 0.85f).coerceIn(0f, 1f)
-        ),
-        Color(
-            (petalColor.red   + 0.15f).coerceIn(0f, 1f),
-            (petalColor.green + 0.12f).coerceIn(0f, 1f),
-            (petalColor.blue  + 0.10f).coerceIn(0f, 1f)
-        )
-    )
-    return List(count) {
-        val col = colors[it % colors.size]
-        PetalData(
-            xFrac     = rng.nextFloat(),
-            fallSpeed = 0.025f + rng.nextFloat() * 0.045f,
-            swayAmp   = 0.025f + rng.nextFloat() * 0.045f,
-            swayFreq  = 0.5f   + rng.nextFloat() * 1.0f,
-            rotSpeed  = 0.3f   + rng.nextFloat() * 1.5f,
-            phase     = rng.nextFloat() * 2f * PI.toFloat(),
-            radius    = 4.5f   + rng.nextFloat() * 6.5f,   // más grandes
-            colorR    = col.red,
-            colorG    = col.green,
-            colorB    = col.blue
-        )
-    }
-}
-
 // ══════════════════════════════════════════════════════════════════════════════
 // CALCULADORES DE POSICIÓN
 // ══════════════════════════════════════════════════════════════════════════════
@@ -207,34 +157,4 @@ fun starAlpha(
     val twinkle = (sin(time * s.twinkleFreq * 2f * PI.toFloat() + s.twinklePhase) + 1f) / 2f
     // Rango más visible: 0.25..0.85
     return (0.25f + twinkle * 0.60f) * baseIntensity
-}
-
-fun petalTransform(
-    p:      PetalData,
-    time:   Float,
-    width:  Float,
-    height: Float
-): Triple<Float, Float, Float> {
-    val yProgress = (p.phase / (2f * PI.toFloat()) + time * p.fallSpeed * 6f).mod(1f)
-    val y = yProgress * (height + p.radius * 4f) - p.radius * 2f
-    val sway = sin(time * p.swayFreq * 2f * PI.toFloat() + p.phase) *
-            p.swayAmp * width
-    val x = p.xFrac * width + sway
-    val rotation = (time * p.rotSpeed * 360f + p.phase * 57.3f).mod(360f)
-    return Triple(x, y, rotation)
-}
-
-fun petalAlpha(
-    p:             PetalData,
-    time:          Float,
-    baseIntensity: Float
-): Float {
-    val yProgress = (p.phase / (2f * PI.toFloat()) + time * p.fallSpeed * 6f).mod(1f)
-    val edgeFade = when {
-        yProgress < 0.08f -> yProgress / 0.08f
-        yProgress > 0.90f -> (1f - yProgress) / 0.10f
-        else              -> 1f
-    }
-    // Más visible: subido de 0.55 a 0.75
-    return (edgeFade * 0.95f * baseIntensity).coerceIn(0f, 1f)
 }
