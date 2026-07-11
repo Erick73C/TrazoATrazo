@@ -3,6 +3,7 @@ package com.example.trazoatrazo.presentation.home
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -29,6 +30,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.*
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -38,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.trazoatrazo.R
 import com.example.trazoatrazo.data.DrawingItem
 import com.example.trazoatrazo.data.drawingCatalog
 import com.example.trazoatrazo.navigation.Routes
@@ -223,7 +226,11 @@ private fun HomeHeader(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text("✏️", fontSize = 22.sp)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_recuerdos_logo_foreground),
+                    contentDescription = null,
+                    modifier = Modifier.size(52.dp)
+                )
             }
 
             // Título
@@ -235,7 +242,7 @@ private fun HomeHeader(
                     color      = AppColors.Reversa
                 )
                 Text(
-                    text     = "¡HOLAAAAA! ✨, " +
+                    text     = "¡Qué alegría verte! ✨, " +
                                 "V 3.2",
                     fontSize = 11.sp,
                     color    = AppColors.Eco

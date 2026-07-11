@@ -32,15 +32,18 @@ import android.graphics.Bitmap
 import android.graphics.Paint
 import android.widget.Toast
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.*
 
 // ── Paleta ────────────────────────────────────────────────────────────────────
-private val BgDark       = Color(0xFF2B1418)     // Fondo vino muy oscuro: contrasta con rojo Y blanco
-private val RosaRed      = Color(0xFFC2185B)     // Rojo-carmín principal (más realista que rojo puro)
-private val RosaRedDark  = Color(0xFF4A0A22)     // Rojo muy oscuro para sombras internas (capullo)
-private val RosaRedLight = Color(0xFFEF5384)     // Rojo-rosa claro para bordes iluminados
+private val BgDark       = Color(0xFF121212)     // Fondo carbón oscuro: hace que los rojos y blancos "brillen"
+private val RosaRed      = Color(0xFFD32F2F)     // Rojo intenso y vibrante
+private val RosaRedDark  = Color(0xFF7B0000)     // Rojo profundo para sombras de pétalos interiores
+private val RosaRedLight = Color(0xFFFF5252)     // Rojo coral brillante para los bordes iluminados
 private val RosaWhite    = Color(0xFFFFFFFF)
-private val RosaWhiteShadow = Color(0xFFC9B4B9)  // Sombra suave para la variante blanca (gris-rosado)
+private val RosaWhiteShadow = Color(0xFFD1C4E9)  // Sombra lavanda suave para la variante blanca
+private val RosaGreen       = Color(0xFF388E3C)  // Verde para el tallo y hojas
+private val RosaGreenDark   = Color(0xFF1B5E20)  // Verde oscuro para detalles
 
 // ── Un pétalo = una curva cerrada tipo "cuchara redondeada" en una capa de la espiral ─
 data class PetalSpec(
@@ -65,13 +68,13 @@ private fun generatePetals(): List<PetalSpec> {
     )
 
     val layers = listOf(
-        LayerDef(count = 1, distance = 0.0f,   length = 5.5f,  width = 6.5f,  curl = 0.85f, offset = 0f,  tilt = 0f),
-        LayerDef(count = 3, distance = 1.0f,   length = 7f,    width = 8f,    curl = 0.75f, offset = 70f, tilt = 6f),
-        LayerDef(count = 4, distance = 2.4f,   length = 9.5f,  width = 11f,   curl = 0.62f, offset = 20f, tilt = 13f),
-        LayerDef(count = 5, distance = 4.8f,   length = 12.5f, width = 14.5f, curl = 0.50f, offset = 55f, tilt = 20f),
-        LayerDef(count = 6, distance = 7.8f,   length = 15.5f, width = 18f,   curl = 0.38f, offset = 10f, tilt = 28f),
-        LayerDef(count = 7, distance = 11.2f,  length = 18.5f, width = 21.5f, curl = 0.25f, offset = 40f, tilt = 37f),
-        LayerDef(count = 8, distance = 14.8f,  length = 21f,   width = 25f,   curl = 0.14f, offset = 0f,  tilt = 47f)
+        LayerDef(count = 1, distance = 0.0f,   length = 6.5f,  width = 7.5f,  curl = 0.9f,  offset = 0f,  tilt = 0f),
+        LayerDef(count = 3, distance = 1.2f,   length = 8.5f,  width = 9.5f,  curl = 0.8f,  offset = 60f, tilt = 8f),
+        LayerDef(count = 4, distance = 3.0f,   length = 11.0f, width = 13.0f, curl = 0.65f, offset = 25f, tilt = 16f),
+        LayerDef(count = 5, distance = 5.5f,   length = 14.5f, width = 17.0f, curl = 0.52f, offset = 45f, tilt = 24f),
+        LayerDef(count = 6, distance = 8.8f,   length = 18.0f, width = 21.0f, curl = 0.40f, offset = 15f, tilt = 34f),
+        LayerDef(count = 7, distance = 12.5f,  length = 22.0f, width = 25.5f, curl = 0.28f, offset = 35f, tilt = 45f),
+        LayerDef(count = 8, distance = 16.5f,  length = 25.0f, width = 30.0f, curl = 0.15f, offset = 0f,  tilt = 58f)
     )
 
     layers.forEachIndexed { layerIndex, def ->
@@ -160,10 +163,10 @@ private fun DrawScope.drawPetalShape(
             drawPath(
                 path = path,
                 color = strokeColor,
-                style = Stroke(width = max(1.2f, scale * 0.1f), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                style = Stroke(width = max(1.5f, scale * 0.12f), cap = StrokeCap.Round, join = StrokeJoin.Round)
             )
         } else {
-            // Relleno con degradado sutil para dar volumen (más oscuro en la base, claro en la punta)
+            // Relleno con degradado radial para simular profundidad esférica en la flor
             drawPath(
                 path = path,
                 brush = Brush.verticalGradient(
@@ -171,6 +174,12 @@ private fun DrawScope.drawPetalShape(
                     startY = -len,
                     endY = 0f
                 )
+            )
+            // Brillo en el borde superior para dar realismo 3D
+            drawPath(
+                path = path,
+                color = highlightColor.copy(alpha = 0.4f),
+                style = Stroke(width = max(0.5f, scale * 0.03f))
             )
             // Línea central sutil que marca el pliegue del pétalo
             drawLine(
@@ -183,11 +192,87 @@ private fun DrawScope.drawPetalShape(
     }
 }
 
+/** Tallo con espinas y hojas de rosa (la parte verde) */
+private fun DrawScope.drawRosaStemAndLeaves(center: Offset, scale: Float, progress: Float) {
+    if (progress <= 0f) return
+    val s = scale
+    val stemLength = 65f * s * progress
+    val strokeW = max(2.5f, s * 0.12f)
+    val color = RosaGreen
+
+    // Tallo principal
+    drawLine(
+        color = color,
+        start = center,
+        end = Offset(center.x, center.y + stemLength),
+        strokeWidth = strokeW,
+        cap = StrokeCap.Round
+    )
+
+    // Sépalos (hojitas verdes que asoman bajo la flor)
+    if (progress > 0.1f) {
+        val sepT = ((progress - 0.1f) / 0.3f).coerceIn(0f, 1f)
+        for (i in 0 until 5) {
+            val angle = i * 72f + 15f
+            withTransform({
+                rotate(angle, pivot = center)
+            }) {
+                val sepalPath = Path().apply {
+                    moveTo(center.x, center.y)
+                    // Hojitas significativamente más largas para que sobresalgan de los pétalos externos
+                    cubicTo(
+                        center.x - 6f * s * sepT, center.y + 15f * s * sepT,
+                        center.x + 6f * s * sepT, center.y + 15f * s * sepT,
+                        center.x, center.y + 38f * s * sepT
+                    )
+                    close()
+                }
+                drawPath(sepalPath, color = color)
+                drawPath(sepalPath, color = RosaGreenDark.copy(alpha = 0.5f), style = Stroke(width = 0.8f * s))
+            }
+        }
+    }
+
+    // Hojas laterales y espinas
+    if (progress > 0.4f) {
+        val leafT = ((progress - 0.4f) / 0.6f).coerceIn(0f, 1f)
+        
+        // Espinas icónicas de la rosa
+        val thornY = listOf(20f, 45f)
+        thornY.forEachIndexed { index, y ->
+            val side = if (index % 2 == 0) 1 else -1
+            val thornPath = Path().apply {
+                moveTo(center.x, center.y + y * s)
+                lineTo(center.x + 3.5f * s * side * leafT, center.y + (y + 2f) * s)
+                lineTo(center.x, center.y + (y + 4f) * s)
+                close()
+            }
+            drawPath(thornPath, color = RosaGreenDark.copy(alpha = 0.8f * leafT))
+        }
+
+        // Hojas dentadas más abajo en el tallo
+        for (side in listOf(-1, 1)) {
+            val yPos = if (side == 1) 42f else 58f
+            val leafPath = Path().apply {
+                moveTo(center.x, center.y + yPos * s)
+                cubicTo(
+                    center.x + 25f * s * side * leafT, center.y + (yPos - 15f) * s,
+                    center.x + 32f * s * side * leafT, center.y + (yPos + 10f) * s,
+                    center.x + 6f * s * side * leafT, center.y + (yPos + 18f) * s
+                )
+                close()
+            }
+            drawPath(leafPath, color = color.copy(alpha = leafT))
+            drawPath(leafPath, color = RosaGreenDark.copy(alpha = 0.5f * leafT), style = Stroke(width = 1.2f * s))
+        }
+    }
+}
+
 /**
  * Dibuja la rosa completa en un estado de crecimiento dado.
- * drawT: 0..1 progreso global de "cuántos pétalos ya se trazaron" (capa por capa, de adentro hacia afuera)
+ * drawT: 0..1 progreso global de "cuántos pétalos ya se trazaron"
  * fillT: 0..1 opacidad del relleno una vez trazado
- * fillColor / shadowColor / highlightColor: colores según modo rojo o blanco
+ * stemT: 0..1 progreso de la parte verde (tallo/hojas)
  */
 private fun DrawScope.drawRosaAtProgress(
     center: Offset,
@@ -195,6 +280,7 @@ private fun DrawScope.drawRosaAtProgress(
     beatScale: Float,
     drawT: Float,
     fillT: Float,
+    stemT: Float,
     petals: List<PetalSpec>,
     fillColor: Color,
     shadowColor: Color,
@@ -202,6 +288,9 @@ private fun DrawScope.drawRosaAtProgress(
     strokeColor: Color
 ) {
     val s = scale * beatScale
+
+    // Dibujar primero la parte verde (atrás de los pétalos)
+    drawRosaStemAndLeaves(center, s, stemT)
 
     // Ordenamos de capa alta (externa) a capa baja (interna) para el TRAZO,
     // pero para el RELLENO dibujamos de adentro hacia afuera para que se superpongan bien.
@@ -255,6 +344,8 @@ fun RosaScreen(onBack: () -> Unit) {
 
     val drawProgress = remember { Animatable(0f) }
     val fillAlpha = remember { Animatable(0f) }
+    val stemProgress = remember { Animatable(0f) }
+    val entryScale = remember { Animatable(0.8f) }
 
     // Pulso continuo cuando termina
     val pulso = rememberInfiniteTransition(label = "pulso_rosa")
@@ -287,19 +378,34 @@ fun RosaScreen(onBack: () -> Unit) {
         etapa = 0
         drawProgress.snapTo(0f)
         fillAlpha.snapTo(0f)
+        stemProgress.snapTo(0f)
+        entryScale.snapTo(0.8f)
 
         delay(400L)
 
+        // 0. Animación de entrada
+        launch {
+            entryScale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow))
+        }
+
+        // 1. Tallo y sépalos primero
         etapa = 1
+        stemProgress.animateTo(1f, tween(1000, easing = EaseOutCubic))
+
+        delay(150L)
+
+        // 2. Trazo de pétalos
+        etapa = 2
         drawProgress.animateTo(1f, tween(2600, easing = LinearEasing))
 
         delay(200L)
 
-        etapa = 2
+        // 3. Relleno de color
+        etapa = 3
         fillAlpha.animateTo(1f, tween(800, easing = EaseOutCubic))
 
         delay(300L)
-        etapa = 3 // completo — botones visibles, pulso activo
+        etapa = 4 // completo — botones visibles, pulso activo
     }
 
     // ── Colores según el modo actual (SIN animación de interpolación: se define
@@ -320,7 +426,7 @@ fun RosaScreen(onBack: () -> Unit) {
                 interactionSource = remember { MutableInteractionSource() }
             ) {
                 // Toggle rojo/blanco al tocar la rosa — solo cuando ya terminó de dibujarse
-                if (etapa >= 3) {
+                if (etapa >= 4) {
                     isWhiteMode = !isWhiteMode
                 }
             }
@@ -336,13 +442,13 @@ fun RosaScreen(onBack: () -> Unit) {
     ) {
 
         // Halo pulsante cuando está completo
-        if (etapa >= 3) {
+        if (etapa >= 4) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val haloAlpha = (beatScale - 1f) * 3f
                 drawCircle(
                     color = fillColor.copy(alpha = 0.06f + haloAlpha * 0.05f),
                     radius = size.width * 0.32f,
-                    center = Offset(size.width / 2f, size.height * 0.42f)
+                    center = Offset(size.width / 2f, size.height * 0.35f)
                 )
             }
         }
@@ -352,15 +458,15 @@ fun RosaScreen(onBack: () -> Unit) {
             modifier = Modifier
                 .fillMaxSize()
                 .graphicsLayer {
-                    scaleX = pressScale
-                    scaleY = pressScale
+                    scaleX = pressScale * entryScale.value
+                    scaleY = pressScale * entryScale.value
                 }
         ) {
             val cx = size.width / 2f
-            val cy = size.height * 0.42f
-            val scale = size.width / 70f
+            val cy = size.height * 0.35f
+            val scale = size.width / 100f
 
-            val beat = if (etapa >= 3) beatScale else 1f
+            val beat = if (etapa >= 4) beatScale else 1f
 
             drawRosaAtProgress(
                 center = Offset(cx, cy),
@@ -368,6 +474,7 @@ fun RosaScreen(onBack: () -> Unit) {
                 beatScale = beat,
                 drawT = drawProgress.value,
                 fillT = fillAlpha.value,
+                stemT = stemProgress.value,
                 petals = petals,
                 fillColor = fillColor,
                 shadowColor = shadowColor,
@@ -377,7 +484,7 @@ fun RosaScreen(onBack: () -> Unit) {
         }
 
         // ── Indicador de modo de color (arriba a la derecha) — también sirve de botón ─
-        if (etapa >= 3) {
+        if (etapa >= 4) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
@@ -406,7 +513,7 @@ fun RosaScreen(onBack: () -> Unit) {
                 .fillMaxWidth()
         ) {
             DrawingButtons(
-                visible = etapa >= 3,
+                visible = etapa >= 4,
                 message = "🌹 Rosa para ti 🌹",
                 subMessage = if (isWhiteMode) "Blanca y pura" else "Roja de pasión",
                 repeatEmoji = "🌹",
@@ -467,8 +574,8 @@ fun saveRosaAsImage(
             drawRect(color = bgColor, size = size)
 
             val cx = artSize / 2f
-            val cy = artSize * 0.42f
-            val scale = artSize / 70f
+            val cy = artSize * 0.35f
+            val scale = artSize / 100f
 
             drawRosaAtProgress(
                 center = Offset(cx, cy),
@@ -476,6 +583,7 @@ fun saveRosaAsImage(
                 beatScale = 1f,
                 drawT = 1f,
                 fillT = 1f,
+                stemT = 1f,
                 petals = petals,
                 fillColor = fillColor,
                 shadowColor = shadowColor,
@@ -503,7 +611,7 @@ fun saveRosaAsImage(
     showBackground = true,
     widthDp = 400,
     heightDp = 800,
-    backgroundColor = 0xFF2B1418
+    backgroundColor = 0xFF121212
 )
 @Composable
 fun RosaScreenPreview() {
