@@ -5,6 +5,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import com.example.trazoatrazo.utils.luminance
 import androidx.lifecycle.ViewModel
+import com.example.trazoatrazo.domain.model.SpecialEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -188,7 +189,19 @@ class HomeViewModel : ViewModel() {
     )
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    fun onMessageTap(background: Color) {
+    /**
+     * Cambia el mensaje de bienvenida y avanza el color al tocar la tarjeta.
+     *
+     * @param background   Color de fondo actual, usado para elegir un color
+     *                      de mensaje con buen contraste.
+     * @param activeEvent   Evento especial activo hoy, si lo hay (ver
+     *                      [com.example.trazoatrazo.utils.EventDetector]).
+     *                      Cuando no es null, el nuevo mensaje se sortea desde
+     *                      [messagesForToday] en vez de [MESSAGES] a secas,
+     *                      dándole probabilidad extra a los mensajes propios
+     *                      de la fecha sin garantizar que siempre salga uno.
+     */
+    fun onMessageTap(background: Color, activeEvent: SpecialEvent? = null) {
         _uiState.update { current ->
             val isDarkBg = background.luminance() <= 0.45f
 
@@ -203,14 +216,41 @@ class HomeViewModel : ViewModel() {
                 nextIdx = (nextIdx + 1) % messageColors.size
             }
 
-            // 2. Optimización de selección de mensaje: evitar .filter {}.random()
-            // Buscamos un índice aleatorio diferente al actual
+            // Ahora se sortea desde messagesForToday() en vez de MESSAGES directo
+            val candidatePool = messagesForToday(activeEvent)
             var nextMsg: String
             do {
-                nextMsg = MESSAGES.random()
+                nextMsg = candidatePool.random()
             } while (nextMsg == current.welcomeMessage)
 
             current.copy(welcomeMessage = nextMsg, colorIndex = nextIdx)
+        }
+    }
+
+    /**
+     * Mezcla los mensajes normales de bienvenida con los mensajes propios
+     * de [activeEvent] cuando hay uno activo (ver
+     * [com.example.trazoatrazo.utils.EventDetector]). No reemplaza
+     * [MESSAGES] — solo los suma, así que durante un evento hay más
+     * probabilidad (no exclusividad) de que salga un mensaje alusivo a la
+     * fecha, manteniendo la sorpresa del resto del catálogo normal.
+     */
+    fun messagesForToday(activeEvent: SpecialEvent?): List<String> =
+        if (activeEvent != null) MESSAGES + activeEvent.extraWelcomeMessages
+        else MESSAGES
+
+
+    /**
+     * Refresca el mensaje de bienvenida inicial para que también pueda
+     * salir uno de [activeEvent] desde el primer momento, no solo al tocar
+     * la tarjeta. Pensada para llamarse una única vez desde `HomeScreen`
+     * en un `LaunchedEffect(activeEvent)` apenas se resuelve el evento del
+     * día — nunca en cada recomposición.
+     */
+    fun refreshWelcomeMessageForEvent(activeEvent: SpecialEvent?) {
+        if (activeEvent == null) return
+        _uiState.update { current ->
+            current.copy(welcomeMessage = messagesForToday(activeEvent).random())
         }
     }
 }

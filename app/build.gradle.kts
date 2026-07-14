@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "com.example.trazoatrazo"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 35
         versionCode = 3
         versionName = "3.4"

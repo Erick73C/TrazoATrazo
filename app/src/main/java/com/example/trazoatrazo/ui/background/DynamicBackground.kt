@@ -19,8 +19,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.lerp
+import com.example.trazoatrazo.domain.model.SpecialEvent
 import com.example.trazoatrazo.ui.theme.AppTheme
 import kotlin.math.PI
 import kotlin.math.sin
@@ -32,14 +33,28 @@ fun DynamicBackground(
     config:   BackgroundConfig,
     bgColor:  Color,
     modifier: Modifier = Modifier,
+    eventOverride: SpecialEvent? = null,
     content:  @Composable () -> Unit
 ) {
-    val particles = remember(theme, config.activeTypes) { 
+    val particles = remember(theme, config.activeTypes) {
         generateParticles(theme = theme, activeTypes = config.activeTypes)
     }
     val stars     = remember { generateStars() }
     val grainPoints = remember { generateGrain() }
     val glows       = remember { defaultGlowsFor(theme) }
+
+    // Partículas extra, exclusivas del evento activo — no se persisten,
+    // no reemplazan las normales, solo se suman encima mientras dura.
+    val eventParticles = remember(eventOverride?.id) {
+        eventOverride?.let { event ->
+            generateParticles(
+                count       = 18,
+                seed        = event.id.hashCode().toLong(),
+                theme       = theme,
+                activeTypes = listOf(event.particleType)
+            )
+        } ?: emptyList()
+    }
 
     val pColor = remember(theme, config.particles.intensity, bgColor) {
         particleColor(theme, config.particles.intensity, bgColor)
@@ -110,13 +125,29 @@ fun DynamicBackground(
                 onDrawBehind {
                     drawRect(color = bgColor)
 
+                    // Wash ambiental de evento (sutil, cubre toda la pantalla)
+                    if (eventOverride != null) {
+                        drawRect(
+                            brush = Brush.verticalGradient(
+                                colors = listOf(
+                                    eventOverride.accentColor.copy(alpha = 0.06f),
+                                    Color.Transparent
+                                )
+                            )
+                        )
+                    }
+
                     // ── 2. Glow ──────────────────────────────
                     if (config.glow.enabled) {
                         glows.forEach { g ->
                             val cx     = g.xFrac * W
                             val cy     = g.yFrac * H
                             val radius = g.radiusFrac * W
-                            val color  = glowColor(theme, glowT, g, config.glow.intensity, bgColor)
+                            val baseColor = glowColor(theme, glowT, g, config.glow.intensity, bgColor)
+                            // Si hay evento activo, se mezcla el glow del tema con el acento del evento
+                            val color = if (eventOverride != null) {
+                                lerp(baseColor, eventOverride.accentColor.copy(alpha = baseColor.alpha), 0.4f)
+                            } else baseColor
                             drawCircle(
                                 brush = Brush.radialGradient(listOf(color, Color.Transparent), Offset(cx, cy), radius),
                                 radius = radius,
@@ -138,11 +169,11 @@ fun DynamicBackground(
                     // ── 4. Partículas (con Efectos Especiales) ──────────────────
                     if (config.particles.enabled) {
                         val kSymmetry = if (config.kaleidoscope.enabled) (2 + (config.kaleidoscope.intensity * 6).toInt()) else 1
-                        
+
                         particles.forEach { p ->
                             var (x, y) = particlePosition(p, floatT, W, H)
-                            
-                            // ── Efecto Waves (Desplazamiento Ondulado) ──
+
+                            // ── Efecto Waves (Desplazamiento Ondulado)
                             if (config.waves.enabled) {
                                 val waveAmp = 40f * config.waves.intensity
                                 x += sin(y * 0.01f + floatT * 10f) * waveAmp
@@ -163,6 +194,20 @@ fun DynamicBackground(
                                         val center = Offset(x, y)
                                         renderParticleForm(p, center, radius, color, alpha, floatT, config)
                                     }
+                                }
+                            }
+                        }
+
+                        // ── 4.5 Partículas exclusivas del evento activo ────────────
+                        if (eventOverride != null && eventParticles.isNotEmpty()) {
+                            val eventColor = eventOverride.accentColor
+                            eventParticles.forEach { p ->
+                                val (x, y) = particlePosition(p, floatT, W, H)
+                                val alpha  = p.baseAlpha * 0.55f
+                                if (alpha > 0.01f) {
+                                    val radius = p.radius * config.particleSize
+                                    val color  = eventColor.copy(alpha = alpha)
+                                    renderParticleForm(p, Offset(x, y), radius, color, alpha, floatT, config)
                                 }
                             }
                         }
@@ -333,5 +378,5 @@ fun DrawingBackground(
     content:  @Composable () -> Unit
 ) {
     val config = LocalBackgroundConfig.current
-    DynamicBackground(theme, config, bgColor, modifier, content)
+    DynamicBackground(theme, config, bgColor, modifier, content = content)  // ← ajustado: content ahora se pasa nombrado
 }

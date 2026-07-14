@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.trazoatrazo.R
 import com.example.trazoatrazo.data.DrawingItem
 import com.example.trazoatrazo.data.drawingCatalog
+import com.example.trazoatrazo.domain.model.TimeCapsule
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.components.DrawingCard
 import com.example.trazoatrazo.presentation.gallery.GalleryScreen
@@ -55,11 +56,20 @@ import kotlinx.coroutines.launch
 import com.example.trazoatrazo.ui.background.DynamicBackground
 import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
+import com.example.trazoatrazo.ui.components.LockedCapsuleOverlay
 import com.example.trazoatrazo.ui.theme.LocalAppColors
 import com.example.trazoatrazo.ui.theme.LocalAppFont
 import com.example.trazoatrazo.ui.theme.LocalMessageStyle
 import com.example.trazoatrazo.ui.theme.MessageStyle
 import com.example.trazoatrazo.ui.theme.fontFamilyFor
+import com.example.trazoatrazo.utils.CapsuleUtils
+import com.example.trazoatrazo.domain.model.SpecialEvent
+import com.example.trazoatrazo.presentation.usage.AppUsageViewModel
+import com.example.trazoatrazo.ui.components.EventBanner
+import com.example.trazoatrazo.ui.components.EventInfoBox
+import com.example.trazoatrazo.ui.components.UnlockBanner
+import com.example.trazoatrazo.utils.EventDetector
+import com.example.trazoatrazo.utils.UnlockUtils
 
 @Immutable
 private data class TabInfo(
@@ -70,16 +80,61 @@ private data class TabInfo(
 )
 
 
-// ── HomeScreen ────────────────────────────────────────────────────────────────
+// HomeScreen
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = viewModel(),
+    appUsageViewModel: AppUsageViewModel,
     onDrawingClick: (categoryId: String, drawingId: String) -> Unit,
     onLetterClick:  () -> Unit,
     onSettingsClick: () -> Unit,
     onMyCreationsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    // Evento activo hoy — se calcula una sola vez por composición del Home
+    val activeEvent = remember { EventDetector.activeEventToday() }
+
+    LaunchedEffect(activeEvent) {
+        viewModel.refreshWelcomeMessageForEvent(activeEvent)
+    }
+
+    // Racha de uso: registro de apertura + detección de desbloqueos ────
+    val daysOpenedCount by appUsageViewModel.daysOpenedCount.collectAsStateWithLifecycle()
+    val notifiedIds     by appUsageViewModel.notifiedIds.collectAsStateWithLifecycle()
+    val lastShownEventId by appUsageViewModel.lastShownEventId.collectAsStateWithLifecycle()
+
+    var showEventInfo by remember { mutableStateOf(false) }
+
+    // Auto-mostrar información del evento una sola vez por cada nuevo evento
+    LaunchedEffect(activeEvent?.id, lastShownEventId) {
+        if (activeEvent != null && activeEvent.id != lastShownEventId) {
+            showEventInfo = true
+        }
+    }
+
+    // Se registra la apertura de hoy una sola vez por sesión.
+    LaunchedEffect(Unit) {
+        appUsageViewModel.registerAppOpenToday()
+    }
+
+    // Mensaje del banner de desbloqueo pendiente de mostrar (null = ninguno)
+    var unlockBannerMessage by remember { mutableStateOf<String?>(null) }
+
+    // Cada vez que cambia la racha, revisa si algo cruzó su umbral y aún
+    // no fue notificado. Solo muestra UN banner a la vez (el primero que
+    // encuentre) — si hubiera varios pendientes, los siguientes aparecerán
+    // en la próxima recomposición de daysOpenedCount.
+    LaunchedEffect(daysOpenedCount, notifiedIds) {
+        val unlockedNow = UnlockUtils.currentlyUnlockedDrawingIds(daysOpenedCount)
+        val pendingId = unlockedNow.firstOrNull { it !in notifiedIds }
+        if (pendingId != null) {
+            val requirement = UnlockUtils.findRequirementFor(pendingId)
+            unlockBannerMessage = requirement?.unlockedMessage
+                ?: "🌻 Nuevo recuerdo desbloqueado"
+            appUsageViewModel.markAsNotified(pendingId)
+        }
+    }
 
     val homeTabs = remember(
         AppColors.FlowersAccent,
@@ -113,7 +168,6 @@ fun HomeScreen(
     val pagerState     = rememberPagerState(pageCount = { homeTabs.size })
     val coroutineScope = rememberCoroutineScope()
 
-    // Lambdas estables para evitar recomposiciones en animaciones
     val headerAnimProvider  = remember { { headerAnim.value } }
     val welcomeAnimProvider = remember { { welcomeAnim.value } }
     val tabsAnimProvider    = remember { { tabsAnim.value } }
@@ -121,19 +175,27 @@ fun HomeScreen(
     DynamicBackground(
         theme   = LocalAppColors.current.appTheme,
         config  = LocalBackgroundConfig.current,
-        bgColor = AppColors.Vacio
+        bgColor = AppColors.Vacio,
+        eventOverride = activeEvent
     ) {
-        // ── Fondo decorativo ──────────────────────────────────────────────────
-
-
         Column(modifier = Modifier.fillMaxSize()) {
 
             // ── HEADER ────────────────────────────────────────────────────────
             HomeHeader(
                 animValueProvider = headerAnimProvider,
+                activeEvent       = activeEvent,
                 onSettingsClick   = onSettingsClick,
-                onMyCreationsClick = onMyCreationsClick
+                onMyCreationsClick = onMyCreationsClick,
+                onEventClick       = { showEventInfo = true }
             )
+
+            // ── Banner de desbloqueo (independiente del de evento) ───────
+            unlockBannerMessage?.let { message ->
+                UnlockBanner(
+                    message     = message,
+                    onDismissed = { unlockBannerMessage = null }
+                )
+            }
 
             // ── DIVIDER ───────────────────────────────────────────────────────
             HorizontalDivider(
@@ -151,7 +213,7 @@ fun HomeScreen(
                 message           = uiState.welcomeMessage,
                 messageColor      = currentMessageColor,
                 animValueProvider = welcomeAnimProvider,
-                onMessageTap      = { viewModel.onMessageTap(AppColors.Sombra) },
+                onMessageTap      = { viewModel.onMessageTap(AppColors.Sombra, activeEvent) },
                 onEnvelopeTap     = onLetterClick
             )
 
@@ -179,22 +241,34 @@ fun HomeScreen(
                     else ->
                         DrawingsPage(
                             categoryId     = tab.categoryId,
+                            activeEvent    = activeEvent,
+                            daysOpenedCount = daysOpenedCount,
                             onDrawingClick = onDrawingClick
                         )
                 }
             }
         }
+
+        if (showEventInfo && activeEvent != null) {
+            EventInfoBox(
+                event     = activeEvent,
+                onDismiss = {
+                    showEventInfo = false
+                    appUsageViewModel.markEventAsShown(activeEvent.id)
+                }
+            )
+        }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── HEADER ────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+//HEADER
 @Composable
 private fun HomeHeader(
     animValueProvider: () -> Float,
+    activeEvent:       SpecialEvent?,
     onSettingsClick:   () -> Unit,
-    onMyCreationsClick: () -> Unit
+    onMyCreationsClick: () -> Unit,
+    onEventClick:      () -> Unit
 ) {
     Box(
         modifier = Modifier
@@ -249,6 +323,24 @@ private fun HomeHeader(
                 )
             }
 
+            // Botón de evento (re-mostrar info)
+            if (activeEvent != null) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(11.dp))
+                        .background(AppColors.Sombra)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication        = null,
+                            onClick           = onEventClick
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(activeEvent.bannerEmoji, fontSize = 18.sp)
+                }
+            }
+
             Box(
                 modifier = Modifier
                     .size(40.dp)
@@ -283,9 +375,7 @@ private fun HomeHeader(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── WELCOME + ENVELOPE ────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// WELCOME + ENVELOPE
 @Composable
 private fun WelcomeSection(
     message:           String,
@@ -328,7 +418,7 @@ private fun WelcomeSection(
         horizontalArrangement = Arrangement.spacedBy(14.dp)
     ) {
 
-        // ── Tarjeta de mensaje ────────────────────────────────────────────────
+        // Tarjeta de mensaje
         Box(
             modifier = Modifier
                 .weight(1f)
@@ -395,7 +485,7 @@ private fun WelcomeSection(
             }
         }
 
-        // ── Sobre flotante ────────────────────────────────────────────────────
+        // Sobre flotante
         Box(
             modifier = Modifier
                 .size(72.dp)
@@ -515,9 +605,7 @@ private fun WelcomeSection(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── TAB ROW ───────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+// TAB ROW
 @Composable
 private fun CategoryTabRow(
     tabs:              List<TabInfo>,
@@ -590,19 +678,31 @@ private fun CategoryTabRow(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ── DRAWINGS PAGE ─────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
-// ── DRAWINGS PAGE ─────────────────────────────────────────────────────────────
+
 @Composable
 private fun DrawingsPage(
     categoryId:     String,
+    activeEvent:    SpecialEvent?,
+    daysOpenedCount: Int,
     onDrawingClick: (categoryId: String, drawingId: String) -> Unit
-    // accentColor eliminado — ya no se usa aquí
 ) {
     val drawings = drawingCatalog[categoryId] ?: emptyList()
 
+    var lockedCapsuleToShow by remember { mutableStateOf<TimeCapsule?>(null) }
+
+    // Si el evento activo trae un dibujo temporal para ESTA categoría,
+    // se busca su DrawingItem real en el catálogo para reusar su emoji/
+    // accentColor tal cual, solo se destaca con un badge distinto.
+    val eventDrawing = remember(activeEvent?.id, categoryId) {
+        if (activeEvent?.temporaryDrawingCategoryId == categoryId) {
+            drawingCatalog[categoryId]?.firstOrNull {
+                it.id == activeEvent.temporaryDrawingId
+            }
+        } else null
+    }
+
     if (drawings.isEmpty()) {
+        // ... (sin cambios, se queda igual)
         Box(
             modifier         = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -631,24 +731,72 @@ private fun DrawingsPage(
         return
     }
 
-    LazyColumn(
-        contentPadding      = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        itemsIndexed(
-            items = drawings,
-            key   = { _, drawing -> drawing.id }   // ← estabilidad de lista
-        ) { _, drawing ->
-            DrawingCard(
-                emoji         = drawing.emoji,
-                title         = drawing.title,
-                description   = drawing.description,
-                categoryId    = categoryId,
-                accentColor   = drawing.accentColor,
-                categoryLabel = categoryLabelFor(categoryId),
-                onClick       = { onDrawingClick(categoryId, drawing.id) }
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            contentPadding      = PaddingValues(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // ── Tarjeta destacada del evento (solo aparece durante la temporada) ──
+            eventDrawing?.let { drawing ->
+                item(key = "event_${drawing.id}") {
+                    DrawingCard(
+                        emoji         = drawing.emoji,
+                        title         = drawing.title,
+                        description   = activeEvent?.bannerMessage ?: drawing.description,
+                        categoryId    = categoryId,
+                        accentColor   = activeEvent?.accentColor ?: drawing.accentColor,
+                        categoryLabel = "Destacado",
+                        isNew         = true,
+                        onClick       = { onDrawingClick(categoryId, drawing.id) }
+                    )
+                }
+            }
+
+            itemsIndexed(
+                items = drawings,
+                key   = { _, drawing -> drawing.id }
+            ) { _, drawing ->
+                val capsule = remember(drawing.capsuleId) {
+                    drawing.capsuleId?.let { CapsuleUtils.findCapsuleById(it) }
+                }
+                val isCapsuleLockedNow = capsule != null &&
+                        CapsuleUtils.isCapsuleLocked(drawing.id)
+                val capsuleDaysRemaining = if (isCapsuleLockedNow)
+                    CapsuleUtils.daysRemainingFor(drawing.id) else 0L
+
+                // Estado de bloqueo por racha de uso (Fase 4)
+                val isRaceLockedNow = remember(drawing.id, daysOpenedCount) {
+                    UnlockUtils.isDrawingLocked(drawing.id, daysOpenedCount)
+                }
+                val raceDaysRemaining = remember(drawing.id, daysOpenedCount) {
+                    UnlockUtils.daysRemainingToUnlock(drawing.id, daysOpenedCount)
+                }
+
+                DrawingCard(
+                    emoji                = drawing.emoji,
+                    title                = drawing.title,
+                    description          = drawing.description,
+                    categoryId           = categoryId,
+                    accentColor          = drawing.accentColor,
+                    categoryLabel        = categoryLabelFor(categoryId),
+                    isCapsuleLocked      = isCapsuleLockedNow,
+                    capsuleDaysRemaining = capsuleDaysRemaining,
+                    isRaceLocked         = isRaceLockedNow,
+                    raceDaysRemaining    = raceDaysRemaining,
+                    onClick              = { onDrawingClick(categoryId, drawing.id) },
+                    onLockedClick        = {
+                        if (isCapsuleLockedNow) lockedCapsuleToShow = capsule
+                    }
+                )
+            }
+            item { Spacer(Modifier.height(20.dp)) }
+        }
+
+        lockedCapsuleToShow?.let { capsule ->
+            LockedCapsuleOverlay(
+                capsule = capsule,
+                onBack  = { lockedCapsuleToShow = null }
             )
         }
-        item { Spacer(Modifier.height(20.dp)) }
     }
 }

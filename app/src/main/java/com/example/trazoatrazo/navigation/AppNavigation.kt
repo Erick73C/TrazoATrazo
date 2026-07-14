@@ -17,6 +17,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -49,13 +50,17 @@ import com.example.trazoatrazo.presentation.pixeleditor.PixelArtReplayScreen
 import com.example.trazoatrazo.presentation.pixeleditor.PixelArtViewModel
 import com.example.trazoatrazo.presentation.settings.SettingsScreen
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
+import com.example.trazoatrazo.presentation.usage.AppUsageViewModel
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.LocalAppColors
 import com.example.trazoatrazo.ui.background.LocalBackgroundConfig
+import com.example.trazoatrazo.ui.components.LockedCapsuleOverlay
 import com.example.trazoatrazo.ui.theme.LocalAppFont
 import com.example.trazoatrazo.ui.theme.LocalMessageStyle
 import com.example.trazoatrazo.ui.theme.themeColorSchemeFor
 import com.example.trazoatrazo.ui.theme.typographyFor
+import com.example.trazoatrazo.utils.CapsuleUtils
+import com.example.trazoatrazo.utils.UnlockUtils
 
 @Composable
 fun AppNavigation(
@@ -68,6 +73,7 @@ fun AppNavigation(
     val selectedFont     by settingsViewModel.selectedFont.collectAsStateWithLifecycle()
     val selectedMessageStyle by settingsViewModel.selectedMessageStyle.collectAsStateWithLifecycle()
     val pixelArtViewModel: PixelArtViewModel = viewModel()
+    val appUsageViewModel: AppUsageViewModel = viewModel()
 
     CompositionLocalProvider(
         LocalAppColors provides themeColorSchemeFor(selectedTheme),
@@ -91,6 +97,7 @@ fun AppNavigation(
             ) {
                 composable(Routes.HOME) {
                     HomeScreen(
+                        appUsageViewModel = appUsageViewModel,
                         onDrawingClick = { categoryId, drawingId ->
                             navController.navigate(Routes.drawing(categoryId, drawingId))
                         },
@@ -103,6 +110,34 @@ fun AppNavigation(
                 composable(Routes.DRAWING) { backStackEntry: NavBackStackEntry ->
                     val categoryId = backStackEntry.arguments?.getString("categoryId") ?: ""
                     val drawingId = backStackEntry.arguments?.getString("drawingId") ?: ""
+
+                    // Gate defensivo de Cápsulas del Tiempo
+                    // Si este drawingId pertenece a una cápsula que aún no se desbloquea,
+                    // se muestra el candado en vez de la pantalla real, sin importar
+                    // por dónde se llegó aquí (tap normal, back-stack
+                    val lockedCapsule = remember(drawingId) {
+                        CapsuleUtils.findCapsuleFor(drawingId)
+                            ?.takeIf { CapsuleUtils.isCapsuleLocked(drawingId) }
+                    }
+
+                    if (lockedCapsule != null) {
+                        LockedCapsuleOverlay(
+                            capsule = lockedCapsule,
+                            onBack  = { navController.popBackStack() }
+                        )
+                        return@composable
+                    }
+
+                    val daysOpenedCount by appUsageViewModel.daysOpenedCount.collectAsStateWithLifecycle()
+                    val isRaceLocked = remember(drawingId, daysOpenedCount) {
+                        UnlockUtils.isDrawingLocked(drawingId, daysOpenedCount)
+                    }
+
+                    if (isRaceLocked) {
+                        LaunchedEffect(Unit) { navController.popBackStack() }
+                        return@composable
+                    }
+
                     when (categoryId) {
                         Routes.Category.FLOWERS -> when (drawingId) {
                             Routes.Drawings.GIRASOL -> GirasolScreen(onBack = { navController.popBackStack() })
