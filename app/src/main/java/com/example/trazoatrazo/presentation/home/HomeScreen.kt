@@ -69,6 +69,7 @@ import com.example.trazoatrazo.ui.components.EventBanner
 import com.example.trazoatrazo.ui.components.EventInfoBox
 import com.example.trazoatrazo.ui.components.UnlockBanner
 import com.example.trazoatrazo.utils.EventDetector
+import com.example.trazoatrazo.utils.NotificationHelper
 import com.example.trazoatrazo.utils.UnlockUtils
 
 @Immutable
@@ -125,14 +126,33 @@ fun HomeScreen(
     // no fue notificado. Solo muestra UN banner a la vez (el primero que
     // encuentre) — si hubiera varios pendientes, los siguientes aparecerán
     // en la próxima recomposición de daysOpenedCount.
+    val context = androidx.compose.ui.platform.LocalContext.current
     LaunchedEffect(daysOpenedCount, notifiedIds) {
         val unlockedNow = UnlockUtils.currentlyUnlockedDrawingIds(daysOpenedCount)
         val pendingId = unlockedNow.firstOrNull { it !in notifiedIds }
         if (pendingId != null) {
             val requirement = UnlockUtils.findRequirementFor(pendingId)
+            val drawingTitle = drawingCatalog.values.flatten().find { it.id == pendingId }?.title ?: "Nuevo dibujo"
+            
             unlockBannerMessage = requirement?.unlockedMessage
                 ?: "🌻 Nuevo recuerdo desbloqueado"
+            
+            // Notificación Push
+            NotificationHelper.showUnlockNotification(context, drawingTitle)
+            
             appUsageViewModel.markAsNotified(pendingId)
+        }
+    }
+
+    // Detección de desbloqueo por Cápsula del Tiempo
+    LaunchedEffect(Unit, notifiedIds) {
+        drawingCatalog.values.flatten().forEach { drawing ->
+            if (drawing.capsuleId != null && !CapsuleUtils.isCapsuleLocked(drawing.id)) {
+                if (drawing.id !in notifiedIds) {
+                    NotificationHelper.showUnlockNotification(context, drawing.title)
+                    appUsageViewModel.markAsNotified(drawing.id)
+                }
+            }
         }
     }
 
@@ -184,6 +204,7 @@ fun HomeScreen(
             HomeHeader(
                 animValueProvider = headerAnimProvider,
                 activeEvent       = activeEvent,
+                streakCount       = daysOpenedCount,
                 onSettingsClick   = onSettingsClick,
                 onMyCreationsClick = onMyCreationsClick,
                 onEventClick       = { showEventInfo = true }
@@ -266,6 +287,7 @@ fun HomeScreen(
 private fun HomeHeader(
     animValueProvider: () -> Float,
     activeEvent:       SpecialEvent?,
+    streakCount:       Int,
     onSettingsClick:   () -> Unit,
     onMyCreationsClick: () -> Unit,
     onEventClick:      () -> Unit
@@ -278,18 +300,18 @@ private fun HomeHeader(
                 scaleX = scale
                 scaleY = scale
             }
-            .padding(top = 52.dp, bottom = 16.dp, start = 22.dp, end = 22.dp)
+            .padding(top = 52.dp, bottom = 12.dp, start = 20.dp, end = 20.dp)
     ) {
         Row(
             verticalAlignment     = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier              = Modifier.fillMaxWidth()
         ) {
             // Logo box
             Box(
                 modifier = Modifier
-                    .size(46.dp)
-                    .clip(RoundedCornerShape(13.dp))
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(12.dp))
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
@@ -303,76 +325,88 @@ private fun HomeHeader(
                 Image(
                     painter = painterResource(id = R.drawable.ic_recuerdos_logo_foreground),
                     contentDescription = null,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(50.dp)
                 )
             }
 
-            // Título
+            // Título y Racha
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text       = "Trazo a Trazo",
-                    fontSize   = 23.sp,
+                    fontSize   = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
                     color      = AppColors.Reversa
                 )
-                Text(
-                    text     = "¡Qué alegría verte! ✨, " +
-                                "V 3.2",
-                    fontSize = 11.sp,
-                    color    = AppColors.Eco
-                )
-            }
-
-            // Botón de evento (re-mostrar info)
-            if (activeEvent != null) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(AppColors.Sombra)
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication        = null,
-                            onClick           = onEventClick
-                        ),
-                    contentAlignment = Alignment.Center
+                
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    Text(activeEvent.bannerEmoji, fontSize = 18.sp)
+                    // Píldora de racha
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(AppColors.KiEspiritual.copy(alpha = 0.15f))
+                            .padding(horizontal = 5.dp, vertical = 1.dp)
+                    ) {
+                        Text(
+                            text = "🔥 $streakCount días",
+                            fontSize = 10.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = AppColors.KiEspiritual
+                        )
+                    }
+
+                    Text(
+                        text     = "V 3.4",
+                        fontSize = 10.sp,
+                        color    = AppColors.Eco.copy(alpha = 0.7f)
+                    )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(AppColors.Sombra)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication        = null,
-                        onClick           = onMyCreationsClick
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("🖼️", fontSize = 18.sp)
-            }
+            // Botones de acción agrupados
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Botón de evento
+                if (activeEvent != null) {
+                    HeaderActionButton(
+                        content = { Text(activeEvent.bannerEmoji, fontSize = 16.sp) },
+                        onClick = onEventClick
+                    )
+                }
 
-            // Botón ajustes
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(AppColors.Sombra)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication        = null,
-                        onClick           = onSettingsClick
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("⚙️", fontSize = 19.sp)
+                HeaderActionButton(
+                    content = { Text("🖼️", fontSize = 16.sp) },
+                    onClick = onMyCreationsClick
+                )
+
+                HeaderActionButton(
+                    content = { Text("⚙️", fontSize = 17.sp) },
+                    onClick = onSettingsClick
+                )
             }
         }
     }
+}
+
+@Composable
+private fun HeaderActionButton(
+    content: @Composable () -> Unit,
+    onClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .size(36.dp)
+            .clip(RoundedCornerShape(10.dp))
+            .background(AppColors.Sombra)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication        = null,
+                onClick           = onClick
+            ),
+        contentAlignment = Alignment.Center,
+        content = { content() }
+    )
 }
 
 // WELCOME + ENVELOPE
@@ -411,11 +445,11 @@ private fun WelcomeSection(
             .graphicsLayer { alpha = animValueProvider() }
             .offset {
                 val v = animValueProvider()
-                IntOffset(0, ((1f - v) * 20).dp.roundToPx())
+                IntOffset(0, ((1f - v) * 15).dp.roundToPx())
             }
-            .padding(horizontal = 18.dp, vertical = 12.dp),
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment     = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
 
         // Tarjeta de mensaje

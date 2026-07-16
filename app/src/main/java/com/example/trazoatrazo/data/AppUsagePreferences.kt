@@ -26,7 +26,9 @@ private object UsageKeys {
     val OPENED_DATES        = stringSetPreferencesKey("opened_dates")
     val NOTIFIED_UNLOCK_IDS = stringSetPreferencesKey("notified_unlock_ids")
     val FIRST_OPEN_TIMESTAMP = longPreferencesKey("first_open_timestamp")
+    val LAST_OPEN_TIMESTAMP = longPreferencesKey("last_open_timestamp")
     val LAST_SHOWN_EVENT_ID = stringPreferencesKey("last_shown_event_id")
+    val NOTIFIED_EVENT_ID   = stringPreferencesKey("notified_event_id")
 }
 
 /**
@@ -64,21 +66,45 @@ class AppUsagePreferences(private val context: Context) {
         getOpenedDatesFlow().map { dates -> dates.size }
 
     /**
-     * Registra la apertura de hoy si aún no estaba registrada, y guarda el
-     * timestamp de la primera apertura de todas si es la primera vez.
+     * Registra la apertura de hoy solo si han pasado al menos 24 horas desde
+     * el último registro exitoso. Esto evita que el usuario aumente su racha
+     * simplemente cambiando la fecha del sistema en intervalos cortos.
      *
      * Debe llamarse una sola vez por sesión (típicamente desde
-     * `MainActivity` o `AppNavigation` al arrancar), no en cada composición.
+     * `MainActivity` o `AppNavigation` al arrancar).
      */
     suspend fun registerAppOpenToday() {
-        val todayStr = DateProvider.todayAsString()
+        val currentTime = System.currentTimeMillis()
+        val twentyFourHours = 24 * 60 * 60 * 1000L
+
         context.usageDataStore.edit { prefs ->
-            val currentDates = prefs[UsageKeys.OPENED_DATES] ?: emptySet()
-            if (todayStr !in currentDates) {
-                prefs[UsageKeys.OPENED_DATES] = currentDates + todayStr
+            val lastTime = prefs[UsageKeys.LAST_OPEN_TIMESTAMP] ?: 0L
+
+            // Anti-bloqueo: si el reloj del sistema retrocedió manualmente,
+            // reseteamos el timestamp al actual para permitir que la racha
+            // siga avanzando normalmente a partir de ahora.
+            if (currentTime < lastTime) {
+                prefs[UsageKeys.LAST_OPEN_TIMESTAMP] = currentTime
+                return@edit
             }
+
+            // Solo registramos si pasaron 24h o es la primera vez (lastTime == 0)
+            if (currentTime - lastTime >= twentyFourHours || lastTime == 0L) {
+                val todayStr = DateProvider.todayAsString()
+                val currentDates = prefs[UsageKeys.OPENED_DATES] ?: emptySet()
+
+                // Si por alguna razón la fecha ya está (ej: se borró el timestamp
+                // pero no las fechas), igual actualizamos el timestamp para
+                // mantener la ventana de 24h.
+                if (todayStr !in currentDates) {
+                    prefs[UsageKeys.OPENED_DATES] = currentDates + todayStr
+                }
+                prefs[UsageKeys.LAST_OPEN_TIMESTAMP] = currentTime
+            }
+
+            // Registrar timestamp de la primera apertura absoluta
             if (prefs[UsageKeys.FIRST_OPEN_TIMESTAMP] == null) {
-                prefs[UsageKeys.FIRST_OPEN_TIMESTAMP] = System.currentTimeMillis()
+                prefs[UsageKeys.FIRST_OPEN_TIMESTAMP] = currentTime
             }
         }
     }
@@ -134,6 +160,24 @@ class AppUsagePreferences(private val context: Context) {
     suspend fun markEventAsShown(id: String) {
         context.usageDataStore.edit { prefs ->
             prefs[UsageKeys.LAST_SHOWN_EVENT_ID] = id
+        }
+    }
+
+    // ── Notificaciones de Eventos ───────────────────────────────────────────
+
+    /** Flow con el ID del último evento que ya envió notificación push. */
+    fun getNotifiedEventIdFlow(): Flow<String?> =
+        context.usageDataStore.data
+            .catch { exception ->
+                if (exception is IOException) emit(emptyPreferences())
+                else throw exception
+            }
+            .map { prefs -> prefs[UsageKeys.NOTIFIED_EVENT_ID] }
+
+    /** Marca el evento [id] como ya notificado vía push. */
+    suspend fun markEventAsNotified(id: String) {
+        context.usageDataStore.edit { prefs ->
+            prefs[UsageKeys.NOTIFIED_EVENT_ID] = id
         }
     }
 }

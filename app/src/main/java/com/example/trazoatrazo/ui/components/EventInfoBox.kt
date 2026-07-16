@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -21,6 +23,7 @@ import androidx.compose.ui.unit.sp
 import com.example.trazoatrazo.domain.model.SpecialEvent
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.utils.textColorFor
+import androidx.compose.ui.geometry.Offset
 
 @Composable
 fun EventInfoBox(
@@ -32,7 +35,7 @@ fun EventInfoBox(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.6f))
+            .background(Color.Black.copy(alpha = 0.75f))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -42,75 +45,102 @@ fun EventInfoBox(
     ) {
         Column(
             modifier = Modifier
-                .width(300.dp)
-                .clip(RoundedCornerShape(28.dp))
+                .width(340.dp)
+                .clip(RoundedCornerShape(32.dp))
                 .background(AppColors.Sombra)
                 .border(
-                    width = 2.dp,
+                    width = 3.dp,
                     brush = Brush.verticalGradient(
-                        listOf(event.accentColor, event.accentColor.copy(alpha = 0.4f))
+                        listOf(event.accentColor, event.accentColor.copy(alpha = 0.2f))
                     ),
-                    shape = RoundedCornerShape(28.dp)
+                    shape = RoundedCornerShape(32.dp)
                 )
                 .clickable(enabled = false) { }
-                .padding(24.dp),
+                .padding(horizontal = 28.dp, vertical = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(event.bannerEmoji, fontSize = 52.sp)
+            // Halo de brillo detrás del emoji
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(100.dp)
+                    .drawBehind {
+                        drawCircle(
+                            brush = Brush.radialGradient(
+                                colors = listOf(event.accentColor.copy(alpha = 0.4f), Color.Transparent),
+                                center = center,
+                                radius = size.width / 1.2f
+                            )
+                        )
+                    }
+            ) {
+                Text(event.bannerEmoji, fontSize = 64.sp)
+            }
             
-            Spacer(Modifier.height(14.dp))
+            Spacer(Modifier.height(20.dp))
             
             Text(
                 text = event.name,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontSize = 26.sp,
+                fontWeight = FontWeight.Black,
                 color = event.accentColor,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                letterSpacing = 0.5.sp
             )
             
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(12.dp))
             
             Text(
                 text = event.bannerMessage,
-                fontSize = 14.sp,
+                fontSize = 15.sp,
                 color = AppColors.ReversaSuave,
                 textAlign = TextAlign.Center,
-                lineHeight = 20.sp
+                lineHeight = 22.sp,
+                fontWeight = FontWeight.Medium
             )
             
-            Spacer(Modifier.height(18.dp))
+            Spacer(Modifier.height(24.dp))
             
-            // Recuadro de duración
+            // Recuadro de duración mejorado
             Box(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(event.accentColor.copy(alpha = 0.12f))
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(event.accentColor.copy(alpha = 0.15f))
+                    .border(
+                        width = 1.dp,
+                        color = event.accentColor.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 10.dp)
             ) {
                 Text(
                     text = "📅 " + event.durationText,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 13.sp,
+                    fontWeight = FontWeight.ExtraBold,
                     color = event.accentColor
                 )
             }
             
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(36.dp))
             
-            // Botón de cerrar
+            // Botón de cerrar con gradiente
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(event.accentColor)
-                    .clickable(onClick = onDismiss)
-                    .padding(vertical = 14.dp),
+                    .height(56.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(
+                        Brush.horizontalGradient(
+                            listOf(event.accentColor, event.accentColor.copy(alpha = 0.8f))
+                        )
+                    )
+                    .clickable(onClick = onDismiss),
                 contentAlignment = Alignment.Center
             ) {
                 Text(
                     text = "¡Qué genial! ✨",
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Black,
                     color = textColor
                 )
             }
