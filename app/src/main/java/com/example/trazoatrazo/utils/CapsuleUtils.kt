@@ -17,13 +17,23 @@ import com.example.trazoatrazo.domain.model.TimeCapsule
  */
 object CapsuleUtils {
 
+    // capsulesList es pequeño y estático — indexarlo evita recorrerlo
+    // linealmente en cada consulta desde DrawingCard/AppNavigation.
+    private val capsulesByDrawingId: Map<String, TimeCapsule> by lazy {
+        capsulesList.associateBy { it.drawingId }
+    }
+
+    private val capsulesById: Map<String, TimeCapsule> by lazy {
+        capsulesList.associateBy { it.id }
+    }
+
     /**
      * Busca la cápsula asociada a [drawingId], si existe.
      * Devuelve `null` si ese dibujo no está ligado a ninguna cápsula
      * (es decir, es un dibujo normal, siempre accesible).
      */
     fun findCapsuleFor(drawingId: String): TimeCapsule? =
-        capsulesList.firstOrNull { it.drawingId == drawingId }
+        capsulesByDrawingId[drawingId]
 
     /**
      * Busca una cápsula por su propio [capsuleId] (no por el drawingId que
@@ -31,7 +41,7 @@ object CapsuleUtils {
      * ejemplo desde el catálogo de notificaciones pendientes.
      */
     fun findCapsuleById(capsuleId: String): TimeCapsule? =
-        capsulesList.firstOrNull { it.id == capsuleId }
+        capsulesById[capsuleId]
 
     /**
      * true si [drawingId] pertenece a una cápsula y esa cápsula **todavía

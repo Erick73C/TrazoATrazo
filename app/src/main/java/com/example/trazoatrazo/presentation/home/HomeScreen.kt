@@ -358,7 +358,7 @@ private fun HomeHeader(
                     }
 
                     Text(
-                        text     = "V 3.4",
+                        text     = "V 4.0",
                         fontSize = 10.sp,
                         color    = AppColors.Eco.copy(alpha = 0.7f)
                     )
@@ -798,12 +798,17 @@ private fun DrawingsPage(
                 val capsuleDaysRemaining = if (isCapsuleLockedNow)
                     CapsuleUtils.daysRemainingFor(drawing.id) else 0L
 
-                // Estado de bloqueo por racha de uso (Fase 4)
-                val isRaceLockedNow = remember(drawing.id, daysOpenedCount) {
-                    UnlockUtils.isDrawingLocked(drawing.id, daysOpenedCount)
+                // Estado de bloqueo por racha de uso — una sola búsqueda del
+                // requisito, reutilizada para ambos valores derivados
+                val requirement = remember(drawing.id) {
+                    UnlockUtils.findRequirementFor(drawing.id)
                 }
-                val raceDaysRemaining = remember(drawing.id, daysOpenedCount) {
-                    UnlockUtils.daysRemainingToUnlock(drawing.id, daysOpenedCount)
+                val isRaceLockedNow = remember(requirement, daysOpenedCount) {
+                    requirement != null && daysOpenedCount < requirement.requiredDaysOpened
+                }
+                val raceDaysRemaining = remember(requirement, daysOpenedCount) {
+                    (requirement?.let { it.requiredDaysOpened - daysOpenedCount } ?: 0)
+                        .coerceAtLeast(0)
                 }
 
                 DrawingCard(

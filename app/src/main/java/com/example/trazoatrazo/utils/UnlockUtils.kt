@@ -13,16 +13,21 @@ import com.example.trazoatrazo.domain.model.UnlockRequirement
  */
 object UnlockUtils {
 
-    /**
-     * Busca el [UnlockRequirement] asociado a [drawingId] recorriendo todas
-     * las categorías del catálogo. Devuelve `null` si ese dibujo no tiene
-     * requisito de racha (siempre accesible).
-     */
-    fun findRequirementFor(drawingId: String): UnlockRequirement? =
+    // Evita recorrer + aplanar drawingCatalog completo en cada consulta —
+    // esto se llama una vez por DrawingCard en cada recomposición del Home.
+    private val requirementsByDrawingId: Map<String, UnlockRequirement> by lazy {
         drawingCatalog.values
             .flatten()
-            .firstOrNull { it.id == drawingId }
-            ?.unlockRequirement
+            .mapNotNull { item -> item.unlockRequirement?.let { item.id to it } }
+            .toMap()
+    }
+
+    /**
+     * Busca el [UnlockRequirement] asociado a [drawingId]. Devuelve `null`
+     * si ese dibujo no tiene requisito de racha (siempre accesible).
+     */
+    fun findRequirementFor(drawingId: String): UnlockRequirement? =
+        requirementsByDrawingId[drawingId]
 
     /**
      * true si [drawingId] tiene un [UnlockRequirement] y la racha actual
@@ -46,15 +51,11 @@ object UnlockUtils {
     /**
      * Todos los `drawingId` que tienen requisito de racha y que [daysOpened]
      * ya alcanza en este momento. Se usa desde `HomeScreen` para comparar
-     * contra los ids ya notificados y detectar desbloqueos nuevos sin tener
-     * que recorrer manualmente cada categoría del catálogo.
+     * contra los ids ya notificados y detectar desbloqueos nuevos.
      */
     fun currentlyUnlockedDrawingIds(daysOpened: Int): List<String> =
-        drawingCatalog.values
-            .flatten()
-            .filter { item ->
-                val req = item.unlockRequirement
-                req != null && daysOpened >= req.requiredDaysOpened
-            }
-            .map { it.id }
+        requirementsByDrawingId
+            .filterValues { daysOpened >= it.requiredDaysOpened }
+            .keys
+            .toList()
 }

@@ -36,7 +36,7 @@ object NotificationHelper {
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
         val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_recuerdos_logo) // Icono de la app solicitado
+            .setSmallIcon(R.mipmap.ic_recuerdos_logo)
             .setContentTitle(eventName)
             .setContentText("¡El evento ha comenzado! La app se ha personalizado y hay nuevos dibujos temáticos por desbloquear.")
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
