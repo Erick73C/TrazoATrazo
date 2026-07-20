@@ -26,7 +26,8 @@ val specialEventsList: List<SpecialEvent> = listOf(
         startMonth    = 12, startDay = 30,
         endMonth      = 1,  endDay   = 2,
         accentColor   = Color(0xFFD4A017),   // dorado (reutilizado de Noche de Oro)
-        particleType  = SpecialParticleType.SPARKLE,
+        particleType  = SpecialParticleType.EMOJI,
+        particleEmojis = listOf("🎆", "✨", "🍾"),
         bannerEmoji   = "🎆",
         bannerMessage = "¡Un nuevo año está por comenzar! 🎆",
         extraWelcomeMessages = listOf(
@@ -64,9 +65,10 @@ val specialEventsList: List<SpecialEvent> = listOf(
         accentColor   = Color(0xFFF59E0B),   // ámbar cálido (reutilizado de tema Ámbar)
         particleType  = SpecialParticleType.SPARKLE,
         bannerEmoji   = "🎂",
-        bannerMessage = "¡Feliz cumpleaños! 🎂",
+        bannerMessage = "¡Feliz cumpleaños! que te la pases super bien 🎂🥳🥳",
         extraWelcomeMessages = listOf(
-            "🎂 ¡Feliz cumpleaños! Espero que sea un día increíble",
+            "🎂 ¡Feliz cumpleaños! tkm",
+            "🫂 Te mando un abrazo muy grande, que te la pases muy bonito",
             "🎉 Un año más de vida, un año más de cosas bonitas",
             "🎈 Que se cumplan todos tus deseos hoy"
         )
@@ -112,8 +114,8 @@ val specialEventsList: List<SpecialEvent> = listOf(
     SpecialEvent(
         id            = "evento_independencia_mx",
         name          = "Independencia de México",
-        startMonth    = 7, startDay = 13,
-        endMonth      = 7, endDay   = 14,
+        startMonth    = 9, startDay = 14,
+        endMonth      = 9, endDay   = 18,
         accentColor   = Color(0xFFCE1126),   // rojo bandera mexicana
         particleType  = SpecialParticleType.SPARKLE,
         bannerEmoji   = "🇲🇽",

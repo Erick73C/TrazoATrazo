@@ -16,8 +16,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -61,6 +63,7 @@ import com.example.trazoatrazo.ui.theme.themeColorSchemeFor
 import com.example.trazoatrazo.ui.theme.typographyFor
 import com.example.trazoatrazo.utils.CapsuleUtils
 import com.example.trazoatrazo.utils.UnlockUtils
+import com.example.trazoatrazo.presentation.loading.AppLoadingScreen
 
 @Composable
 fun AppNavigation(
@@ -75,6 +78,10 @@ fun AppNavigation(
     val pixelArtViewModel: PixelArtViewModel = viewModel()
     val appUsageViewModel: AppUsageViewModel = viewModel()
 
+    // Evita que themeReady (que suele llegar rápido) corte la animación
+    // a medio camino.
+    var loadingAnimationFinished by remember { mutableStateOf(false) }
+
     CompositionLocalProvider(
         LocalAppColors provides themeColorSchemeFor(selectedTheme),
         LocalBackgroundConfig provides backgroundConfig,
@@ -84,13 +91,11 @@ fun AppNavigation(
         MaterialTheme(
             typography = typographyFor(selectedFont)
         ) {
-        if (!themeReady) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(AppColors.Vacio)
-            )
-        } else {
+            if (!themeReady || !loadingAnimationFinished) {
+                AppLoadingScreen(
+                    onFinished = { loadingAnimationFinished = true }
+                )
+            } else {
             NavHost(
                 navController = navController,
                 startDestination = Routes.HOME

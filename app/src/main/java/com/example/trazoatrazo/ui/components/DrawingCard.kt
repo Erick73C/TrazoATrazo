@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trazoatrazo.navigation.Routes
 import com.example.trazoatrazo.ui.theme.AppColors
+import com.example.trazoatrazo.ui.theme.LocalUiTransparency
 import com.example.trazoatrazo.utils.subtitleColorFor
 import com.example.trazoatrazo.utils.textColorFor
 
@@ -117,6 +118,7 @@ fun DrawingCard(
     onLockedClick:         () -> Unit = {}
 ) {
     val isSpecial = categoryId == Routes.Category.SPECIAL
+    val transparency = LocalUiTransparency.current
 
     // Bloqueo efectivo: cualquiera de los dos sistemas activa el estado bloqueado
     val isLocked = isCapsuleLocked || isRaceLocked
@@ -138,7 +140,7 @@ fun DrawingCard(
             }
             if (accent != Color.Transparent) lerp(base, accent, 0.08f) else base
         }
-    }
+    }.copy(alpha = (1f - transparency).coerceIn(0f, 1f))
 
     // Paleta de bloqueo activa según qué sistema aplica
     val lockBorder = if (isCapsuleLocked) CapsuleLockColors.Border else RaceLockColors.Border
@@ -192,10 +194,19 @@ fun DrawingCard(
                 val barTop    = 8.dp.toPx()
                 val barHeight = size.height - 16.dp.toPx()
                 val borderW   = if (isSpecial) 1.5f else 1.2f
-                val borderA   = if (isLocked) 0.6f else if (isSpecial) 1f else 0.42f
+                val borderA   = if (isLocked) {
+                    (0.6f + (0.4f * transparency)).coerceIn(0f, 1f)
+                } else if (isSpecial) {
+                    (1f - (0.3f * transparency)).coerceIn(0f, 1f)
+                } else {
+                    (0.42f + (0.38f * transparency)).coerceIn(0f, 1f)
+                }
 
                 val barBrush = Brush.linearGradient(
-                    colors = listOf(borderColor, borderColor.copy(alpha = 0.35f)),
+                    colors = listOf(
+                        borderColor.copy(alpha = (1f - transparency * 0.5f).coerceIn(0f, 1f)),
+                        borderColor.copy(alpha = (0.35f - transparency * 0.2f).coerceIn(0f, 1f))
+                    ),
                     start  = Offset(0f, 0f),
                     end    = Offset(0f, size.height)
                 )
@@ -247,19 +258,20 @@ fun DrawingCard(
                 modifier = Modifier
                     .size(50.dp)
                     .clip(RoundedCornerShape(13.dp))
-                    .background(iconBg)
+                    .background(iconBg.copy(alpha = (iconBg.alpha * (1f - transparency)).coerceIn(0f, 1f)))
                     .drawWithCache {
                         val cornerR     = CornerRadius(13.dp.toPx())
                         val innerCorner = CornerRadius(11.dp.toPx())
                         val reflectH    = size.height * 0.45f
                         val reflectBrush = Brush.linearGradient(
-                            colors = listOf(Color.White.copy(alpha = 0.13f), Color.Transparent),
+                            colors = listOf(Color.White.copy(alpha = 0.13f * (1f - transparency)), Color.Transparent),
                             start  = Offset(0f, 0f),
                             end    = Offset(0f, reflectH)
                         )
                         onDrawWithContent {
                             drawContent()
-                            drawRoundRect(color = iconBorder, cornerRadius = cornerR, style = Stroke(1f))
+                            val strokeA = if (transparency > 0f) 0.3f * transparency else iconBorder.alpha
+                            drawRoundRect(color = iconBorder.copy(alpha = strokeA.coerceIn(0f, 1f)), cornerRadius = cornerR, style = Stroke(1f))
                             if (!isLocked) {
                                 drawRoundRect(
                                     brush        = reflectBrush,
@@ -335,13 +347,14 @@ fun DrawingCard(
                     modifier = Modifier
                         .size(34.dp)
                         .clip(RoundedCornerShape(10.dp))
-                        .background(playBg)
+                        .background(playBg.copy(alpha = (playBg.alpha * (1f - transparency)).coerceIn(0f, 1f)))
                         .drawWithCache {
                             val cornerR = CornerRadius(10.dp.toPx())
                             val strokeW = if (isSpecial) 1.3f else 1f
+                            val strokeA = if (transparency > 0f) 0.4f * transparency else playBorder.alpha
                             onDrawWithContent {
                                 drawContent()
-                                drawRoundRect(color = playBorder, cornerRadius = cornerR, style = Stroke(strokeW))
+                                drawRoundRect(color = playBorder.copy(alpha = strokeA.coerceIn(0f, 1f)), cornerRadius = cornerR, style = Stroke(strokeW))
                             }
                         },
                     contentAlignment = Alignment.Center

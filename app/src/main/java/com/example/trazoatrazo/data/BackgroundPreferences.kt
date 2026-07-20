@@ -48,6 +48,7 @@ private object BgKeys {
     val WAVES_INTENSITY        = floatPreferencesKey("bg_waves_intensity")
     val SPEED               = floatPreferencesKey("bg_speed")
     val PARTICLE_SIZE       = floatPreferencesKey("bg_particle_size")
+    val EMOJI_PARTICLES     = stringPreferencesKey("bg_emoji_particles")
 }
 
 class BackgroundPreferences(private val context: Context) {
@@ -105,7 +106,8 @@ class BackgroundPreferences(private val context: Context) {
                         intensity = prefs[BgKeys.WAVES_INTENSITY] ?: themeDefault.waves.intensity
                     ),
                     speed = prefs[BgKeys.SPEED] ?: themeDefault.speed,
-                    particleSize = prefs[BgKeys.PARTICLE_SIZE] ?: themeDefault.particleSize
+                    particleSize = prefs[BgKeys.PARTICLE_SIZE] ?: themeDefault.particleSize,
+                    emojiParticles = prefs[BgKeys.EMOJI_PARTICLES]?.split(",") ?: themeDefault.emojiParticles
                 )
             }
 
@@ -133,6 +135,7 @@ class BackgroundPreferences(private val context: Context) {
             prefs[BgKeys.WAVES_INTENSITY]        = config.waves.intensity
             prefs[BgKeys.SPEED]               = config.speed
             prefs[BgKeys.PARTICLE_SIZE]       = config.particleSize
+            prefs[BgKeys.EMOJI_PARTICLES]     = config.emojiParticles.joinToString(",")
         }
     }
 

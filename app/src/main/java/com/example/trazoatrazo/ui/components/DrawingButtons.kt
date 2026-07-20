@@ -24,10 +24,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.trazoatrazo.ui.theme.AppColors
 import com.example.trazoatrazo.ui.theme.LocalAppFont
+import com.example.trazoatrazo.ui.theme.LocalUiTransparency
 import com.example.trazoatrazo.ui.theme.fontFamilyFor
 import com.example.trazoatrazo.utils.subtitleColorFor
 import com.example.trazoatrazo.utils.textColorFor
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.graphics.drawscope.Stroke
 
 /**
  * Bloque reutilizable que aparece al terminar cualquier animación.
@@ -60,6 +64,7 @@ fun DrawingButtons(
     val secondaryTextColor = subtitleColorFor(backgroundColor)
     var showSaveOptions by remember { mutableStateOf(false) }
     
+    val transparency = LocalUiTransparency.current
     val currentFont = LocalAppFont.current
     val fontFamily = fontFamilyFor(currentFont)
 
@@ -115,10 +120,21 @@ fun DrawingButtons(
                         onClick = onBack,
                         shape   = RoundedCornerShape(14.dp),
                         colors  = ButtonDefaults.buttonColors(
-                            containerColor = mainTextColor.copy(alpha = 0.12f),
+                            containerColor = mainTextColor.copy(alpha = (0.12f * (1f - transparency)).coerceIn(0f, 1f)),
                             contentColor   = mainTextColor
                         ),
-                        modifier = Modifier.weight(1f, fill = false)
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .drawWithContent {
+                                drawContent()
+                                if (transparency > 0f) {
+                                    drawRoundRect(
+                                        color = mainTextColor.copy(alpha = 0.3f * transparency),
+                                        cornerRadius = CornerRadius(14.dp.toPx()),
+                                        style = Stroke(1.2f)
+                                    )
+                                }
+                            }
                     ) {
                         Text("← Menú", fontSize = 13.sp, fontFamily = fontFamily)
                     }
@@ -128,10 +144,21 @@ fun DrawingButtons(
                         onClick = onRepeat,
                         shape   = RoundedCornerShape(14.dp),
                         colors  = ButtonDefaults.buttonColors(
-                            containerColor = accentColor,
-                            contentColor   = textColorFor(accentColor)
+                            containerColor = accentColor.copy(alpha = (1f - transparency).coerceIn(0f, 1f)),
+                            contentColor   = if (transparency > 0.5f) mainTextColor else textColorFor(accentColor)
                         ),
-                        modifier = Modifier.weight(1f, fill = false)
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .drawWithContent {
+                                drawContent()
+                                if (transparency > 0f) {
+                                    drawRoundRect(
+                                        color = accentColor.copy(alpha = 0.6f * transparency),
+                                        cornerRadius = CornerRadius(14.dp.toPx()),
+                                        style = Stroke(1.5f)
+                                    )
+                                }
+                            }
                     ) {
                         Text(
                             "$repeatEmoji $repeatLabel",
@@ -147,10 +174,21 @@ fun DrawingButtons(
                             onClick = { showSaveOptions = true },
                             shape   = RoundedCornerShape(14.dp),
                             colors  = ButtonDefaults.buttonColors(
-                                containerColor = AppColors.Eco.copy(alpha = 0.2f),
+                                containerColor = AppColors.Eco.copy(alpha = (0.2f * (1f - transparency)).coerceIn(0f, 1f)),
                                 contentColor   = AppColors.Eco
                             ),
-                            modifier = Modifier.weight(1f, fill = false)
+                            modifier = Modifier
+                                .weight(1f, fill = false)
+                                .drawWithContent {
+                                    drawContent()
+                                    if (transparency > 0f) {
+                                        drawRoundRect(
+                                            color = AppColors.Eco.copy(alpha = 0.4f * transparency),
+                                            cornerRadius = CornerRadius(14.dp.toPx()),
+                                            style = Stroke(1.2f)
+                                        )
+                                    }
+                                }
                         ) {
                             Icon(Icons.Default.Share, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(4.dp))
@@ -164,7 +202,17 @@ fun DrawingButtons(
             if (showSaveOptions && onSave != null) {
                 AlertDialog(
                     onDismissRequest = { showSaveOptions = false },
-                    containerColor = Color(0xFF1E1E1E),
+                    containerColor = Color(0xFF1E1E1E).copy(alpha = (1f - transparency).coerceIn(0.2f, 1f)),
+                    modifier = Modifier.drawWithContent {
+                        drawContent()
+                        if (transparency > 0f) {
+                            drawRoundRect(
+                                color = Color.White.copy(alpha = 0.15f * transparency),
+                                cornerRadius = CornerRadius(28.dp.toPx()),
+                                style = Stroke(1.5f)
+                            )
+                        }
+                    },
                     title = {
                         Text("Guardar creación", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold, fontFamily = fontFamily)
                     },

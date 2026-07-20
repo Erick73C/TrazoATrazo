@@ -79,6 +79,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
             initialValue = true
         )
 
+    val uiTransparency: StateFlow<Float> = systemPrefs.getUiTransparencyFlow()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = 0f
+        )
+
     private var persistJob: Job? = null
     
     private fun updateConfig(update: (BackgroundConfig) -> BackgroundConfig) {
@@ -151,6 +158,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setBackgroundSpeed(speed: Float) = updateConfig { it.copy(speed = speed.coerceIn(0.25f, 2.0f)) }
     fun setParticleSize(size: Float) = updateConfig { it.copy(particleSize = size.coerceIn(0.5f, 2.5f)) }
 
+    fun setEmojiParticles(emojis: List<String>) = updateConfig {
+        it.copy(emojiParticles = emojis)
+    }
+
     fun resetBackgroundToThemeDefault() {
         viewModelScope.launch { backgroundPrefs.resetToThemeDefault() }
     }
@@ -167,5 +178,9 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setImmersiveMode(enabled: Boolean) {
         viewModelScope.launch { systemPrefs.saveImmersiveMode(enabled) }
+    }
+
+    fun setUiTransparency(alpha: Float) {
+        viewModelScope.launch { systemPrefs.saveUiTransparency(alpha) }
     }
 }

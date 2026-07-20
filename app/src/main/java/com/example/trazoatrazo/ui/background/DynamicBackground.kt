@@ -21,8 +21,13 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.text.ExperimentalTextApi
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import com.example.trazoatrazo.domain.model.SpecialEvent
 import com.example.trazoatrazo.ui.theme.AppTheme
+import com.example.trazoatrazo.utils.adaptiveColorFor
 import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.math.cos
@@ -36,12 +41,13 @@ fun DynamicBackground(
     eventOverride: SpecialEvent? = null,
     content:  @Composable () -> Unit
 ) {
-    val particles = remember(theme, config.activeTypes) {
-        generateParticles(theme = theme, activeTypes = config.activeTypes)
+    val textMeasurer = rememberTextMeasurer()
+    val particles = remember(theme, config.activeTypes, config.emojiParticles) {
+        BackgroundNoiseCache.particlesFor(theme, config.activeTypes, config.emojiParticles)
     }
-    val stars     = remember { generateStars() }
-    val grainPoints = remember { generateGrain() }
-    val glows       = remember { defaultGlowsFor(theme) }
+    val stars     = remember { BackgroundNoiseCache.stars() }
+    val grainPoints = remember { BackgroundNoiseCache.grain() }
+    val glows       = remember(theme) { BackgroundNoiseCache.glowsFor(theme) }
 
     // Partículas extra, exclusivas del evento activo — no se persisten,
     // no reemplazan las normales, solo se suman encima mientras dura.
@@ -51,7 +57,8 @@ fun DynamicBackground(
                 count       = 18,
                 seed        = event.id.hashCode().toLong(),
                 theme       = theme,
-                activeTypes = listOf(event.particleType)
+                activeTypes = listOf(event.particleType),
+                emojis      = event.particleEmojis ?: emptyList()
             )
         } ?: emptyList()
     }
@@ -192,7 +199,7 @@ fun DynamicBackground(
                                         if (kSymmetry > 1) rotate(angle, Offset(W / 2, H / 2))
                                     }) {
                                         val center = Offset(x, y)
-                                        renderParticleForm(p, center, radius, color, alpha, floatT, config)
+                                        renderParticleForm(p, center, radius, color, alpha, floatT, config, textMeasurer, bgColor)
                                     }
                                 }
                             }
@@ -207,7 +214,7 @@ fun DynamicBackground(
                                 if (alpha > 0.01f) {
                                     val radius = p.radius * config.particleSize
                                     val color  = eventColor.copy(alpha = alpha)
-                                    renderParticleForm(p, Offset(x, y), radius, color, alpha, floatT, config)
+                                    renderParticleForm(p, Offset(x, y), radius, color, alpha, floatT, config, textMeasurer, bgColor)
                                 }
                             }
                         }
@@ -259,12 +266,39 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.renderParticleForm(
     color: Color,
     alpha: Float,
     time: Float,
-    config: BackgroundConfig
+    config: BackgroundConfig,
+    textMeasurer: androidx.compose.ui.text.TextMeasurer,
+    bgColor: Color
 ) {
     val x = center.x
     val y = center.y
 
     when (p.type) {
+        SpecialParticleType.EMOJI -> {
+            p.emoji?.let { emoji ->
+                val rot = particleRotation(p, time)
+                val fontSize = (radius * 2.5f).toSp()
+                
+                // Aplicar color adaptativo para letras/texto plano
+                val adaptiveColor = color.adaptiveColorFor(bgColor)
+                
+                val layoutResult = textMeasurer.measure(
+                    text = emoji,
+                    style = TextStyle(
+                        fontSize = fontSize,
+                        color = adaptiveColor.copy(alpha = alpha)
+                    )
+                )
+                withTransform({
+                    rotate(rot, center)
+                }) {
+                    drawText(
+                        textLayoutResult = layoutResult,
+                        topLeft = Offset(x - layoutResult.size.width / 2f, y - layoutResult.size.height / 2f)
+                    )
+                }
+            }
+        }
         SpecialParticleType.SNOWFLAKE -> {
             val rot = particleRotation(p, time)
             withTransform({ rotate(rot, center) }) {
@@ -378,5 +412,29 @@ fun DrawingBackground(
     content:  @Composable () -> Unit
 ) {
     val config = LocalBackgroundConfig.current
-    DynamicBackground(theme, config, bgColor, modifier, content = content)  // ← ajustado: content ahora se pasa nombrado
+    DynamicBackground(theme, config, bgColor, modifier, content = content)
+}
+
+// Vive en memoria del proceso (no en disco) — se pierde al cerrar la app
+// por completo, lo cual es intencional y aceptable.
+// ─────────────────────────────────────────────────────────────────────────────
+private object BackgroundNoiseCache {
+    private val particlesCache = mutableMapOf<Triple<AppTheme, List<SpecialParticleType>, List<String>>, List<ParticleData>>()
+    private val starsCache     = mutableMapOf<Unit, List<StarData>>()
+    private val grainCache     = mutableMapOf<Unit, List<GrainPoint>>()
+    private val glowsCache     = mutableMapOf<AppTheme, List<GlowData>>()
+
+    fun particlesFor(theme: AppTheme, activeTypes: List<SpecialParticleType>, emojis: List<String>): List<ParticleData> =
+        particlesCache.getOrPut(Triple(theme, activeTypes, emojis)) {
+            generateParticles(theme = theme, activeTypes = activeTypes, emojis = emojis)
+        }
+
+    fun stars(): List<StarData> =
+        starsCache.getOrPut(Unit) { generateStars() }
+
+    fun grain(): List<GrainPoint> =
+        grainCache.getOrPut(Unit) { generateGrain() }
+
+    fun glowsFor(theme: AppTheme): List<GlowData> =
+        glowsCache.getOrPut(theme) { defaultGlowsFor(theme) }
 }

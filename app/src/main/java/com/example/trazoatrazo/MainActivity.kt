@@ -10,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
@@ -20,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import com.example.trazoatrazo.data.AppUsagePreferences
 import com.example.trazoatrazo.navigation.AppNavigation
 import com.example.trazoatrazo.presentation.settings.SettingsViewModel
+import com.example.trazoatrazo.ui.theme.LocalUiTransparency
 import com.example.trazoatrazo.ui.theme.TrazoATrazoTheme
 import com.example.trazoatrazo.utils.EventDetector
 import com.example.trazoatrazo.utils.NotificationHelper
@@ -49,14 +51,17 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             val immersiveMode by settingsViewModel.immersiveMode.collectAsStateWithLifecycle()
+            val uiTransparency by settingsViewModel.uiTransparency.collectAsStateWithLifecycle()
             
             // Aplicar modo inmersivo cada vez que cambie el estado
             androidx.compose.runtime.LaunchedEffect(immersiveMode) {
                 applyImmersiveMode(immersiveMode)
             }
 
-            TrazoATrazoTheme {
-                AppNavigation()
+            CompositionLocalProvider(LocalUiTransparency provides uiTransparency) {
+                TrazoATrazoTheme {
+                    AppNavigation()
+                }
             }
         }
     }

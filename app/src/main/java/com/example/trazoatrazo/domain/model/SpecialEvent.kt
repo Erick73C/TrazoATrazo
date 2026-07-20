@@ -31,6 +31,7 @@ data class SpecialEvent(
     val endDay:                    Int,
     val accentColor:               Color,
     val particleType:              SpecialParticleType = SpecialParticleType.SPARKLE,
+    val particleEmojis:            List<String>? = null,
     val bannerEmoji:                String = "✨",
     val bannerMessage:              String,
     val extraWelcomeMessages:       List<String> = emptyList(),

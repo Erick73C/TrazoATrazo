@@ -60,6 +60,7 @@ import com.example.trazoatrazo.ui.components.LockedCapsuleOverlay
 import com.example.trazoatrazo.ui.theme.LocalAppColors
 import com.example.trazoatrazo.ui.theme.LocalAppFont
 import com.example.trazoatrazo.ui.theme.LocalMessageStyle
+import com.example.trazoatrazo.ui.theme.LocalUiTransparency
 import com.example.trazoatrazo.ui.theme.MessageStyle
 import com.example.trazoatrazo.ui.theme.fontFamilyFor
 import com.example.trazoatrazo.utils.CapsuleUtils
@@ -92,6 +93,7 @@ fun HomeScreen(
     onMyCreationsClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val transparency = LocalUiTransparency.current
 
     // Evento activo hoy — se calcula una sola vez por composición del Home
     val activeEvent = remember { EventDetector.activeEventToday() }
@@ -207,7 +209,8 @@ fun HomeScreen(
                 streakCount       = daysOpenedCount,
                 onSettingsClick   = onSettingsClick,
                 onMyCreationsClick = onMyCreationsClick,
-                onEventClick       = { showEventInfo = true }
+                onEventClick       = { showEventInfo = true },
+                transparency      = transparency
             )
 
             // ── Banner de desbloqueo (independiente del de evento) ───────
@@ -235,7 +238,8 @@ fun HomeScreen(
                 messageColor      = currentMessageColor,
                 animValueProvider = welcomeAnimProvider,
                 onMessageTap      = { viewModel.onMessageTap(AppColors.Sombra, activeEvent) },
-                onEnvelopeTap     = onLetterClick
+                onEnvelopeTap     = onLetterClick,
+                transparency      = transparency
             )
 
             // ── TAB ROW ───────────────────────────────────────────────────────
@@ -243,6 +247,7 @@ fun HomeScreen(
                 tabs              = homeTabs,
                 selectedIndex     = pagerState.currentPage,
                 animValueProvider = tabsAnimProvider,
+                transparency      = transparency,
                 onTabClick        = { index ->
                     coroutineScope.launch { pagerState.animateScrollToPage(index) }
                 }
@@ -290,7 +295,8 @@ private fun HomeHeader(
     streakCount:       Int,
     onSettingsClick:   () -> Unit,
     onMyCreationsClick: () -> Unit,
-    onEventClick:      () -> Unit
+    onEventClick:      () -> Unit,
+    transparency:      Float
 ) {
     Box(
         modifier = Modifier
@@ -315,11 +321,21 @@ private fun HomeHeader(
                     .background(
                         Brush.linearGradient(
                             colors = listOf(
-                                AppColors.Maldicion.copy(alpha = 0.5f),
-                                AppColors.Expansion.copy(alpha = 0.5f)
+                                AppColors.Maldicion.copy(alpha = (0.5f * (1f - transparency)).coerceIn(0f, 1f)),
+                                AppColors.Expansion.copy(alpha = (0.5f * (1f - transparency)).coerceIn(0f, 1f))
                             )
                         )
-                    ),
+                    )
+                    .drawWithContent {
+                        drawContent()
+                        if (transparency > 0f) {
+                            drawRoundRect(
+                                color = AppColors.Maldicion.copy(alpha = 0.3f * transparency),
+                                cornerRadius = CornerRadius(12.dp.toPx()),
+                                style = Stroke(1.2f)
+                            )
+                        }
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 Image(
@@ -346,7 +362,17 @@ private fun HomeHeader(
                     Box(
                         modifier = Modifier
                             .clip(RoundedCornerShape(6.dp))
-                            .background(AppColors.KiEspiritual.copy(alpha = 0.15f))
+                            .background(AppColors.KiEspiritual.copy(alpha = (0.15f * (1f - transparency)).coerceIn(0f, 1f)))
+                            .drawWithContent {
+                                drawContent()
+                                if (transparency > 0f) {
+                                    drawRoundRect(
+                                        color = AppColors.KiEspiritual.copy(alpha = 0.3f * transparency),
+                                        cornerRadius = CornerRadius(6.dp.toPx()),
+                                        style = Stroke(1f)
+                                    )
+                                }
+                            }
                             .padding(horizontal = 5.dp, vertical = 1.dp)
                     ) {
                         Text(
@@ -371,18 +397,21 @@ private fun HomeHeader(
                 if (activeEvent != null) {
                     HeaderActionButton(
                         content = { Text(activeEvent.bannerEmoji, fontSize = 16.sp) },
-                        onClick = onEventClick
+                        onClick = onEventClick,
+                        transparency = transparency
                     )
                 }
 
                 HeaderActionButton(
                     content = { Text("🖼️", fontSize = 16.sp) },
-                    onClick = onMyCreationsClick
+                    onClick = onMyCreationsClick,
+                    transparency = transparency
                 )
 
                 HeaderActionButton(
                     content = { Text("⚙️", fontSize = 17.sp) },
-                    onClick = onSettingsClick
+                    onClick = onSettingsClick,
+                    transparency = transparency
                 )
             }
         }
@@ -392,13 +421,24 @@ private fun HomeHeader(
 @Composable
 private fun HeaderActionButton(
     content: @Composable () -> Unit,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    transparency: Float = 0f
 ) {
     Box(
         modifier = Modifier
             .size(36.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(AppColors.Sombra)
+            .background(AppColors.Sombra.copy(alpha = (1f - transparency).coerceIn(0f, 1f)))
+            .drawWithContent {
+                drawContent()
+                if (transparency > 0f) {
+                    drawRoundRect(
+                        color = AppColors.Maldicion.copy(alpha = 0.3f * transparency),
+                        cornerRadius = CornerRadius(10.dp.toPx()),
+                        style = Stroke(1.2f)
+                    )
+                }
+            }
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication        = null,
@@ -416,7 +456,8 @@ private fun WelcomeSection(
     messageColor:      Color,
     animValueProvider: () -> Float,
     onMessageTap:      () -> Unit,
-    onEnvelopeTap:     () -> Unit
+    onEnvelopeTap:     () -> Unit,
+    transparency:      Float = 0f
 ) {
     // Flotación del sobre
     val infiniteTransition = rememberInfiniteTransition(label = "envelope_float")
@@ -457,12 +498,13 @@ private fun WelcomeSection(
             modifier = Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(18.dp))
-                .background(AppColors.Sombra)
+                .background(AppColors.Sombra.copy(alpha = (1f - transparency).coerceIn(0f, 1f)))
                 .then(
                     Modifier.drawWithContent {
                         drawContent()
+                        val borderAlpha = if (transparency > 0f) 0.3f * transparency else 0.3f
                         drawRoundRect(
-                            color        = AppColors.Maldicion.copy(alpha = 0.3f),
+                            color        = AppColors.Maldicion.copy(alpha = borderAlpha),
                             cornerRadius = CornerRadius(18.dp.toPx()),
                             style        = Stroke(1.2f)
                         )
@@ -645,7 +687,8 @@ private fun CategoryTabRow(
     tabs:              List<TabInfo>,
     selectedIndex:     Int,
     animValueProvider: () -> Float,
-    onTabClick:        (Int) -> Unit
+    onTabClick:        (Int) -> Unit,
+    transparency:      Float = 0f
 ) {
     val scrollState = rememberScrollState()
 
@@ -653,7 +696,7 @@ private fun CategoryTabRow(
         modifier = Modifier
             .fillMaxWidth()
             .graphicsLayer { alpha = animValueProvider() }
-            .background(AppColors.Sombra)
+            .background(AppColors.Sombra.copy(alpha = (1f - transparency).coerceIn(0f, 1f)))
             .horizontalScroll(scrollState)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(20.dp),
@@ -663,7 +706,10 @@ private fun CategoryTabRow(
             val isSelected = index == selectedIndex
 
             val bgColor by animateColorAsState(
-                targetValue   = if (isSelected) tab.accentColor.copy(alpha = 0.22f) else Color.Transparent,
+                targetValue   = if (isSelected) {
+                    val baseAlpha = 0.22f
+                    tab.accentColor.copy(alpha = (baseAlpha * (1f - transparency)).coerceIn(0f, 1f))
+                } else Color.Transparent,
                 animationSpec = tween(220),
                 label         = "tabBg_$index"
             )
@@ -683,6 +729,16 @@ private fun CategoryTabRow(
                     .scale(tabScale)
                     .clip(RoundedCornerShape(13.dp))
                     .background(bgColor)
+                    .drawWithContent {
+                        drawContent()
+                        if (isSelected && transparency > 0f) {
+                            drawRoundRect(
+                                color = tab.accentColor.copy(alpha = 0.4f * transparency),
+                                cornerRadius = CornerRadius(13.dp.toPx()),
+                                style = Stroke(1f)
+                            )
+                        }
+                    }
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication        = null

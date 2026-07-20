@@ -39,6 +39,7 @@ fun SettingsScreen(
     val selectedFont     by viewModel.selectedFont.collectAsStateWithLifecycle()
     val selectedMessageStyle by viewModel.selectedMessageStyle.collectAsStateWithLifecycle()
     val immersiveMode    by viewModel.immersiveMode.collectAsStateWithLifecycle()
+    val uiTransparency by viewModel.uiTransparency.collectAsStateWithLifecycle()
 
     val screenAnim = remember { Animatable(0f) }
     LaunchedEffect(Unit) {
@@ -105,7 +106,9 @@ fun SettingsScreen(
                     Spacer(Modifier.height(16.dp))
                     SystemSettingsSection(
                         immersiveMode = immersiveMode,
-                        onImmersiveModeChange = viewModel::setImmersiveMode
+                        onImmersiveModeChange = viewModel::setImmersiveMode,
+                        uiTransparency = uiTransparency,
+                        onUiTransparencyChange = viewModel::setUiTransparency
                     )
                     Spacer(Modifier.height(24.dp))
                     ResetBackgroundButton(onClick = viewModel::resetBackgroundToThemeDefault)
@@ -169,7 +172,9 @@ private fun BackgroundEffectsSectionDashboard(
             onSlider    = viewModel::setParticlesIntensity,
             onTypeClick = viewModel::toggleParticleType,
             particleSize = config.particleSize,
-            onSizeSlider = viewModel::setParticleSize
+            onSizeSlider = viewModel::setParticleSize,
+            emojiParticles = config.emojiParticles,
+            onEmojiParticlesChange = viewModel::setEmojiParticles
         )
 
         // 2. Lista de Efectos en una sola tarjeta elegante
@@ -221,7 +226,7 @@ private fun EffectCompactRow(
                     text = effect.title,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Bold,
-                    color = if (effect.enabled) Color.White else AppColors.Eco
+                    color = if (effect.enabled) AppColors.Reversa else AppColors.Eco
                 )
                 if (effect.enabled) {
                     Text("Intensidad: ${(effect.intensity * 100).toInt()}%", fontSize = 10.sp, color = AppColors.Tecnica)
@@ -311,7 +316,7 @@ private fun MessageStyleRow(selectedStyle: MessageStyle, onStyleSelect: (Message
 
 @Composable
 private fun ThemeCard(modifier: Modifier, theme: AppTheme, isSelected: Boolean, onClick: () -> Unit) {
-    val scheme = themeColorSchemeFor(theme)
+    val scheme = remember(theme) { themeColorSchemeFor(theme) }
     Box(
         modifier = modifier
             .height(150.dp)
@@ -400,7 +405,7 @@ private fun MessageStyleCard(modifier: Modifier, style: MessageStyle, isSelected
             .padding(12.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(style.displayName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (isSelected) Color.White else AppColors.Eco)
+        Text(style.displayName, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = if (isSelected) AppColors.Reversa else AppColors.Eco)
     }
 }
 
@@ -416,9 +421,11 @@ private fun ParticleCatalogCard(
     onSlider:    (Float) -> Unit,
     onTypeClick: (SpecialParticleType) -> Unit,
     particleSize: Float,
-    onSizeSlider: (Float) -> Unit
+    onSizeSlider: (Float) -> Unit,
+    emojiParticles: List<String>,
+    onEmojiParticlesChange: (List<String>) -> Unit
 ) {
-    val cardAlpha by animateFloatAsState(if (enabled) 1f else 0.5f)
+    val cardAlpha by animateFloatAsState(if (enabled) 1f else 0.5f, label = "cardAlpha")
 
     Column(
         modifier = Modifier
@@ -445,7 +452,7 @@ private fun ParticleCatalogCard(
         if (enabled) {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Cantidad", fontSize = 11.sp, color = AppColors.Eco, modifier = Modifier.width(70.dp))
+                    Text("Brillo", fontSize = 11.sp, color = AppColors.Eco, modifier = Modifier.width(70.dp))
                     Slider(value = intensity, onValueChange = onSlider, colors = SliderDefaults.colors(thumbColor = AppColors.Tecnica, activeTrackColor = AppColors.Maldicion))
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
@@ -462,6 +469,101 @@ private fun ParticleCatalogCard(
                 SpecialParticleType.entries.forEach { type ->
                     val isSelected = activeTypes.contains(type)
                     ParticleCatalogItem(type = type, isSelected = isSelected, onClick = { onTypeClick(type) })
+                }
+            }
+
+            if (activeTypes.contains(SpecialParticleType.EMOJI)) {
+                EmojiCustomizer(
+                    emojis = emojiParticles,
+                    onEmojisChange = onEmojiParticlesChange
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmojiCustomizer(
+    emojis: List<String>,
+    onEmojisChange: (List<String>) -> Unit
+) {
+    var textValue by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(AppColors.Dominio.copy(alpha = 0.3f))
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            "Emojis Personalizados",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            color = AppColors.Tecnica
+        )
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TextField(
+                value = textValue,
+                onValueChange = { if (it.length <= 2) textValue = it },
+                modifier = Modifier.weight(1f).height(48.dp),
+                placeholder = { Text("Añadir emoji...", fontSize = 12.sp, color = AppColors.Eco) },
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = AppColors.Sombra,
+                    unfocusedContainerColor = AppColors.Sombra,
+                    focusedTextColor = AppColors.Reversa,
+                    unfocusedTextColor = AppColors.Reversa,
+                    cursorColor = AppColors.Tecnica,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent
+                ),
+                shape = RoundedCornerShape(8.dp),
+                singleLine = true
+            )
+
+            IconButton(
+                onClick = {
+                    if (textValue.isNotBlank()) {
+                        onEmojisChange(emojis + textValue.trim())
+                        textValue = ""
+                    }
+                },
+                modifier = Modifier.size(48.dp).background(AppColors.Maldicion, RoundedCornerShape(8.dp))
+            ) {
+                Text("+", color = AppColors.Sombra, fontWeight = FontWeight.Bold)
+            }
+        }
+
+        @OptIn(ExperimentalLayoutApi::class)
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            emojis.forEachIndexed { index, emoji ->
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(AppColors.Sombra)
+                        .clickable {
+                            val newList = emojis.toMutableList().apply { removeAt(index) }
+                            onEmojisChange(newList)
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(emoji, fontSize = 20.sp)
+                    Text("×", 
+                        modifier = Modifier.align(Alignment.TopEnd).padding(2.dp),
+                        fontSize = 10.sp, 
+                        color = Color.Red.copy(alpha = 0.7f)
+                    )
                 }
             }
         }
@@ -485,7 +587,7 @@ private fun ParticleCatalogItem(type: SpecialParticleType, isSelected: Boolean, 
     ) {
         Text(type.emoji, fontSize = 22.sp)
         Spacer(Modifier.height(4.dp))
-        Text(type.displayName, fontSize = 8.sp, color = if (isSelected) Color.White else AppColors.Eco, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Text(type.displayName, fontSize = 8.sp, color = if (isSelected) AppColors.Reversa else AppColors.Eco, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
@@ -527,18 +629,50 @@ private fun BgToggle(checked: Boolean, onChecked: (Boolean) -> Unit) {
 }
 
 @Composable
-private fun SystemSettingsSection(immersiveMode: Boolean, onImmersiveModeChange: (Boolean) -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(24.dp)).background(AppColors.Sombra).padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
+private fun SystemSettingsSection(
+    immersiveMode: Boolean,
+    onImmersiveModeChange: (Boolean) -> Unit,
+    uiTransparency: Float,
+    onUiTransparencyChange: (Float) -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(24.dp))
+            .background(AppColors.Sombra)
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text("📱", fontSize = 22.sp)
-        Spacer(Modifier.width(12.dp))
-        Column(modifier = Modifier.weight(1f)) {
-            Text("Modo Inmersivo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
-            Text("Ocultar barras de sistema", fontSize = 11.sp, color = AppColors.Eco)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("📱", fontSize = 22.sp)
+            Spacer(Modifier.width(12.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Modo Inmersivo", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                Text("Ocultar barras de sistema", fontSize = 11.sp, color = AppColors.Eco)
+            }
+            BgToggle(checked = immersiveMode, onChecked = onImmersiveModeChange)
         }
-        BgToggle(checked = immersiveMode, onChecked = onImmersiveModeChange)
+
+        HorizontalDivider(color = AppColors.Dominio.copy(alpha = 0.5f), thickness = 0.5.dp)
+
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("✨", fontSize = 22.sp)
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text("Transparencia UI", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = AppColors.Reversa)
+                    Text("Modo Cristal: ${(uiTransparency * 100).toInt()}%", fontSize = 11.sp, color = AppColors.Eco)
+                }
+            }
+            Slider(
+                value = uiTransparency,
+                onValueChange = onUiTransparencyChange,
+                colors = SliderDefaults.colors(
+                    thumbColor = AppColors.Tecnica,
+                    activeTrackColor = AppColors.Maldicion
+                )
+            )
+        }
     }
 }
 
@@ -599,6 +733,7 @@ private val SpecialParticleType.emoji: String get() = when(this) {
     SpecialParticleType.SQUARE_DOT -> "🟦"
     SpecialParticleType.SHINE_STARDUST -> "✨"
     SpecialParticleType.WAVE -> "〰️"
+    SpecialParticleType.EMOJI -> "😄"
 }
 
 private val SpecialParticleType.displayName: String get() = when(this) {
@@ -618,4 +753,5 @@ private val SpecialParticleType.displayName: String get() = when(this) {
     SpecialParticleType.SQUARE_DOT -> "Pixeles"
     SpecialParticleType.SHINE_STARDUST -> "Polvo"
     SpecialParticleType.WAVE -> "Ondas"
+    SpecialParticleType.EMOJI -> "Emoji"
 }

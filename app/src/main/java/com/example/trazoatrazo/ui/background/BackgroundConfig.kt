@@ -25,7 +25,8 @@ data class BackgroundConfig(
     val kaleidoscope: EffectConfig = EffectConfig(enabled = false), // NUEVO
     val waves:        EffectConfig = EffectConfig(enabled = false), // NUEVO
     val speed:        Float        = 1.0f,   
-    val particleSize: Float        = 1.0f
+    val particleSize: Float        = 1.0f,
+    val emojiParticles: List<String> = listOf("✨", "⭐", "✨")
 )
 
 // ── CompositionLocal para proveer el config al árbol de Compose ───────────────

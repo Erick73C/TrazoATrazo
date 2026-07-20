@@ -31,7 +31,8 @@ enum class SpecialParticleType {
     HEART_S,         // corazón pequeño — Valentín
     SQUARE_DOT,      // cuadrado / pixel — Cyberpunk
     SHINE_STARDUST,  // punto con destello — Noche de Oro
-    WAVE             // onda / curva — Océano
+    WAVE,            // onda / curva — Océano
+    EMOJI            // personalizada (usuario o evento)
 }
 
 fun specialParticleTypeFor(theme: AppTheme): SpecialParticleType = when (theme) {
@@ -68,7 +69,8 @@ data class ParticleData(
     val driftFreq:    Float,
     val baseAlpha:    Float,
     val rotSpeed:     Float  = 0f,
-    val type:         SpecialParticleType = SpecialParticleType.NONE
+    val type:         SpecialParticleType = SpecialParticleType.NONE,
+    val emoji:        String? = null
 )
 
 @Immutable
@@ -88,13 +90,18 @@ fun generateParticles(
     count: Int  = 45,
     seed:  Long = 77L,
     theme: AppTheme = AppTheme.JJK_DARK,
-    activeTypes: List<SpecialParticleType> = listOf(SpecialParticleType.NONE)
+    activeTypes: List<SpecialParticleType> = listOf(SpecialParticleType.NONE),
+    emojis: List<String> = emptyList()
 ): List<ParticleData> {
     val rng = Random(seed)
     return List(count) { i ->
         val type = if (activeTypes.isEmpty()) SpecialParticleType.NONE 
                    else activeTypes[i % activeTypes.size]
         
+        val emoji = if (type == SpecialParticleType.EMOJI && emojis.isNotEmpty()) {
+            emojis[rng.nextInt(emojis.size)]
+        } else null
+
         ParticleData(
             xFrac     = rng.nextFloat(),
             yFrac     = rng.nextFloat(),
@@ -105,7 +112,8 @@ fun generateParticles(
             driftFreq = 0.4f + rng.nextFloat() * 0.8f,
             baseAlpha = 0.45f + rng.nextFloat() * 0.50f,
             rotSpeed  = 0.2f + rng.nextFloat() * 1.2f,
-            type      = type
+            type      = type,
+            emoji     = emoji
         )
     }
 }
